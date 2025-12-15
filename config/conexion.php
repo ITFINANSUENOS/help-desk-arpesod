@@ -1,6 +1,7 @@
 <?php
 
 session_start();
+date_default_timezone_set('America/Bogota');
 
 // Requerir el autoload de Composer para poder usar las librerías instaladas
 require_once __DIR__ . '/../vendor/autoload.php';
