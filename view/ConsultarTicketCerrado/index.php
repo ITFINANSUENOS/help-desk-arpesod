@@ -23,10 +23,10 @@ if (isset($_SESSION["usu_id"])) {
                     <div class="tbl">
                         <div class="tbl-row">
                             <div class="tbl-cell">
-                                <h3>Consultar ticket Abiertos</h3>
+                                <h3>Consultar ticket Cerrados</h3>
                                 <ol class="breadcrumb breadcrumb-simple">
                                     <li><a href="..\Home\">Home</a></li>
-                                    <li class="active">Consultar ticket</li>
+                                    <li class="active">Consultar ticket Cerrados</li>
                                 </ol>
                             </div>
                         </div>
@@ -69,7 +69,7 @@ if (isset($_SESSION["usu_id"])) {
         </div>
         <?php require_once('../MainJs/js.php') ?>
 
-        <script type="text/javascript" src="../ConsultarTicket/consultarticket.js"></script>
+        <script type="text/javascript" src="../ConsultarTicketCerrado/consultarticketcerrado.js"></script>
         <script type="text/javascript" src="../notificacion.js"></script>
 
 

@@ -26,17 +26,20 @@ switch ($_GET["op"]) {
         break;
 
     case "listar_x_usu":
-        $result = $lister->listTicketsByUser($_POST['usu_id']);
+        $status = isset($_POST['tick_estado']) ? $_POST['tick_estado'] : null;
+        $result = $lister->listTicketsByUser($_POST['usu_id'], $status);
         echo json_encode($result);
         break;
 
     case "listar_x_agente":
-        $result = $lister->listTicketsByAgent($_POST['usu_asig']);
+        $status = isset($_POST['tick_estado']) ? $_POST['tick_estado'] : null;
+        $result = $lister->listTicketsByAgent($_POST['usu_asig'], $status);
         echo json_encode($result);
         break;
 
     case "listar":
-        $result = $lister->listAllTickets();
+        $status = isset($_POST['tick_estado']) ? $_POST['tick_estado'] : null;
+        $result = $lister->listAllTickets($status);
         echo json_encode($result);
         break;
 

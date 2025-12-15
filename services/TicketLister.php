@@ -14,12 +14,12 @@ class TicketLister
         $this->usuarioModel = new Usuario();
     }
 
-    public function listTicketsByUser($userId)
+    public function listTicketsByUser($userId, $status = null)
     {
         // Prioritize custom search if not empty, otherwise fallback to DataTables search
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
 
-        $datos = $this->ticketModel->listar_ticket_x_usuario($userId, $search);
+        $datos = $this->ticketModel->listar_ticket_x_usuario($userId, $search, $status);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -72,12 +72,12 @@ class TicketLister
         ];
     }
 
-    public function listTicketsByAgent($agentId)
+    public function listTicketsByAgent($agentId, $status = null)
     {
         // Prioritize custom search if not empty, otherwise fallback to DataTables search
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
 
-        $datos = $this->ticketModel->listar_ticket_x_agente($agentId, $search);
+        $datos = $this->ticketModel->listar_ticket_x_agente($agentId, $search, $status);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -132,11 +132,11 @@ class TicketLister
         ];
     }
 
-    public function listAllTickets()
+    public function listAllTickets($status = null)
     {
         // Prioritize custom search if not empty, otherwise fallback to DataTables search
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
-        $datos = $this->ticketModel->listar_ticket($search);
+        $datos = $this->ticketModel->listar_ticket($search, $status);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();

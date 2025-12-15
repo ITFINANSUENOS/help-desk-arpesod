@@ -36,7 +36,7 @@ $(document).ready(function () {
                 url: '../../controller/ticket.php?op=listar_x_usu',
                 type: 'post',
                 dataType: 'json',
-                data: { usu_id: usu_id, tick_estado: 'Abierto' },
+                data: { usu_id: usu_id, tick_estado: 'Cerrado' },
                 error: function (e) {
                     console.log(e.responseText);
                 }
@@ -95,7 +95,7 @@ $(document).ready(function () {
                 data: function (d) {
                     d.usu_asig = usu_asig;
                     d.search_custom = $('#custom_search').val();
-                    d.tick_estado = 'Abierto';
+                    d.tick_estado = 'Cerrado';
                 },
                 dataType: 'json',
                 error: function (e) {
@@ -152,7 +152,7 @@ $(document).ready(function () {
                 dataType: 'json',
                 data: function (d) {
                     d.search_custom = $('#custom_search').val();
-                    d.tick_estado = 'Abierto';
+                    d.tick_estado = 'Cerrado';
                 },
                 error: function (e) {
                     console.log(e.responseText);

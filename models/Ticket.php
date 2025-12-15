@@ -139,7 +139,7 @@ class Ticket extends Conectar
         }
     }
 
-    public function listar_ticket_x_usuario($usu_id, $search_term = null)
+    public function listar_ticket_x_usuario($usu_id, $search_term = null, $status = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -169,6 +169,10 @@ class Ticket extends Conectar
                 tm_ticket.est = 1
                 AND tm_usuario.usu_id=?";
 
+        if (!empty($status)) {
+            $sql .= " AND tm_ticket.tick_estado = ?";
+        }
+
         if (!empty($search_term)) {
             $sql .= " AND (
                 tm_ticket.tick_titulo LIKE ? 
@@ -184,11 +188,20 @@ class Ticket extends Conectar
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
 
+        $paramIndex = 2;
+        if (!empty($status)) {
+            $sql->bindValue($paramIndex, $status);
+            $paramIndex++;
+        }
+
         if (!empty($search_term)) {
             $term = "%" . $search_term . "%";
-            $sql->bindValue(2, $term);
-            $sql->bindValue(3, $term);
-            $sql->bindValue(4, $term);
+            $sql->bindValue($paramIndex, $term);
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $term);
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $term);
+            $paramIndex++;
         }
 
         $sql->execute();
@@ -196,7 +209,7 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function listar_ticket_x_agente($usu_asig, $search_term = null)
+    public function listar_ticket_x_agente($usu_asig, $search_term = null, $status = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -228,6 +241,10 @@ class Ticket extends Conectar
                 tm_ticket.est = 1
                 AND FIND_IN_SET(?, tm_ticket.usu_asig)";
 
+        if (!empty($status)) {
+            $sql .= " AND tm_ticket.tick_estado = ?";
+        }
+
         if (!empty($search_term)) {
             $sql .= " AND (
                 tm_ticket.tick_titulo LIKE ? 
@@ -244,11 +261,20 @@ class Ticket extends Conectar
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_asig);
 
+        $paramIndex = 2;
+        if (!empty($status)) {
+            $sql->bindValue($paramIndex, $status);
+            $paramIndex++;
+        }
+
         if (!empty($search_term)) {
             $term = "%" . $search_term . "%";
-            $sql->bindValue(2, $term);
-            $sql->bindValue(3, $term);
-            $sql->bindValue(4, $term);
+            $sql->bindValue($paramIndex, $term);
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $term);
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $term);
+            $paramIndex++;
         }
 
         $sql->execute();
@@ -256,7 +282,7 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function listar_ticket($search_term = null)
+    public function listar_ticket($search_term = null, $status = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -285,6 +311,10 @@ class Ticket extends Conectar
                 WHERE 
                 tm_ticket.est = 1";
 
+        if (!empty($status)) {
+            $sql .= " AND tm_ticket.tick_estado = ?";
+        }
+
         if (!empty($search_term)) {
             $sql .= " AND (
                 tm_ticket.tick_titulo LIKE ? 
@@ -299,11 +329,16 @@ class Ticket extends Conectar
 
         $sql = $conectar->prepare($sql);
 
+        if (!empty($status)) {
+            $sql->bindValue(1, $status);
+        }
+
         if (!empty($search_term)) {
             $term = "%" . $search_term . "%";
-            $sql->bindValue(1, $term);
-            $sql->bindValue(2, $term);
-            $sql->bindValue(3, $term);
+            $paramStart = !empty($status) ? 2 : 1;
+            $sql->bindValue($paramStart, $term);
+            $sql->bindValue($paramStart + 1, $term);
+            $sql->bindValue($paramStart + 2, $term);
         }
 
         $sql->execute();
@@ -560,7 +595,7 @@ class Ticket extends Conectar
                     OR t.how_asig = ?
                     OR t.tick_id IN (SELECT DISTINCT tick_id FROM tm_ticket_paralelo WHERE usu_id = ?)
                 )";
-        
+
         if (!empty($search_term)) {
             $sql .= " AND (
                 t.tick_titulo LIKE ? 

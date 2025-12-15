@@ -18,7 +18,13 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
             <li class="blue-dirty">
                 <a href="..\ConsultarTicket\">
                     <i class="tag-color grey-blue"></i>
-                    <span class="lbl">Consultar Ticket</span>
+                    <span class="lbl">Consultar Ticket Abiertos</span>
+                </a>
+            </li>
+            <li class="blue-dirty">
+                <a href="..\ConsultarTicketCerrado\">
+                    <i class="tag-color grey-blue"></i>
+                    <span class="lbl">Consultar Ticket Cerrados</span>
                 </a>
             </li>
             <li class="blue-dirty">
@@ -53,7 +59,13 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
             <li class="blue-dirty">
                 <a href="..\ConsultarTicket\">
                     <i class="tag-color grey-blue"></i>
-                    <span class="lbl">Consultar Ticket Asignados</span>
+                    <span class="lbl">Consultar Ticket Asignados Abiertos</span>
+                </a>
+            </li>
+            <li class="blue-dirty">
+                <a href="..\ConsultarTicketCerrado\">
+                    <i class="tag-color grey-blue"></i>
+                    <span class="lbl">Consultar Ticket Asignados Cerrados</span>
                 </a>
             </li>
             <li class="blue-dirty">
@@ -94,7 +106,13 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
             <li class="blue-dirty">
                 <a href="..\ConsultarTicket\">
                     <i class="tag-color grey-blue"></i>
-                    <span class="lbl">Consultar Ticket</span>
+                    <span class="lbl">Consultar Ticket Abiertos</span>
+                </a>
+            </li>
+            <li class="blue-dirty">
+                <a href="..\ConsultarTicketCerrado\">
+                    <i class="tag-color grey-blue"></i>
+                    <span class="lbl">Consultar Ticket Cerrados</span>
                 </a>
             </li>
             <li class="blue-dirty">
