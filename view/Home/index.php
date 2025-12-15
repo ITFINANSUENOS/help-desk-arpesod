@@ -15,9 +15,37 @@ if (isset($_SESSION["usu_id"])) {
 
         <div class="page-content">
             <div class="container-fluid">
-                <div class="box-typical box-typical-padding">
-                    <h3>Bienvenido</h3>
-                    <p>El sistema de reportes está siendo actualizado.</p>
+                <div class="row">
+                    <div class="col-xl-4">
+                        <article class="statistic-box red">
+                            <div>
+                                <div class="number" id="lblasignados">0</div>
+                                <div class="caption">
+                                    <div>Pasos Asignados</div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                    <div class="col-xl-4">
+                        <article class="statistic-box purple">
+                            <div>
+                                <div class="number" id="lblfinalizados">0</div>
+                                <div class="caption">
+                                    <div>Pasos Finalizados</div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                    <div class="col-xl-4">
+                        <article class="statistic-box yellow">
+                            <div>
+                                <div class="number" id="lblpromedio">0 min</div>
+                                <div class="caption">
+                                    <div>Tiempo Promedio Respuesta</div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
                 </div>
             </div>
         </div>
