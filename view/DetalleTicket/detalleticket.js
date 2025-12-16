@@ -84,6 +84,13 @@ $(document).ready(function () {
         $('#upload_signature').change(function (e) {
             var file = e.target.files[0];
             if (file) {
+                // Validar tamaño (Max 2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    swal("Error", "La imagen de firma supera el límite de 2MB.", "error");
+                    $(this).val(''); // Limpiar input
+                    return;
+                }
+
                 var reader = new FileReader();
                 reader.onload = function (evt) {
                     var img = new Image();
@@ -283,8 +290,15 @@ $(document).ready(function () {
                 // Get files and validate size
                 var fileInput = document.getElementById('fileElem');
                 var totalSize = 0;
+                var maxFileSize = 2 * 1024 * 1024; // 2MB
+
                 if (fileInput && fileInput.files.length > 0) {
                     for (var i = 0; i < fileInput.files.length; i++) {
+                        // Validar archivo individual
+                        if (fileInput.files[i].size > maxFileSize) {
+                            swal("Error", "El archivo '" + fileInput.files[i].name + "' supera el límite de 2MB.", "error");
+                            return;
+                        }
                         totalSize += fileInput.files[i].size;
                         formData.append('files[]', fileInput.files[i]);
                     }
@@ -385,6 +399,11 @@ function getRespuestasRapidas() {
 }
 
 function myimagetreat(image) {
+    // Validar tamaño de imagen (Max 2MB)
+    if (image.size > 2 * 1024 * 1024) {
+        swal("Error", "La imagen supera el límite de 2MB.", "error");
+        return;
+    }
     var data = new FormData();
     data.append("file", image);
     $.ajax({
@@ -476,10 +495,33 @@ function enviarDetalle(signatureData = null) {
 
     // Explicitly handle file upload to ensure it works
     var fileInput = document.getElementById('fileElem');
+    var maxFileSize = 2 * 1024 * 1024; // 2MB
+    var maxTotalSize = 8 * 1024 * 1024; // 8MB
+    var currentTotalSize = 0;
+
     if (fileInput && fileInput.files.length > 0) {
         for (var i = 0; i < fileInput.files.length; i++) {
-            formData.append('files[]', fileInput.files[i]);
+            var file = fileInput.files[i];
+
+            // Validar individual
+            if (file.size > maxFileSize) {
+                swal("Error", "El archivo '" + file.name + "' supera el límite de 2MB.", "error");
+                $('#btnenviar').data('processing', false).prop('disabled', false);
+                updateEnviarButtonState();
+                return false;
+            }
+
+            currentTotalSize += file.size;
+            formData.append('files[]', file);
         }
+    }
+
+    // Validar total
+    if (currentTotalSize > maxTotalSize) {
+        swal("Error", "El tamaño total de los archivos supera el límite de 8MB.", "error");
+        $('#btnenviar').data('processing', false).prop('disabled', false);
+        updateEnviarButtonState();
+        return false;
     }
 
     if ($('#checkbox_avanzar_flujo').is(':checked')) {
@@ -709,8 +751,23 @@ $(document).on('click', '#btn_confirmar_cierre', function () {
     formData.append('nota_cierre', nota_cierre);
 
     var files = $('#cierre_files')[0].files;
+    var maxFileSize = 2 * 1024 * 1024; // 2MB
+    var maxTotalSize = 8 * 1024 * 1024; // 8MB
+    var currentTotalSize = 0;
+
     for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        if (file.size > maxFileSize) {
+            swal("Error", "El archivo '" + file.name + "' supera el límite de 2MB.", "error");
+            return;
+        }
+        currentTotalSize += file.size;
         formData.append('cierre_files[]', files[i]);
+    }
+
+    if (currentTotalSize > maxTotalSize) {
+        swal("Error", "El tamaño total de los archivos supera el límite de 8MB.", "error");
+        return;
     }
 
     $.ajax({

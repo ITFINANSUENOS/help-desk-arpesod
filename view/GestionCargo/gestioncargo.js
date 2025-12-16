@@ -1,8 +1,22 @@
 var tabla;
 
 function init() {
-    $("#cargo_form").on("submit", function(e) {
+    $("#cargo_form").on("submit", function (e) {
         guardaryeditar(e);
+    });
+
+    // Validar Cargue Masivo
+    $('#modalCargueMasivo form').on('submit', function (e) {
+        var input = $(this).find('input[type="file"]');
+        var maxFileSize = 2 * 1024 * 1024; // 2MB
+
+        if (input.length > 0 && input[0].files.length > 0) {
+            if (input[0].files[0].size > maxFileSize) {
+                swal("Error", "El archivo supera el límite de 2MB.", "error");
+                e.preventDefault();
+                return false;
+            }
+        }
     });
 }
 
@@ -15,7 +29,7 @@ function guardaryeditar(e) {
         data: formData,
         contentType: false,
         processData: false,
-        success: function(datos) {
+        success: function (datos) {
             $('#cargo_form')[0].reset();
             $("#modalnuevocargo").modal('hide');
             $('#cargo_data').DataTable().ajax.reload();
@@ -29,7 +43,7 @@ function guardaryeditar(e) {
     });
 }
 
-$(document).ready(function() {
+$(document).ready(function () {
     tabla = $('#cargo_data').dataTable({
         "aProcessing": true,
         "aServerSide": true,
@@ -42,7 +56,7 @@ $(document).ready(function() {
             url: '../../controller/cargo.php?op=listar',
             type: "post",
             dataType: "json",
-            error: function(e) {
+            error: function (e) {
                 console.log(e.responseText);
             }
         },
@@ -80,7 +94,7 @@ $(document).ready(function() {
 
 function editar(car_id) {
     $('#mdltitulo').html('Editar Registro');
-    $.post("../../controller/cargo.php?op=mostrar", { car_id: car_id }, function(data) {
+    $.post("../../controller/cargo.php?op=mostrar", { car_id: car_id }, function (data) {
         data = JSON.parse(data);
         $('#car_id').val(data.car_id);
         $('#car_nom').val(data.car_nom);
@@ -99,23 +113,23 @@ function eliminar(car_id) {
         cancelButtonText: "No",
         closeOnConfirm: false
     },
-    function(isConfirm) {
-        if (isConfirm) {
-            $.post("../../controller/cargo.php?op=eliminar", { car_id: car_id }, function(data) {
-                // No es necesario procesar la respuesta, solo recargar
-            });
-            $('#cargo_data').DataTable().ajax.reload();
-            swal({
-                title: "¡Correcto!",
-                text: "Registro Eliminado.",
-                type: "success",
-                confirmButtonClass: "btn-success"
-            });
-        }
-    });
+        function (isConfirm) {
+            if (isConfirm) {
+                $.post("../../controller/cargo.php?op=eliminar", { car_id: car_id }, function (data) {
+                    // No es necesario procesar la respuesta, solo recargar
+                });
+                $('#cargo_data').DataTable().ajax.reload();
+                swal({
+                    title: "¡Correcto!",
+                    text: "Registro Eliminado.",
+                    type: "success",
+                    confirmButtonClass: "btn-success"
+                });
+            }
+        });
 }
 
-$('#btnnuevocargo').on('click', function() {
+$('#btnnuevocargo').on('click', function () {
     $('#mdltitulo').html('Nuevo Registro');
     $('#cargo_form')[0].reset();
     $('#car_id').val('');

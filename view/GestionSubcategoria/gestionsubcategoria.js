@@ -1,12 +1,26 @@
 var tabla;
 
 function init() {
-    $("#cats_form").on("submit", function(e){
+    $("#cats_form").on("submit", function (e) {
         guardaryeditar(e);
-    })
+    });
+
+    // Validar Cargue Masivo
+    $('#modalCargueMasivo form').on('submit', function (e) {
+        var input = $(this).find('input[type="file"]');
+        var maxFileSize = 2 * 1024 * 1024; // 2MB
+
+        if (input.length > 0 && input[0].files.length > 0) {
+            if (input[0].files[0].size > maxFileSize) {
+                swal("Error", "El archivo supera el límite de 2MB.", "error");
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
 }
 
-function guardaryeditar(e){
+function guardaryeditar(e) {
     e.preventDefault();
     var formData = new FormData($("#cats_form")[0])
     $.ajax({
@@ -15,7 +29,7 @@ function guardaryeditar(e){
         data: formData,
         contentType: false,
         processData: false,
-        success: function(datos){
+        success: function (datos) {
             $("#cats_form")[0].reset();
             $('#cats_descrip').summernote('code', '');
             $('#cat_id').html('<option value="">Seleccione una Empresa y Departamento</option>');
@@ -27,7 +41,7 @@ function guardaryeditar(e){
                 text: "Se ha guardado correctamente el nuevo registro.",
                 type: "success",
                 confirmButtonClass: "btn-success"
-            });          
+            });
         }
     })
 }
@@ -35,7 +49,7 @@ function guardaryeditar(e){
 
 $(document).ready(function () {
 
-    $.post("../../controller/categoria.php?op=combocat", function(data) {
+    $.post("../../controller/categoria.php?op=combocat", function (data) {
         $('#cat_id').html(data);
     })
     mostrarprioridad();
@@ -100,15 +114,15 @@ $(document).ready(function () {
 function editar(cats_id) {
     $("#mdltitulo").html('Editar registro');
 
-    $.post("../../controller/subcategoria.php?op=mostrar", {cats_id:cats_id}, function(data) {
+    $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
         data = JSON.parse(data);
-        $('#cat_id').val(data.subcategoria.cat_id).trigger('change'); 
+        $('#cat_id').val(data.subcategoria.cat_id).trigger('change');
         $('#cats_id').val(data.subcategoria.cats_id);
         $('#cats_nom').val(data.subcategoria.cats_nom);
         $('#pd_id').val(data.subcategoria.pd_id).trigger('change');
         $('#cats_descrip').summernote('code', data.subcategoria.cats_descrip);
 
-    });    
+    });
 
     $("#modalnuevasubcategoria").modal("show");
 }
@@ -124,30 +138,30 @@ function eliminar(cats_id) {
         closeOnConfirm: false,
         closeOnCancel: false
     },
-    function(isConfirm) {
-        if (isConfirm) {
-            $.post("../../controller/subcategoria.php?op=eliminar", {cats_id:cats_id}, function(data) {
-                $('#cats_data').DataTable().ajax.reload(); 
+        function (isConfirm) {
+            if (isConfirm) {
+                $.post("../../controller/subcategoria.php?op=eliminar", { cats_id: cats_id }, function (data) {
+                    $('#cats_data').DataTable().ajax.reload();
+                    swal({
+                        title: "Eliminado!",
+                        text: "subcategoria eliminada correctamente",
+                        type: "success",
+                        confirmButtonClass: "btn-success"
+                    });
+                });
+            } else {
                 swal({
-                    title: "Eliminado!",
-                    text: "subcategoria eliminada correctamente",
-                    type: "success",
-                    confirmButtonClass: "btn-success"
-                }); 
-            });
-        } else {
-            swal({
-                title: "Cancelado",
-                text: "La subcategoria no fue eliminada",
-                type: "error",
-                confirmButtonClass: "btn-danger"
-                
-            });
-        }
-    });
+                    title: "Cancelado",
+                    text: "La subcategoria no fue eliminada",
+                    type: "error",
+                    confirmButtonClass: "btn-danger"
+
+                });
+            }
+        });
 }
 
-function descripcionSubcategoria(){
+function descripcionSubcategoria() {
     $('#cats_descrip').summernote({
         height: 200,
         lang: "es-ES",
@@ -161,21 +175,21 @@ function descripcionSubcategoria(){
     });
 }
 
-function mostrarprioridad(){
+function mostrarprioridad() {
     $.post("../../controller/prioridad.php?op=combo", function (data) {
         $('#pd_id').html(data);
     });
 }
 
-$(document).on("click", "#btnnuevasubcategoria", function() {
+$(document).on("click", "#btnnuevasubcategoria", function () {
     // Limpiamos el formulario
     $("#cats_form")[0].reset();
-    
+
     // Reseteamos los combos y el editor de texto
     $('#cat_id').val("").trigger('change');
     $('#pd_id').val("").trigger('change');
     $('#cats_descrip').summernote('code', '');
-    
+
     // Limpiamos el ID oculto de la subcategoría
     $("#cats_id").val('');
 
@@ -185,10 +199,36 @@ $(document).on("click", "#btnnuevasubcategoria", function() {
 });
 
 
-$('#modalnuevasubcategoria').on('hidden.bs.modal', function() {
+$('#modalnuevasubcategoria').on('hidden.bs.modal', function () {
     // Al cerrar, simplemente reseteamos la selección de los combos
     $('#cat_id').val("").trigger('change');
     $('#pd_id').val("").trigger('change');
 });
+
+function myimagetreat(image) {
+    // Validar tamaño de imagen (Max 2MB)
+    if (image.size > 2 * 1024 * 1024) {
+        swal("Error", "La imagen supera el límite de 2MB.", "error");
+        return;
+    }
+
+    var data = new FormData();
+    data.append("file", image);
+    $.ajax({
+        url: '../../controller/tmp_upload.php',
+        cache: false,
+        contentType: false,
+        processData: false,
+        data: data,
+        type: "post",
+        success: function (data) {
+            var image = $('<img>').attr('src', data);
+            $('#cats_descrip').summernote("insertNode", image[0]);
+        },
+        error: function (data) {
+            console.log(data);
+        }
+    });
+}
 
 init();

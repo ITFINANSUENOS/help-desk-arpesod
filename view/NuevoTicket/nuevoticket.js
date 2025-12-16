@@ -39,6 +39,12 @@ $(document).ready(function () {
 
 
     function myimagetreat(image) {
+        // Validar tamaño de imagen (Max 2MB)
+        if (image.size > 2 * 1024 * 1024) {
+            swal("Error", "La imagen supera el límite de 2MB.", "error");
+            return;
+        }
+
         var data = new FormData();
         data.append("file", image);
         $.ajax({
@@ -280,6 +286,33 @@ function guardaryeditar(e) {
             }
         }
     }
+
+    // --- VALIDACION DE ARCHIVOS (Max 2MB c/u, Max 8MB Total) ---
+    var input = document.getElementById('files');
+    var maxFileSize = 2 * 1024 * 1024; // 2MB
+    var maxTotalSize = 8 * 1024 * 1024; // 8MB
+    var currentTotalSize = 0;
+
+    if (input && input.files && input.files.length > 0) {
+        for (var i = 0; i < input.files.length; i++) {
+            var file = input.files[i];
+
+            // Validar tamaño individual
+            if (file.size > maxFileSize) {
+                swal("Error", "El archivo '" + file.name + "' supera el límite de 2MB.", "error");
+                return false;
+            }
+
+            currentTotalSize += file.size;
+        }
+
+        // Validar tamaño total
+        if (currentTotalSize > maxTotalSize) {
+            swal("Error", "El tamaño total de los archivos supera el límite de 8MB.", "error");
+            return false;
+        }
+    }
+    // -----------------------------------------------------------
 
     // 4) (Opcional) Quitar entradas basura que puedan existir por error
     //    Si por alguna razón quedó una entrada "files" vacía, la borramos:

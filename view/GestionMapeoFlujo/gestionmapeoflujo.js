@@ -4,6 +4,20 @@ function init() {
     $("#flujomapeo_form").on("submit", function (e) {
         guardaryeditar(e);
     });
+
+    // Validar Cargue Masivo
+    $('#modalCargueMasivo form').on('submit', function (e) {
+        var input = $(this).find('input[type="file"]');
+        var maxFileSize = 2 * 1024 * 1024; // 2MB
+
+        if (input.length > 0 && input[0].files.length > 0) {
+            if (input[0].files[0].size > maxFileSize) {
+                swal("Error", "El archivo supera el límite de 2MB.", "error");
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
 }
 
 function guardaryeditar(e) {
