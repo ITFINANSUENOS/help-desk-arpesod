@@ -35,19 +35,22 @@ if (isset($_SESSION["usu_id"])) {
                     </div>
                 </header>
                 <div class="box-typical box-typical-padding">
-                <button type="button" id="btn_cargue_masivo" class="btn btn-inline btn-success" data-toggle="modal" data-target="#modalCargueMasivo">
-                    <i class="fa fa-upload"></i> Cargue Masivo
-                </button>
-                <button type="button" id="btnnuevoflujo" class="btn btn-inline btn-primary">Nuevo flujo</button>
+                    <button type="button" id="btn_cargue_masivo" class="btn btn-inline btn-success" data-toggle="modal" data-target="#modalCargueMasivo">
+                        <i class="fa fa-upload"></i> Cargue Masivo
+                    </button>
+                    <a href="../../export_flujos.php" target="_blank" class="btn btn-inline btn-secondary">
+                        <i class="fa fa-download"></i> Descargar Reporte
+                    </a>
+                    <button type="button" id="btnnuevoflujo" class="btn btn-inline btn-primary">Nuevo flujo</button>
                     <table id="flujo_data" class="table table-bordered table-striped table-vcenter js-dataTable-full">
                         <thead>
                             <tr role="row">
-                                <th style="width: 25%;">Subcategoria</th> 
+                                <th style="width: 25%;">Subcategoria</th>
                                 <th style="width: 2%;">Editar</th>
                                 <th style="width: 2%;">Eliminar</th>
                                 <th style="width: 2%;">Ver</th>
                             </tr>
-                        </thead>    
+                        </thead>
                     </table>
                 </div>
             </div>
