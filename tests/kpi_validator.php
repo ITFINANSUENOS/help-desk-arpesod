@@ -304,4 +304,57 @@ foreach ($moves as $m) {
 }
 if (!$found_anomaly_move) echo "Todos los tickets movidos tienen su registro de entrada.\n";
 
+echo "\n\n[6] ANALISIS DE BALANCE (DETECTANDO RE-TOMAS / AUTO-RECUPERACIONES)\n";
+echo "    Buscando tickets donde (Salidas + Abierto) > (Entradas Validas).\n";
+echo "    Esto ocurre cuando re-tomas un ticket (auto-asignacion) y lo vuelves a gestionar.\n";
+echo str_repeat("-", 80) . "\n";
+echo str_pad("Ticket", 10) . str_pad("Entradas (A)", 15) . str_pad("Salidas (F)", 15) . str_pad("Abierto (O)", 15) . "Extra (Recuperado)\n";
+echo str_repeat("-", 80) . "\n";
+
+// 1. Consolidar todos los IDs involucrados
+$all_ids = array_unique(array_merge(array_keys($assigned_ids), array_column($moves, 'tick_id'), array_column($open_tickets, 'tick_id')));
+sort($all_ids);
+
+$total_recovered_moves = 0;
+
+foreach ($all_ids as $tid) {
+    // A: Entradas validas (Ya calculado en $assigned_ids)
+    $in = isset($assigned_ids[$tid]) ? $assigned_ids[$tid] : 0;
+
+    // F: Salidas validas (Moves)
+    $out = 0;
+    foreach ($moves as $m) {
+        if ($m['tick_id'] == $tid) $out++; // Asumiendo que todos los moves listados arriba pasaron el filtro 'received'
+    }
+    // Sumar cierres validos tambien a F?
+    // El KPI 'Finalizados' suma Moves + Closes.
+    // Si cierro un ticket, es una salida.
+    foreach ($closed as $c) {
+        if ($c['tick_id'] == $tid && $c['how_asig'] != $usu_id) $out++;
+    }
+
+    // O: Abierto valido (Current State)
+    $open_val = 0;
+    foreach ($open_tickets as $ot) {
+        if ($ot['tick_id'] == $tid && $ot['how_asig'] != $usu_id && $ot['how_asig'] != null) {
+            $open_val = 1;
+        }
+    }
+
+    // Calculo del "Extra"
+    // Balance = (Out + Open) - In
+    $balance = ($out + $open_val) - $in;
+
+    if ($balance > 0) {
+        $total_recovered_moves += $balance;
+        echo str_pad($tid, 10) . str_pad($in, 15) . str_pad($out, 15) . str_pad($open_val, 15) . "+$balance\n";
+    }
+}
+
+echo str_repeat("-", 80) . "\n";
+echo "TOTAL GESTIONES 'RECUPERADAS' (Auto-asignadas y vueltas a gestionar): $total_recovered_moves\n";
+echo "Esta cifra ($total_recovered_moves) deberia explicar la diferencia entre (Finalizados+Abiertos) - Asignados.\n";
+
 echo "\n================================================================================\n";
+?>
+```
