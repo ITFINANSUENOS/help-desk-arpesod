@@ -208,4 +208,44 @@ if (!empty($tiempos)) {
     echo "No hay tiempos registrados.\n";
 }
 
+echo "\n\n[4] ANALISIS DE TICKETS ABIERTOS (ACTUALES)\n";
+echo "    Objetivo: Entender la diferencia entre 'Abiertos en Sistema' vs 'Pendientes KPI'.\n";
+echo str_repeat("-", 80) . "\n";
+echo str_pad("Ticket", 10) . str_pad("Asignado Por", 20) . "Clasificación\n";
+echo str_repeat("-", 80) . "\n";
+
+// Buscar tickets actualmente abiertos asignados al usuario
+$sql_open = "SELECT tick_id, how_asig, 
+             (SELECT usu_nom FROM tm_usuario WHERE usu_id = tm_ticket.how_asig) as nom_asigno
+             FROM tm_ticket 
+             WHERE usu_asig = ? AND tick_estado = 'Abierto' AND est = 1";
+$stmt = $conectar->prepare($sql_open);
+$stmt->bindValue(1, $usu_id);
+$stmt->execute();
+$open_tickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$total_abiertos = count($open_tickets);
+$kpi_pending = 0; // Abiertos que SÍ cuentan (recibidos de otros)
+$excluded_open = 0; // Abiertos que NO cuentan (propios)
+
+foreach ($open_tickets as $t) {
+    if ($t['how_asig'] != $usu_id && $t['how_asig'] != null) {
+        $status = "[KPI PENDIENTE]"; // Recibido de otro, aun no cerrado
+        $kpi_pending++;
+    } else {
+        $status = "[PROPIO/AUTO]"; // Creado por el mismo o self-assigned
+        $excluded_open++;
+    }
+
+    $quien = $t['how_asig'] ? $t['how_asig'] : "Sistema";
+    echo str_pad($t['tick_id'], 10) . str_pad($quien, 20) . $status . "\n";
+}
+
+echo str_repeat("-", 80) . "\n";
+echo "TOTAL TICKETS ABIERTOS EN SISTEMA: $total_abiertos\n";
+echo "  -> Del KPI (Pendientes de gestion): $kpi_pending\n";
+echo "  -> Excluidos (Propios/Auto-asignados): $excluded_open\n";
+echo "\nNota: Si 'Total Abiertos' es el numero que ves en pantalla ($total_abiertos), \n";
+echo "la diferencia son los $excluded_open tickets que el KPI ignora por ser propios.\n";
+
 echo "\n================================================================================\n";
