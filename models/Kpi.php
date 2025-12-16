@@ -75,12 +75,14 @@ class Kpi extends Conectar
         return $movidos['total'] + $cerrados['total'];
     }
 
+
     /**
-     * Calcula el tiempo promedio de respuesta del usuario.
+     * Calcula la MEDIANA del tiempo de respuesta del usuario.
      * Tiempo respuesta = (Fecha de acción - Fecha de asignación)
      * Acción = Reasignar (th_ticket_asignacion) o Comentar (td_ticketdetalle) o Cerrar.
+     * La Mediana es mejor para descartar valores atípicos.
      */
-    public function get_promedio_respuesta($usu_id)
+    public function get_mediana_respuesta($usu_id)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -92,8 +94,7 @@ class Kpi extends Conectar
         $stmt_asig->execute();
         $asignaciones = $stmt_asig->fetchAll(PDO::FETCH_ASSOC);
 
-        $total_minutos = 0;
-        $conteo_respuestas = 0;
+        $tiempos = []; // Array para almacenar los tiempos en minutos
 
         foreach ($asignaciones as $asig) {
             $tick_id = $asig['tick_id'];
@@ -101,7 +102,7 @@ class Kpi extends Conectar
 
             // Buscar la primera acción posterior a la asignación
 
-            // 1. Reasignación (movimiento) hecha por este usuario para este ticket despues de la fecha de asignacion
+            // 1. Reasignación (movimiento) hecha por este usuario
             $sql_move = "SELECT fech_asig FROM th_ticket_asignacion WHERE tick_id = ? AND how_asig = ? AND fech_asig > ? ORDER BY fech_asig ASC LIMIT 1";
             $stmt_move = $conectar->prepare($sql_move);
             $stmt_move->bindValue(1, $tick_id);
@@ -119,8 +120,7 @@ class Kpi extends Conectar
             $stmt_comment->execute();
             $comment = $stmt_comment->fetch(PDO::FETCH_ASSOC);
 
-            // 3. Cierre (si aplica, update en tm_ticket no guarda historial facil, pero suele haber detalle o asignación)
-            // Si cerró, suele haber un detalle. Asumimos que el detalle cubre el cierre.
+            // 3. Cierre (no siempre guarda historial perfecto, asumimos detalle o movimiento cubre la acción)
 
             $fin = null;
 
@@ -134,17 +134,29 @@ class Kpi extends Conectar
 
             if ($fin) {
                 $diff_minutes = ($fin - $inicio) / 60;
-                $total_minutos += $diff_minutes;
-                $conteo_respuestas++;
+                $tiempos[] = $diff_minutes;
             }
         }
 
-        if ($conteo_respuestas > 0) {
-            $promedio = $total_minutos / $conteo_respuestas;
-            // Retornar redondeado a 2 decimales
-            return round($promedio, 2);
-        } else {
+        if (empty($tiempos)) {
             return 0;
         }
+
+        // Calcular Mediana
+        sort($tiempos);
+        $count = count($tiempos);
+        $middle = floor(($count - 1) / 2);
+
+        if ($count % 2) {
+            // Impar: valor del medio
+            $mediana = $tiempos[$middle];
+        } else {
+            // Par: promedio de los dos del medio
+            $low = $tiempos[$middle];
+            $high = $tiempos[$middle + 1];
+            $mediana = ($low + $high) / 2;
+        }
+
+        return round($mediana, 2);
     }
 }

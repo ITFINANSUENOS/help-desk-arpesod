@@ -41,7 +41,7 @@ if (isset($_SESSION["usu_id"])) {
                             <div>
                                 <div class="number" id="lblpromedio">0 min</div>
                                 <div class="caption">
-                                    <div>Tiempo Promedio Respuesta</div>
+                                    <div>Tiempo Mediana Respuesta</div>
                                 </div>
                             </div>
                         </article>

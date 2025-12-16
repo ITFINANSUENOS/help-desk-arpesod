@@ -14,12 +14,12 @@ switch ($_GET["op"]) {
 
         $asignados = $kpi->get_pasos_asignados($usu_id);
         $finalizados = $kpi->get_pasos_finalizados($usu_id);
-        $promedio = $kpi->get_promedio_respuesta($usu_id);
+        $promedio = $kpi->get_mediana_respuesta($usu_id);
 
         $results = array(
             "asignados" => $asignados,
             "finalizados" => $finalizados,
-            "promedio" => $promedio, // En minutos
+            "promedio" => $promedio, // En minutos (MEDIANA)
             "promedio_formato" => formatTime($promedio)
         );
 
