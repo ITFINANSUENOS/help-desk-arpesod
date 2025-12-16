@@ -43,6 +43,7 @@ $headers = [
     'ASIGNADO INICIAL A',
     'ORDEN',
     'PASO',
+    'RESPONSABLES', // Nueva Columna
     'DESCRIPCIÓN',
     'TIPO',
     'CONDICIÓN',
@@ -64,7 +65,7 @@ $headerStyle = [
     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THICK, 'color' => ['rgb' => 'FFFFFF']]]
 ];
-$sheet->getStyle('A1:L1')->applyFromArray($headerStyle);
+$sheet->getStyle('A1:M1')->applyFromArray($headerStyle);
 $sheet->getRowDimension(1)->setRowHeight(30);
 
 $row = 2;
@@ -113,7 +114,11 @@ foreach ($flujos as $flujo) {
     }
 
     // -- Obtener Pasos --
-    $sql_pasos = "SELECT * FROM tm_flujo_paso WHERE flujo_id = ? AND est = 1 ORDER BY paso_orden ASC";
+    $sql_pasos = "SELECT fp.*, c.car_nom AS cargo_asignado 
+                  FROM tm_flujo_paso fp
+                  LEFT JOIN tm_cargo c ON fp.cargo_id_asignado = c.car_id
+                  WHERE fp.flujo_id = ? AND fp.est = 1 
+                  ORDER BY fp.paso_orden ASC";
     $stmt_pasos = $conectar->prepare($sql_pasos);
     $stmt_pasos->execute([$flujo_id]);
     $pasos = $stmt_pasos->fetchAll(PDO::FETCH_ASSOC);
@@ -125,6 +130,7 @@ foreach ($flujos as $flujo) {
         $flujo_rows[] = [
             'orden' => '-',
             'paso' => 'Sin pasos configurados',
+            'resp' => '',
             'desc' => '',
             'tipo' => '',
             'cond' => '',
@@ -135,6 +141,45 @@ foreach ($flujos as $flujo) {
             $paso_id = $paso['paso_id'];
             $tipo_paso = "Normal";
             if ($paso['permite_cerrar']) $tipo_paso = "Cierre";
+
+            // --- OBTENER RESPONSABLES (Assignees) ---
+            $responsables_arr = [];
+
+            // 1. Cargo principal
+            if (!empty($paso['cargo_asignado'])) {
+                $responsables_arr[] = "Rol: " . $paso['cargo_asignado'];
+            }
+
+            // 2. Usuarios Específicos
+            $sql_usu = "SELECT u.usu_nom, u.usu_ape 
+                        FROM tm_flujo_paso_usuarios pu
+                        JOIN tm_usuario u ON pu.usu_id = u.usu_id
+                        WHERE pu.paso_id = ?";
+            $stmt_usu = $conectar->prepare($sql_usu);
+            $stmt_usu->execute([$paso_id]);
+            $usuarios = $stmt_usu->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($usuarios as $u) {
+                $responsables_arr[] = "Usu: " . $u['usu_nom'] . " " . $u['usu_ape'];
+            }
+
+            // 3. Cargos Adicionales Específicos
+            $sql_car_add = "SELECT c.car_nom, pu.car_id 
+                            FROM tm_flujo_paso_usuarios pu
+                            LEFT JOIN tm_cargo c ON pu.car_id = c.car_id
+                            WHERE pu.paso_id = ? AND pu.car_id IS NOT NULL";
+            $stmt_car_add = $conectar->prepare($sql_car_add);
+            $stmt_car_add->execute([$paso_id]);
+            $cargos_add = $stmt_car_add->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($cargos_add as $ca) {
+                if ($ca['car_id'] == -1) {
+                    $responsables_arr[] = "Rol: Jefe Inmediato";
+                } elseif (!empty($ca['car_nom'])) {
+                    $responsables_arr[] = "Rol Add: " . $ca['car_nom'];
+                }
+            }
+
+            $responsables_str = implode("\n", $responsables_arr);
+
 
             // Buscar transiciones
             $sql_trans = "SELECT 
@@ -161,6 +206,7 @@ foreach ($flujos as $flujo) {
                         $flujo_rows[] = [
                             'orden' => $paso['paso_orden'],
                             'paso' => $paso['paso_nombre'],
+                            'resp' => $responsables_str,
                             'desc' => strip_tags($paso['paso_descripcion']),
                             'tipo' => $tipo_paso,
                             'cond' => $trans['condicion_nombre'],
@@ -175,6 +221,7 @@ foreach ($flujos as $flujo) {
                         $flujo_rows[] = [
                             'orden' => $paso['paso_orden'],
                             'paso' => $paso['paso_nombre'],
+                            'resp' => $responsables_str,
                             'desc' => strip_tags($paso['paso_descripcion']),
                             'tipo' => $tipo_paso,
                             'cond' => $trans['condicion_nombre'],
@@ -195,8 +242,9 @@ foreach ($flujos as $flujo) {
 
                         foreach ($pasos_ruta as $pr) {
                             $flujo_rows[] = [
-                                'orden' => "-> R." . $pr['orden'], // Indicar que es paso de ruta
-                                'paso' => "  [Ruta: " . $trans['ruta_nombre'] . "] " . $pr['paso_nombre'], // Indentación visual
+                                'orden' => "-> R." . $pr['orden'],
+                                'paso' => "  [Ruta: " . $trans['ruta_nombre'] . "] " . $pr['paso_nombre'],
+                                'resp' => "Ver Definición Ruta", // Simplificado por hoy
                                 'desc' => strip_tags($pr['paso_descripcion']),
                                 'tipo' => "Paso de Ruta",
                                 'cond' => "Parte de Ruta",
@@ -205,10 +253,11 @@ foreach ($flujos as $flujo) {
                             ];
                         }
                     } else {
-                        // Caso transición simple sin destino claro (raro, pero posible si borraron paso destino)
+                        // Transición sin destino claro
                         $flujo_rows[] = [
                             'orden' => $paso['paso_orden'],
                             'paso' => $paso['paso_nombre'],
+                            'resp' => $responsables_str,
                             'desc' => strip_tags($paso['paso_descripcion']),
                             'tipo' => $tipo_paso,
                             'cond' => $trans['condicion_nombre'],
@@ -218,7 +267,7 @@ foreach ($flujos as $flujo) {
                     }
                 }
             } else {
-                // Lineal (sin decisiones explícitas)
+                // Lineal 
                 $sql_next = "SELECT paso_nombre, paso_orden FROM tm_flujo_paso 
                              WHERE flujo_id = ? AND paso_orden > ? AND est = 1 
                              ORDER BY paso_orden ASC LIMIT 1";
@@ -231,6 +280,7 @@ foreach ($flujos as $flujo) {
                 $flujo_rows[] = [
                     'orden' => $paso['paso_orden'],
                     'paso' => $paso['paso_nombre'],
+                    'resp' => $responsables_str,
                     'desc' => strip_tags($paso['paso_descripcion']),
                     'tipo' => $tipo_paso,
                     'cond' => "N/A",
@@ -257,23 +307,24 @@ foreach ($flujos as $flujo) {
         $sheet->setCellValue('E' . $row, $creadores_perfiles);
         $sheet->setCellValue('F' . $row, $asignados);
 
-        // Datos del paso (G-L)
+        // Datos del paso (G-M)
         $sheet->setCellValue('G' . $row, $fdata['orden']);
         $sheet->setCellValue('H' . $row, $fdata['paso']);
-        $sheet->setCellValue('I' . $row, $fdata['desc']);
-        $sheet->setCellValue('J' . $row, $fdata['tipo']);
-        $sheet->setCellValue('K' . $row, $fdata['cond']);
-        $sheet->setCellValue('L' . $row, $fdata['dest']);
+        $sheet->setCellValue('I' . $row, $fdata['resp']);
+        $sheet->setCellValue('J' . $row, $fdata['desc']);
+        $sheet->setCellValue('K' . $row, $fdata['tipo']);
+        $sheet->setCellValue('L' . $row, $fdata['cond']);
+        $sheet->setCellValue('M' . $row, $fdata['dest']);
 
         // Estilos condicionales
         if (isset($fdata['is_decision']) && $fdata['is_decision']) {
-            $sheet->getStyle('K' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEB9C'); // Amarillo/Naranja claro para condiciones
-            $sheet->getStyle('K' . $row)->getFont()->getColor()->setARGB('9C5700');
+            $sheet->getStyle('L' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEB9C'); // Amarillo/Naranja claro para condiciones
+            $sheet->getStyle('L' . $row)->getFont()->getColor()->setARGB('9C5700');
         }
 
         // Estilo diferente para pasos de ruta
         if (isset($fdata['is_route_step']) && $fdata['is_route_step']) {
-            $sheet->getStyle('G' . $row . ':L' . $row)->getFont()->setItalic(true);
+            $sheet->getStyle('G' . $row . ':M' . $row)->getFont()->setItalic(true);
             $sheet->getStyle('H' . $row)->getFont()->getColor()->setARGB('555555'); // Gris oscuro
         }
 
@@ -285,7 +336,7 @@ foreach ($flujos as $flujo) {
             ],
             'alignment' => ['vertical' => Alignment::VERTICAL_TOP, 'wrapText' => true]
         ];
-        $sheet->getStyle('A' . $row . ':L' . $row)->applyFromArray($rowStyle);
+        $sheet->getStyle('A' . $row . ':M' . $row)->applyFromArray($rowStyle);
 
         $row++;
     }
@@ -303,12 +354,12 @@ foreach ($flujos as $flujo) {
     }
 
     // Borde inferior fuerte para separar flujos completamente
-    $sheet->getStyle("A{$endRow}:L{$endRow}")->getBorders()->getBottom()->setBorderStyle(Border::BORDER_MEDIUM)->setColor(new Color('000000'));
+    $sheet->getStyle("A{$endRow}:M{$endRow}")->getBorders()->getBottom()->setBorderStyle(Border::BORDER_MEDIUM)->setColor(new Color('000000'));
 }
 
 // Auto-size final adjustment (limited width)
-foreach (range('A', 'L') as $colID) {
-    if (in_array($colID, ['D', 'E', 'F', 'I', 'L'])) {
+foreach (range('A', 'M') as $colID) {
+    if (in_array($colID, ['D', 'E', 'F', 'I', 'J', 'M'])) {
         $sheet->getColumnDimension($colID)->setWidth(35); // Más ancho para textos largos
     } else {
         $sheet->getColumnDimension($colID)->setAutoSize(true);
