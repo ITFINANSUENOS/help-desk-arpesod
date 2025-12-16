@@ -248,4 +248,60 @@ echo "  -> Excluidos (Propios/Auto-asignados): $excluded_open\n";
 echo "\nNota: Si 'Total Abiertos' es el numero que ves en pantalla ($total_abiertos), \n";
 echo "la diferencia son los $excluded_open tickets que el KPI ignora por ser propios.\n";
 
+echo "\n\n[5] CHEQUEO DE CONSISTENCIA (EL MISTERIO DE LOS 18)\n";
+echo "    Buscando tickets que están 'Abiertos' o 'Finalizados' pero NO aparecen en 'Asignados'.\n";
+echo str_repeat("-", 80) . "\n";
+
+// Recolectar IDs de Asignados Validados
+$assigned_ids = []; // [tick_id => count]
+$stmt = $conectar->prepare($sql_asig); // Reusamos query de sección 1
+$stmt->bindValue(1, $usu_id);
+$stmt->execute();
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    if ($row['how_asig'] != $usu_id) {
+        if (!isset($assigned_ids[$row['tick_id']])) $assigned_ids[$row['tick_id']] = 0;
+        $assigned_ids[$row['tick_id']]++;
+    }
+}
+
+// Chequear Abiertos KPI vs Asignados
+echo "--- Tickets Abiertos (KPI) sin registro histórico valido ---\n";
+$found_anomaly = false;
+foreach ($open_tickets as $t) {
+    if ($t['how_asig'] != $usu_id && $t['how_asig'] != null) {
+        // Es un abierto valido para KPI. ¿Tiene historia?
+        if (!isset($assigned_ids[$t['tick_id']])) {
+            echo "ANOMALIA DETECTADA: Ticket {$t['tick_id']} está Abierto asignado por {$t['how_asig']}, pero NO TIENE registro de entrada en historial.\n";
+            $found_anomaly = true;
+        }
+    }
+}
+if (!$found_anomaly) echo "Todos los tickets abiertos tienen su registro de entrada.\n";
+
+
+// Chequear Finalizados (Movidos) vs Asignados
+echo "\n--- Tickets Movidos (KPI) sin registro histórico valido ---\n";
+$found_anomaly_move = false;
+foreach ($moves as $m) {
+    // Re-verificar logica de inclusion
+    $received_sql = "SELECT count(*) FROM th_ticket_asignacion 
+                     WHERE tick_id = {$m['tick_id']} 
+                     AND usu_asig = $usu_id 
+                     AND (how_asig != $usu_id OR how_asig IS NULL) 
+                     AND fech_asig < '{$m['fech_asig']}'";
+    $received = $conectar->query($received_sql)->fetchColumn() > 0;
+
+    if ($received) {
+        // Si contó como movido, debió contar como asignado.
+        // Pero, ¿cuenta como asignado en la lista GENERAL?
+        // La lista general solo mira si existe ALGUNA asignacion. 
+        // Si el ticket fue movido, DEBE haber una asignacion previa.
+        if (!isset($assigned_ids[$m['tick_id']])) {
+            echo "ANOMALIA: Ticket {$m['tick_id']} se contó como Movido el {$m['fech_asig']}, pero no aparece en la lista de Asignados validos.\n";
+            $found_anomaly_move = true;
+        }
+    }
+}
+if (!$found_anomaly_move) echo "Todos los tickets movidos tienen su registro de entrada.\n";
+
 echo "\n================================================================================\n";
