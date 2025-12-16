@@ -1,0 +1,211 @@
+<?php
+if (php_sapi_name() !== 'cli') {
+    die("Este script debe ejecutarse desde la consola.\nUso: php tests/kpi_validator.php <USU_ID>\n");
+}
+
+require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/../models/Kpi.php';
+
+// 1. Obtener ID de usuario
+$usu_id = 0;
+if (isset($argv[1])) {
+    $usu_id = (int)$argv[1];
+} else {
+    echo "Ingrese el ID del usuario: ";
+    $handle = fopen("php://stdin", "r");
+    $usu_id = (int)trim(fgets($handle));
+    fclose($handle);
+}
+
+if ($usu_id <= 0) die("ID invalido.\n");
+
+$kpi = new Kpi();
+$conectar = Conectar::getConexion();
+
+echo "\n================================================================================\n";
+echo " KPI VALIDATOR - AUDITORIA COMPLETA - USUARIO: $usu_id\n";
+echo "================================================================================\n";
+
+// -----------------------------------------------------------------------------
+// SECCION 1: PASOS ASIGNADOS
+// -----------------------------------------------------------------------------
+echo "\n[1] KPI: PASOS ASIGNADOS\n";
+echo "    Definición: Tickets entregados a este usuario por OTRO usuario/sistema.\n";
+echo "    Excluye: Tickets que el mismo usuario creó y se auto-asignó al mismo tiempo.\n";
+echo str_repeat("-", 80) . "\n";
+echo str_pad("Ticket", 10) . str_pad("Fecha Asig", 22) . str_pad("Asignado Por", 20) . "Estado\n";
+echo str_repeat("-", 80) . "\n";
+
+$sql_asig = "SELECT t1.tick_id, t1.fech_asig, t1.how_asig,
+             (SELECT usu_nom FROM tm_usuario WHERE usu_id = t1.how_asig) as nom_asigno
+             FROM th_ticket_asignacion t1
+             WHERE t1.usu_asig = ? AND t1.est = 1
+             ORDER BY t1.fech_asig DESC";
+$stmt = $conectar->prepare($sql_asig);
+$stmt->bindValue(1, $usu_id);
+$stmt->execute();
+$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$count_assigned = 0;
+foreach ($rows as $r) {
+    $is_valid = ($r['how_asig'] != $usu_id); // Valido si no se lo asignó él mismo
+    $status = $is_valid ? "[ OK ]" : "[EXCLUIDO]";
+    if ($is_valid) $count_assigned++;
+
+    $quien = $r['how_asig'] ? $r['how_asig'] . " (" . substr($r['nom_asigno'], 0, 10) . ")" : "Sistema";
+
+    echo str_pad($r['tick_id'], 10) . str_pad($r['fech_asig'], 22) . str_pad($quien, 20) . $status . "\n";
+}
+echo str_repeat("-", 80) . "\n";
+echo "TOTAL ASIGNADOS (Calculado): $count_assigned\n";
+echo "TOTAL ASIGNADOS (Modelo KPI): " . $kpi->get_pasos_asignados($usu_id) . "\n";
+
+
+// -----------------------------------------------------------------------------
+// SECCION 2: PASOS FINALIZADOS
+// -----------------------------------------------------------------------------
+echo "\n\n[2] KPI: PASOS FINALIZADOS\n";
+echo "    Definición: Suma de (A) Tickets movidos a otros + (B) Tickets cerrados.\n";
+echo "    Requisito: El usuario debió haber recibido el ticket de alguien más antes.\n";
+echo str_repeat("-", 80) . "\n";
+
+echo "--- (A) MOVIDOS (Transferidos a otros) ---\n";
+echo str_pad("Ticket", 10) . str_pad("Fecha Mov", 22) . str_pad("Movido A", 15) . "Valido?\n";
+echo str_repeat("-", 80) . "\n";
+
+// Buscar movimientos hechos por el usuario
+$sql_moves = "SELECT t1.tick_id, t1.fech_asig, t1.usu_asig as enviado_a
+              FROM th_ticket_asignacion t1
+              WHERE t1.how_asig = ? AND t1.usu_asig != ? AND t1.est = 1
+              ORDER BY t1.fech_asig DESC";
+$stmt = $conectar->prepare($sql_moves);
+$stmt->bindValue(1, $usu_id);
+$stmt->bindValue(2, $usu_id);
+$stmt->execute();
+$moves = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$count_moves = 0;
+foreach ($moves as $m) {
+    // Verificar si lo recibió antes de moverlo
+    $received_sql = "SELECT count(*) FROM th_ticket_asignacion 
+                     WHERE tick_id = {$m['tick_id']} 
+                     AND usu_asig = $usu_id 
+                     AND (how_asig != $usu_id OR how_asig IS NULL) 
+                     AND fech_asig < '{$m['fech_asig']}'";
+    $received = $conectar->query($received_sql)->fetchColumn() > 0;
+
+    $status = $received ? "[ OK ]" : "[EXCLUIDO (No recibido)]";
+    if ($received) $count_moves++;
+
+    echo str_pad($m['tick_id'], 10) . str_pad($m['fech_asig'], 22) . str_pad($m['enviado_a'], 15) . $status . "\n";
+}
+
+echo "\n--- (B) CERRADOS (En estado 'Cerrado' actual) ---\n";
+echo str_pad("Ticket", 10) . str_pad("Asignado Por", 22) . "Valido?\n";
+echo str_repeat("-", 80) . "\n";
+
+$sql_closed = "SELECT tick_id, how_asig FROM tm_ticket WHERE usu_asig = ? AND tick_estado = 'Cerrado' AND est = 1";
+$stmt = $conectar->prepare($sql_closed);
+$stmt->bindValue(1, $usu_id);
+$stmt->execute();
+$closed = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$count_closed = 0;
+foreach ($closed as $c) {
+    $is_valid = ($c['how_asig'] != $usu_id);
+    $status = $is_valid ? "[ OK ]" : "[EXCLUIDO (Auto)]";
+    if ($is_valid) $count_closed++;
+
+    echo str_pad($c['tick_id'], 10) . str_pad($c['how_asig'] ? $c['how_asig'] : "Sistema", 22) . $status . "\n";
+}
+
+$total_finished = $count_moves + $count_closed;
+echo str_repeat("-", 80) . "\n";
+echo "TOTAL FINALIZADOS (Calculado: $count_moves Movs + $count_closed Cerr): $total_finished\n";
+echo "TOTAL FINALIZADOS (Modelo KPI): " . $kpi->get_pasos_finalizados($usu_id) . "\n";
+
+
+// -----------------------------------------------------------------------------
+// SECCION 3: TIEMPO MEDIANA
+// -----------------------------------------------------------------------------
+echo "\n\n[3] KPI: TIEMPO MEDIANA RESPUESTA\n";
+echo "    Definición: Mediana del tiempo entre Asignación -> Primera Respuesta (Movimiento o Comentario).\n";
+echo "    Nota: Incluye horario 24/7 (Noches/Fines de semana).\n";
+echo str_repeat("-", 80) . "\n";
+echo str_pad("Ticket", 10) . str_pad("Inicio (Asig)", 22) . str_pad("Fin (Resp)", 22) . str_pad("Minutos", 10) . "Tipo\n";
+echo str_repeat("-", 80) . "\n";
+
+// Replicar lógica de recolección de tiempos
+$sql_asignaciones = "SELECT tick_id, fech_asig FROM th_ticket_asignacion WHERE usu_asig = ? AND est = 1";
+$stmt_asig = $conectar->prepare($sql_asignaciones);
+$stmt_asig->bindValue(1, $usu_id);
+$stmt_asig->execute();
+$asignaciones = $stmt_asig->fetchAll(PDO::FETCH_ASSOC);
+
+$tiempos = [];
+
+foreach ($asignaciones as $asig) {
+    $tick_id = $asig['tick_id'];
+    $inicio = strtotime($asig['fech_asig']);
+
+    $sql_move = "SELECT fech_asig FROM th_ticket_asignacion WHERE tick_id = ? AND how_asig = ? AND fech_asig > ? ORDER BY fech_asig ASC LIMIT 1";
+    $stmt_move = $conectar->prepare($sql_move);
+    $stmt_move->bindValue(1, $tick_id);
+    $stmt_move->bindValue(2, $usu_id);
+    $stmt_move->bindValue(3, $asig['fech_asig']);
+    $stmt_move->execute();
+    $move = $stmt_move->fetch(PDO::FETCH_ASSOC);
+
+    $sql_comment = "SELECT fech_crea FROM td_ticketdetalle WHERE tick_id = ? AND usu_id = ? AND fech_crea > ? ORDER BY fech_crea ASC LIMIT 1";
+    $stmt_comment = $conectar->prepare($sql_comment);
+    $stmt_comment->bindValue(1, $tick_id);
+    $stmt_comment->bindValue(2, $usu_id);
+    $stmt_comment->bindValue(3, $asig['fech_asig']);
+    $stmt_comment->execute();
+    $comment = $stmt_comment->fetch(PDO::FETCH_ASSOC);
+
+    $fin = null;
+    $tipo = "";
+    $fecha_fin = "";
+
+    if ($move && $comment) {
+        if (strtotime($move['fech_asig']) < strtotime($comment['fech_crea'])) {
+            $fin = strtotime($move['fech_asig']);
+            $fecha_fin = $move['fech_asig'];
+            $tipo = "Movimiento";
+        } else {
+            $fin = strtotime($comment['fech_crea']);
+            $fecha_fin = $comment['fech_crea'];
+            $tipo = "Comentario";
+        }
+    } elseif ($move) {
+        $fin = strtotime($move['fech_asig']);
+        $fecha_fin = $move['fech_asig'];
+        $tipo = "Movimiento";
+    } elseif ($comment) {
+        $fin = strtotime($comment['fech_crea']);
+        $fecha_fin = $comment['fech_crea'];
+        $tipo = "Comentario";
+    }
+
+    if ($fin) {
+        $diff_minutes = ($fin - $inicio) / 60;
+        $tiempos[] = $diff_minutes;
+        echo str_pad($tick_id, 10) . str_pad($asig['fech_asig'], 22) . str_pad($fecha_fin, 22) . str_pad(round($diff_minutes, 2), 10) . "$tipo\n";
+    }
+}
+
+if (!empty($tiempos)) {
+    sort($tiempos);
+    $count = count($tiempos);
+    $middle = floor(($count - 1) / 2);
+    $mediana = ($count % 2) ? $tiempos[$middle] : ($tiempos[$middle] + $tiempos[$middle + 1]) / 2;
+
+    echo str_repeat("-", 80) . "\n";
+    echo "MEDIANA CALCULADA: " . round($mediana, 2) . " min\n";
+    echo "MEDIANA (Modelo KPI): " . $kpi->get_mediana_respuesta($usu_id) . " min\n";
+} else {
+    echo "No hay tiempos registrados.\n";
+}
+
+echo "\n================================================================================\n";
