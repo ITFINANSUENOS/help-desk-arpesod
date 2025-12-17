@@ -10,14 +10,12 @@ class Kpi extends Conectar
         $conectar = parent::Conexion();
         parent::set_names();
 
-        // Contamos cuántas veces el usuario aparece como 'usu_asig' en el historial,
-        // PERO excluimos cuando el mismo usuario se lo asignó (ej. creación propia).
-        // Se considera creación propia si how_asig es el mismo usuario.
-        // Si how_asig es NULL o es otro usuario, SÍ cuenta.
-        $sql = "SELECT COUNT(*) as total FROM th_ticket_asignacion WHERE usu_asig = ? AND (how_asig != ? OR how_asig IS NULL) AND est = 1";
+        // Contamos TODAS las asignaciones recibidas, incluidas las auto-asignaciones.
+        // Esto equilibra la ecuación: Si el usuario se lo asigna (Entrada), y luego lo trabaja (Salida),
+        // ambos lados suman.
+        $sql = "SELECT COUNT(*) as total FROM th_ticket_asignacion WHERE usu_asig = ? AND est = 1";
         $stmt = $conectar->prepare($sql);
         $stmt->bindValue(1, $usu_id);
-        $stmt->bindValue(2, $usu_id);
         $stmt->execute();
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -26,8 +24,8 @@ class Kpi extends Conectar
 
     /**
      * Obtiene el número de pasos finalizados por un usuario.
-     * Se considera finalizado si el usuario reasignó el ticket a OTRO usuario (how_asig = usu_id AND usu_asig != usu_id)
-     * o si el ticket fue cerrado por el usuario.
+     * Se considera finalizado si el usuario reasignó el ticket a OTRO usuario
+     * o si el ticket fue cerrado mientras estaba asignado al usuario.
      */
     public function get_pasos_finalizados($usu_id)
     {
@@ -35,57 +33,30 @@ class Kpi extends Conectar
         parent::set_names();
 
         // 1. Pasos MOVIDOS:
-        // El usuario (how_asig) movió el ticket a otro (usu_asig != user).
-        // CONDICIÓN ADICIONAL: La asignación INMEDIATAMENTE ANTERIOR (la que le dio el ticket al usuario)
-        // NO debió ser una auto-asignación (how_asig != user).
+        // El usuario movió el ticket a otro.
+        // Al contar todas las entradas (incluso auto-asignadas), cualquier salida es válida.
         $sql_movidos = "SELECT COUNT(*) as total 
                         FROM th_ticket_asignacion t1
                         WHERE t1.how_asig = ? 
                         AND t1.usu_asig != ? 
-                        AND t1.est = 1
-                        AND (
-                            (
-                                SELECT t2.how_asig 
-                                FROM th_ticket_asignacion t2 
-                                WHERE t2.tick_id = t1.tick_id 
-                                AND t2.usu_asig = t1.how_asig -- Debe ser el usuario actual
-                                AND t2.fech_asig < t1.fech_asig
-                                ORDER BY t2.fech_asig DESC 
-                                LIMIT 1
-                            ) != ? 
-                            OR 
-                            (
-                                SELECT t2.how_asig 
-                                FROM th_ticket_asignacion t2 
-                                WHERE t2.tick_id = t1.tick_id 
-                                AND t2.usu_asig = t1.how_asig 
-                                AND t2.fech_asig < t1.fech_asig
-                                ORDER BY t2.fech_asig DESC 
-                                LIMIT 1
-                            ) IS NULL
-                        )";
+                        AND t1.est = 1";
 
         $stmt_movidos = $conectar->prepare($sql_movidos);
         $stmt_movidos->bindValue(1, $usu_id);
         $stmt_movidos->bindValue(2, $usu_id);
-        $stmt_movidos->bindValue(3, $usu_id);
         $stmt_movidos->execute();
         $movidos = $stmt_movidos->fetch(PDO::FETCH_ASSOC);
 
         // 2. Tickets CERRADOS:
-        // El usuario cerró el ticket.
-        // CONDICIÓN: Quien se lo asignó (how_asig del ticket actual) NO debe ser él mismo.
-        // NOTA: tm_ticket.how_asig guarda quién hizo la última asignación. Si fue auto-asignado, how_asig = usu_id.
+        // El usuario tiene el ticket asignado y está cerrado.
         $sql_cerrados = "SELECT COUNT(*) as total 
                          FROM tm_ticket 
                          WHERE usu_asig = ? 
                          AND tick_estado = 'Cerrado' 
-                         AND (how_asig != ? OR how_asig IS NULL)
                          AND est = 1";
 
         $stmt_cerrados = $conectar->prepare($sql_cerrados);
         $stmt_cerrados->bindValue(1, $usu_id);
-        $stmt_cerrados->bindValue(2, $usu_id);
         $stmt_cerrados->execute();
         $cerrados = $stmt_cerrados->fetch(PDO::FETCH_ASSOC);
 

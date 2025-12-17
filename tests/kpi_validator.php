@@ -30,8 +30,8 @@ echo "==========================================================================
 // SECCION 1: PASOS ASIGNADOS
 // -----------------------------------------------------------------------------
 echo "\n[1] KPI: PASOS ASIGNADOS\n";
-echo "    Definición: Tickets entregados a este usuario por OTRO usuario/sistema.\n";
-echo "    Excluye: Tickets que el mismo usuario creó y se auto-asignó al mismo tiempo.\n";
+echo "    Definición: Tickets entregados a este usuario (incluyendo auto-asignaciones).\n";
+echo "    Nota: Se incluyen auto-asignaciones para equilibrar la ecuación de flujo.\n";
 echo str_repeat("-", 80) . "\n";
 echo str_pad("Ticket", 10) . str_pad("Fecha Asig", 22) . str_pad("Asignado Por", 20) . "Estado\n";
 echo str_repeat("-", 80) . "\n";
@@ -48,9 +48,10 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $count_assigned = 0;
 foreach ($rows as $r) {
-    $is_valid = ($r['how_asig'] != $usu_id); // Valido si no se lo asignó él mismo
-    $status = $is_valid ? "[ OK ]" : "[EXCLUIDO]";
-    if ($is_valid) $count_assigned++;
+    // AHORA VALE TODO (Incluido Auto-asignado)
+    $is_self = ($r['how_asig'] == $usu_id);
+    $status = $is_self ? "[ OK (Auto) ]" : "[ OK ]";
+    $count_assigned++;
 
     $quien = $r['how_asig'] ? $r['how_asig'] . " (" . substr($r['nom_asigno'], 0, 10) . ")" : "Sistema";
 
@@ -66,13 +67,11 @@ echo "TOTAL ASIGNADOS (Modelo KPI): " . $kpi->get_pasos_asignados($usu_id) . "\n
 // -----------------------------------------------------------------------------
 echo "\n\n[2] KPI: PASOS FINALIZADOS\n";
 echo "    Definición: Suma de (A) Tickets movidos a otros + (B) Tickets cerrados.\n";
-echo "    Requisito: La asignación INMEDIATA ANTERIOR no debió ser una auto-asignación.\n";
+echo "    Requisito: Simple (Movimiento o Cierre efectivo).\n";
 echo str_repeat("-", 80) . "\n";
 
 // 2. MOVIDOS (SALIDAS A OTROS)
-// CONDICIÓN: Tuvieron que recibirlo VALIDAMENTE antes.
-// Nueva Logica: El predecesor inmediato no puede ser uno mismo.
-$moves_valid = []; // Renamed to avoid conflict with previous $moves
+$moves_valid = [];
 $count_moves = 0;
 
 echo "--- (A) MOVIDOS (Transferidos a otros) ---\n";
@@ -82,62 +81,26 @@ echo str_repeat("-", 80) . "\n";
 $sql_mov = "SELECT t1.tick_id, t1.fech_asig, t1.usu_asig
             FROM th_ticket_asignacion t1
             WHERE t1.how_asig = ? AND t1.usu_asig != ? AND t1.est = 1
-            ORDER BY t1.fech_asig DESC"; // Order by to get latest moves first, though not strictly needed for this logic
+            ORDER BY t1.fech_asig DESC";
 $stmt = $conectar->prepare($sql_mov);
 $stmt->bindValue(1, $usu_id);
 $stmt->bindValue(2, $usu_id);
 $stmt->execute();
 
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    // Chequear predecesor inmediato
-    $pred_sql = "SELECT how_asig FROM th_ticket_asignacion 
-                 WHERE tick_id = ? 
-                 AND usu_asig = ? 
-                 AND fech_asig < ? 
-                 ORDER BY fech_asig DESC LIMIT 1";
-    $pred_stmt = $conectar->prepare($pred_sql);
-    $pred_stmt->bindValue(1, $row['tick_id']);
-    $pred_stmt->bindValue(2, $usu_id);
-    $pred_stmt->bindValue(3, $row['fech_asig']);
-    $pred_stmt->execute();
-    $pred_how = $pred_stmt->fetchColumn();
-
-    $is_valid = true;
-    $reason = "";
-
-    if ($pred_how == $usu_id) {
-        $is_valid = false;
-        $reason = "[EXCLUIDO (Auto-recuperado)]";
-    } elseif ($pred_how === false) {
-        // No encontré asignación previa a mí. ¿Fui el creador?
-        // Si no recibí el ticket, no debería contar como finalizado (dispatcher).
-        // Esto cubre casos donde el usuario mueve un ticket que nunca le fue asignado por otro.
-        $is_valid = false;
-        $reason = "[EXCLUIDO (No recibido previamente)]";
-    }
-
-    if ($is_valid) {
-        $moves_valid[] = $row;
-        $count_moves++;
-        echo str_pad($row['tick_id'], 10) . str_pad($row['fech_asig'], 22) . str_pad($row['usu_asig'], 15) . "[ OK ]\n";
-    } else {
-        echo str_pad($row['tick_id'], 10) . str_pad($row['fech_asig'], 22) . str_pad($row['usu_asig'], 15) . $reason . "\n";
-    }
+    // Sin logica compleja de predecesor. Si lo movió, cuenta.
+    // (Asumimos que si lo movió es porque lo tenía, sea por auto o por otro).
+    $moves_valid[] = $row;
+    $count_moves++;
+    echo str_pad($row['tick_id'], 10) . str_pad($row['fech_asig'], 22) . str_pad($row['usu_asig'], 15) . "[ OK ]\n";
 }
 
 // 2. CERRADOS
-// Nueva Logica: Predecesor inmediato != Self.
-// Para cerrados, la "asignacion actual" es la que cuenta.
-// Miramos tm_ticket.how_asig? No, eso cambia si cerramos?
-// Mejor mirar th_ticket_asignacion. El cierre NO crea un registro en th_ticket_asignacion (usualmente).
-// El cierre es un estado en tm_ticket.
-// Entonces, debemos mirar QUÍEN le asignó el ticket que ahora está cerrando.
-// Es decir, buscar la ÚLTIMA asignación hacia el usuario.
-$closed_valid = []; // Renamed to avoid conflict with previous $closed
+$closed_valid = [];
 $count_closed = 0;
 
 echo "\n--- (B) CERRADOS (En estado 'Cerrado' actual) ---\n";
-echo str_pad("Ticket", 10) . str_pad("Asignado Por", 22) . "Valido?\n";
+echo str_pad("Ticket", 10) . str_pad("Estado", 22) . "Valido?\n";
 echo str_repeat("-", 80) . "\n";
 
 $sql_closed = "SELECT tick_id, how_asig, usu_id FROM tm_ticket WHERE usu_asig = ? AND tick_estado = 'Cerrado' AND est = 1";
@@ -146,46 +109,10 @@ $stmt_closed->bindValue(1, $usu_id);
 $stmt_closed->execute();
 
 while ($row = $stmt_closed->fetch(PDO::FETCH_ASSOC)) {
-    // Buscar quien se lo dio (Ultima asignacion)
-    $last_asig_sql = "SELECT how_asig FROM th_ticket_asignacion 
-                      WHERE tick_id = ? 
-                      AND usu_asig = ? 
-                      ORDER BY fech_asig DESC LIMIT 1";
-    $last_stmt = $conectar->prepare($last_asig_sql);
-    $last_stmt->bindValue(1, $row['tick_id']);
-    $last_stmt->bindValue(2, $usu_id);
-    $last_stmt->execute();
-    $last_how = $last_stmt->fetchColumn();
-
-    $is_valid_c = true;
-    $reason_c = "";
-
-    if ($last_how == $usu_id) {
-        $is_valid_c = false; // Auto-asignado y cerrado
-        $reason_c = "[EXCLUIDO (Auto-recuperado)]";
-    } elseif ($last_how === false) {
-        // Nunca asignado en historico a este usuario?
-        // Podría ser que el usuario lo creó y lo cerró directamente.
-        // O que lo recibió y no hay registro en th_ticket_asignacion (anomalía).
-        // Si how_asig en tm_ticket es el mismo usuario, o es null y usu_id es el mismo, entonces es propio.
-        if ($row['how_asig'] == $usu_id || ($row['how_asig'] === null && $row['usu_id'] == $usu_id)) {
-            $is_valid_c = false;
-            $reason_c = "[EXCLUIDO (Propio/Auto-creado)]";
-        } else {
-            // Si no es propio y no hay registro de asignación, es una anomalía o caso no cubierto.
-            // Por seguridad, lo excluimos si no hay un registro claro de recepción.
-            $is_valid_c = false;
-            $reason_c = "[EXCLUIDO (Sin registro de recepción)]";
-        }
-    }
-
-    if ($is_valid_c) {
-        $closed_valid[] = $row;
-        $count_closed++;
-        echo str_pad($row['tick_id'], 10) . str_pad($last_how ? $last_how : "Sistema", 22) . "[ OK ]\n";
-    } else {
-        echo str_pad($row['tick_id'], 10) . str_pad($last_how ? $last_how : ($row['how_asig'] ? $row['how_asig'] : "Sistema"), 22) . $reason_c . "\n";
-    }
+    // Si está cerrado y asignado al usuario, cuenta.
+    $closed_valid[] = $row;
+    $count_closed++;
+    echo str_pad($row['tick_id'], 10) . str_pad("Cerrado", 22) . "[ OK ]\n";
 }
 
 $total_finished = $count_moves + $count_closed;
@@ -298,13 +225,9 @@ $kpi_pending = 0; // Abiertos que SÍ cuentan (recibidos de otros)
 $excluded_open = 0; // Abiertos que NO cuentan (propios)
 
 foreach ($open_tickets as $t) {
-    if ($t['how_asig'] != $usu_id && $t['how_asig'] != null) {
-        $status = "[KPI PENDIENTE]"; // Recibido de otro, aun no cerrado
-        $kpi_pending++;
-    } else {
-        $status = "[PROPIO/AUTO]"; // Creado por el mismo o self-assigned
-        $excluded_open++;
-    }
+    // AHORA TODOS SON PENDIENTES KPI, incluso si how_asig es el mismo.
+    $status = "[KPI PENDIENTE]";
+    $kpi_pending++;
 
     $quien = $t['how_asig'] ? $t['how_asig'] : "Sistema";
     echo str_pad($t['tick_id'], 10) . str_pad($quien, 20) . $status . "\n";
@@ -327,10 +250,9 @@ $stmt = $conectar->prepare($sql_asig); // Reusamos query de sección 1
 $stmt->bindValue(1, $usu_id);
 $stmt->execute();
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-    if ($row['how_asig'] != $usu_id) {
-        if (!isset($assigned_ids[$row['tick_id']])) $assigned_ids[$row['tick_id']] = 0;
-        $assigned_ids[$row['tick_id']]++;
-    }
+    // Incluir todos, incluso auto-asignados
+    if (!isset($assigned_ids[$row['tick_id']])) $assigned_ids[$row['tick_id']] = 0;
+    $assigned_ids[$row['tick_id']]++;
 }
 
 // Chequear Abiertos KPI vs Asignados
@@ -405,7 +327,7 @@ foreach ($all_ids as $tid) {
     // O: Abierto valido (Current State)
     $open_val = 0;
     foreach ($open_tickets as $ot) {
-        if ($ot['tick_id'] == $tid && $ot['how_asig'] != $usu_id && $ot['how_asig'] != null) {
+        if ($ot['tick_id'] == $tid) { // Solo chequear ID, todo cuenta
             $open_val = 1;
         }
     }
