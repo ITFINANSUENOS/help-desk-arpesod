@@ -34,38 +34,55 @@ class Kpi extends Conectar
         $conectar = parent::Conexion();
         parent::set_names();
 
-        // 1. Pasos donde el usuario reasignó a OTRO (how_asig = usu_id AND usu_asig != usu_id)
-        // Y ADEMÁS, el usuario debió haber recibido el ticket de ALGUIEN MÁS antes.
-        // Es decir, excluimos si el usuario está moviendo un ticket que él mismo creó o se auto-asignó y nadie más se lo dio.
+        // 1. Pasos MOVIDOS:
+        // El usuario (how_asig) movió el ticket a otro (usu_asig != user).
+        // CONDICIÓN ADICIONAL: La asignación INMEDIATAMENTE ANTERIOR (la que le dio el ticket al usuario)
+        // NO debió ser una auto-asignación (how_asig != user).
         $sql_movidos = "SELECT COUNT(*) as total 
                         FROM th_ticket_asignacion t1
                         WHERE t1.how_asig = ? 
                         AND t1.usu_asig != ? 
                         AND t1.est = 1
-                        AND EXISTS (
-                            SELECT 1 
-                            FROM th_ticket_asignacion t2 
-                            WHERE t2.tick_id = t1.tick_id 
-                            AND t2.usu_asig = ? 
-                            AND (t2.how_asig != ? OR t2.how_asig IS NULL)
-                            AND t2.fech_asig < t1.fech_asig
+                        AND (
+                            (
+                                SELECT t2.how_asig 
+                                FROM th_ticket_asignacion t2 
+                                WHERE t2.tick_id = t1.tick_id 
+                                AND t2.usu_asig = t1.how_asig -- Debe ser el usuario actual
+                                AND t2.fech_asig < t1.fech_asig
+                                ORDER BY t2.fech_asig DESC 
+                                LIMIT 1
+                            ) != ? 
+                            OR 
+                            (
+                                SELECT t2.how_asig 
+                                FROM th_ticket_asignacion t2 
+                                WHERE t2.tick_id = t1.tick_id 
+                                AND t2.usu_asig = t1.how_asig 
+                                AND t2.fech_asig < t1.fech_asig
+                                ORDER BY t2.fech_asig DESC 
+                                LIMIT 1
+                            ) IS NULL
                         )";
+
         $stmt_movidos = $conectar->prepare($sql_movidos);
         $stmt_movidos->bindValue(1, $usu_id);
         $stmt_movidos->bindValue(2, $usu_id);
         $stmt_movidos->bindValue(3, $usu_id);
-        $stmt_movidos->bindValue(4, $usu_id);
         $stmt_movidos->execute();
         $movidos = $stmt_movidos->fetch(PDO::FETCH_ASSOC);
 
-        // 2. Tickets cerrados por el usuario
-        // Solo contamos si quien se lo asignó (how_asig) NO es él mismo.
+        // 2. Tickets CERRADOS:
+        // El usuario cerró el ticket.
+        // CONDICIÓN: Quien se lo asignó (how_asig del ticket actual) NO debe ser él mismo.
+        // NOTA: tm_ticket.how_asig guarda quién hizo la última asignación. Si fue auto-asignado, how_asig = usu_id.
         $sql_cerrados = "SELECT COUNT(*) as total 
                          FROM tm_ticket 
                          WHERE usu_asig = ? 
                          AND tick_estado = 'Cerrado' 
                          AND (how_asig != ? OR how_asig IS NULL)
                          AND est = 1";
+
         $stmt_cerrados = $conectar->prepare($sql_cerrados);
         $stmt_cerrados->bindValue(1, $usu_id);
         $stmt_cerrados->bindValue(2, $usu_id);
