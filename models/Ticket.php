@@ -1156,4 +1156,52 @@ class Ticket extends Conectar
         $sql->execute();
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
+    public function mark_as_error($tick_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "UPDATE tm_ticket SET error_proceso = 1 WHERE tick_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->execute();
+    }
+
+    public function listar_tickets_con_error()
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT 
+                tm_ticket.tick_id,
+                tm_ticket.usu_id,
+                tm_ticket.cat_id,
+                tm_ticket.tick_titulo,
+                tm_ticket.tick_descrip,
+                tm_ticket.tick_estado,
+                tm_ticket.fech_crea,     
+                tm_ticket.usu_asig,
+                tm_usuario.usu_nom,
+                tm_usuario.usu_ape,
+                tm_categoria.cat_nom,
+                tm_subcategoria.cats_nom,
+                (
+                    SELECT error_descrip 
+                    FROM th_ticket_asignacion 
+                    WHERE th_ticket_asignacion.tick_id = tm_ticket.tick_id 
+                    AND th_ticket_asignacion.error_descrip IS NOT NULL 
+                    ORDER BY th_ticket_asignacion.fech_asig DESC 
+                    LIMIT 1
+                ) as ultimo_error
+                FROM 
+                tm_ticket
+                INNER join tm_categoria on tm_ticket.cat_id = tm_categoria.cat_id
+                INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
+                INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
+                WHERE 
+                tm_ticket.est = 1
+                AND tm_ticket.error_proceso > 0";
+
+        $sql = $conectar->prepare($sql);
+        $sql->execute();
+        return $resultado = $sql->fetchAll();
+    }
 }

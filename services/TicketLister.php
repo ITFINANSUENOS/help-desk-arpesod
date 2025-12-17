@@ -294,4 +294,45 @@ class TicketLister
         }
         return '';
     }
+
+    public function listTicketsWithError()
+    {
+        $datos = $this->ticketModel->listar_tickets_con_error();
+        $data = array();
+        foreach ($datos as $row) {
+            $sub_array = array();
+            $sub_array[] = $row['tick_id'];
+            $sub_array[] = $row['cat_nom'];
+            $sub_array[] = $row['cats_nom'];
+            $sub_array[] = $row['tick_titulo'];
+
+            // Columna de DETALLE ERROR
+            $sub_array[] = '<span style="color:red; font-weight:bold;">' . ($row['ultimo_error'] ?? 'Sin detalle') . '</span>';
+
+            if ($row['tick_estado'] == 'Abierto') {
+                $sub_array[] = '<span class="label label-success">Abierto</span>';
+            } else {
+                $sub_array[] = '<span class="label label-danger">Cerrado</span>';
+            }
+
+            $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
+
+            if ($row['usu_asig'] == null) {
+                $sub_array[] = '<span class="label label-danger">Sin asignar</span>';
+            } else {
+                $sub_array[] = $this->getFormattedUserNames($row['usu_asig'], 'label-warning');
+            }
+
+            $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Ticket"><i class="fa fa-eye"></i></button>';
+
+            $data[] = $sub_array;
+        }
+
+        return [
+            "sEcho" => isset($_POST['draw']) ? intval($_POST['draw']) : 1,
+            "iTotalRecords" => count($data),
+            "iTotalDisplayRecords" => count($data),
+            "aaData" => $data
+        ];
+    }
 }

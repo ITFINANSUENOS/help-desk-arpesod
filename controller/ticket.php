@@ -43,6 +43,11 @@ switch ($_GET["op"]) {
         echo json_encode($result);
         break;
 
+    case "listar_error":
+        $result = $lister->listTicketsWithError();
+        echo json_encode($result);
+        break;
+
     case "listar_historial_tabla_x_agente":
         $result = $lister->listTicketsRecordByAgent($_POST['usu_id']);
         echo json_encode($result);

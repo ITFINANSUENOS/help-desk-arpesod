@@ -1602,6 +1602,7 @@ class TicketService
                 } else {
                     $comentario_reasignacion = "Ticket devuelto por error de proceso.";
                     $mensaje_notificacion = "Se te ha devuelto el Ticket #{$tick_id} por un error en el proceso.";
+
                     $this->ticketModel->update_asignacion_y_paso(
                         $tick_id,
                         $assigned_to,
@@ -1610,6 +1611,12 @@ class TicketService
                         $comentario_reasignacion,
                         $mensaje_notificacion
                     );
+                }
+            } else {
+                // Si NO es error de proceso (es meramente informativo, ej: Error de Información con ID 22)
+                // No cerramos ni devolvemos, pero notificamos al responsable (o al creador si está asignado)
+                if ($assigned_to) {
+                    $this->notificationRepository->insertNotification($assigned_to, "Notificación de error informativo en Ticket #{$tick_id}: {$nombre_respuesta}", $tick_id);
                 }
             }
 

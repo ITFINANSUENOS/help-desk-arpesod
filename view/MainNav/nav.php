@@ -28,6 +28,12 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                 </a>
             </li>
             <li class="blue-dirty">
+                <a href="..\ConsultarTicketError\">
+                    <i class="tag-color red"></i>
+                    <span class="lbl">Tickets con Error</span>
+                </a>
+            </li>
+            <li class="blue-dirty">
                 <a href="..\ConsultarNovedades\">
                     <i class="tag-color grey-blue"></i>
                     <span class="lbl">Consultar Novedades</span>
@@ -54,6 +60,12 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                 <a href="..\NuevoTicket\">
                     <i class="tag-color grey-blue"></i>
                     <span class="lbl">Nuevo Ticket</span>
+                </a>
+            </li>
+            <li class="blue-dirty">
+                <a href="..\ConsultarTicketError\">
+                    <i class="tag-color red"></i>
+                    <span class="lbl">Tickets con Error</span>
                 </a>
             </li>
             <li class="blue-dirty">
@@ -113,6 +125,12 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                 <a href="..\ConsultarTicketCerrado\">
                     <i class="tag-color grey-blue"></i>
                     <span class="lbl">Consultar Ticket Cerrados</span>
+                </a>
+            </li>
+            <li class="blue-dirty">
+                <a href="..\ConsultarTicketError\">
+                    <i class="tag-color red"></i>
+                    <span class="lbl">Tickets con Error</span>
                 </a>
             </li>
             <li class="blue-dirty">
