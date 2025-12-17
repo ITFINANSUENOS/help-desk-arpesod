@@ -1586,8 +1586,17 @@ class TicketService
             if (!empty($error_descrip)) $comentario .= "<br><b>Descripción:</b> " . htmlspecialchars($error_descrip);
             if ($nombre_completo_responsable) $comentario .= "<br><small class='text-muted'>Error atribuido a: <b>{$nombre_completo_responsable}</b></small>";
 
-            $this->ticketModel->update_error_proceso($tick_id, $answer_id);
             $this->ticketModel->insert_ticket_detalle($tick_id, $usu_id_reporta, $comentario);
+
+            // NEW: Insert into relational error table
+            require_once('../models/TicketError.php');
+            $ticketErrorModel = new TicketError();
+            // Determine responsible: if assigned_to is set, use it. Otherwise use Creator?
+            // The existing logic sets $assigned_to perfectly for "Who caused this" (The person we are returning to, or the one responsible).
+            $responsable_id = $assigned_to ?? $ticket_data['usu_id'];
+
+            $ticketErrorModel->insert_error($tick_id, $usu_id_reporta, $responsable_id, $answer_id, $error_descrip, $es_error_proceso ? 1 : 0);
+
 
             // Realizar la reasignación si es un error de proceso
             if ($es_error_proceso && $assigned_to) {
@@ -1613,10 +1622,10 @@ class TicketService
                     );
                 }
             } else {
-                // Si NO es error de proceso (es meramente informativo, ej: Error de Información con ID 22)
-                // No cerramos ni devolvemos, pero notificamos al responsable (o al creador si está asignado)
-                if ($assigned_to) {
-                    $this->notificationRepository->insertNotification($assigned_to, "Notificación de error informativo en Ticket #{$tick_id}: {$nombre_respuesta}", $tick_id);
+                // Si NO es error de proceso (es meramente informativo)
+                // Usamos el ID del responsable para notificarle
+                if ($responsable_id) {
+                    $this->notificationRepository->insertNotification($responsable_id, "Se ha reportado un error informativo en Ticket #{$tick_id}: {$nombre_respuesta}", $tick_id);
                 }
             }
 

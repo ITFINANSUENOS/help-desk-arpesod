@@ -335,4 +335,56 @@ class TicketLister
             "aaData" => $data
         ];
     }
+    public function listReceivedErrors($usuId)
+    {
+        require_once('../models/TicketError.php');
+        $ticketErrorModel = new TicketError();
+        $datos = $ticketErrorModel->listar_errores_recibidos($usuId);
+        return $this->formatErrorList($datos);
+    }
+
+    public function listReportedErrors($usuId)
+    {
+        require_once('../models/TicketError.php');
+        $ticketErrorModel = new TicketError();
+        $datos = $ticketErrorModel->listar_errores_enviados($usuId);
+        return $this->formatErrorList($datos, true);
+    }
+
+    private function formatErrorList($datos, $isReported = false)
+    {
+        $data = array();
+        foreach ($datos as $row) {
+            $sub_array = array();
+            $sub_array[] = $row['tick_id'];
+            $sub_array[] = $row['cat_nom'];
+            $sub_array[] = $row['cats_nom'];
+            $sub_array[] = $row['tick_titulo'];
+
+            // Detalle del Error
+            $sub_array[] = '<span style="color:red; font-weight:bold;">' . $row['answer_nom'] . '</span><br>' . ($row['error_descrip'] ?? '');
+
+            // Si es lista de reportados, mostramos QUIEN es el responsable. Si es recibidos, mostramos QUIEN reportó.
+            if ($isReported) {
+                // "Responsable" (quien cometió el error)
+                $sub_array[] = $row['resp_nom'] . ' ' . $row['resp_ape'];
+            } else {
+                // "Reportado Por" (quien me asignó el error)
+                $sub_array[] = $row['reporta_nom'] . ' ' . $row['reporta_ape'];
+            }
+
+            $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
+
+            $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Ticket"><i class="fa fa-eye"></i></button>';
+
+            $data[] = $sub_array;
+        }
+
+        return [
+            "sEcho" => isset($_POST['draw']) ? intval($_POST['draw']) : 1,
+            "iTotalRecords" => count($data),
+            "iTotalDisplayRecords" => count($data),
+            "aaData" => $data
+        ];
+    }
 }

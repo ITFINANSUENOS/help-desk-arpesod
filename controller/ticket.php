@@ -43,8 +43,13 @@ switch ($_GET["op"]) {
         echo json_encode($result);
         break;
 
-    case "listar_error":
-        $result = $lister->listTicketsWithError();
+    case "listar_error_recibido":
+        $result = $lister->listReceivedErrors($_POST['usu_id']);
+        echo json_encode($result);
+        break;
+
+    case "listar_error_enviado":
+        $result = $lister->listReportedErrors($_POST['usu_id']);
         echo json_encode($result);
         break;
 
