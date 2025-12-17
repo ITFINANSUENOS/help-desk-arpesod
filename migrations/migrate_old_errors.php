@@ -9,8 +9,8 @@ $sql = "
     INSERT INTO tm_ticket_error (tick_id, usu_id_reporta, usu_id_responsable, answer_id, error_descrip, es_error_proceso, fech_crea, est)
     SELECT 
         th.tick_id,
-        th.how_asig,        -- Usuario que asignó (Reporta)
-        th.usu_asig,        -- Usuario asignado (Responsable/Culpable)
+        th.usu_asig,        -- CORREGIDO: El que RECIBIÓ la asignación errónea es quien la REPORTA (ej. Analista recibe de Soporte y marca error)
+        th.how_asig,        -- CORREGIDO: El que HIZO la asignación es el RESPONSABLE (Culpable)
         th.error_code_id,   -- ID del error (Fast Answer)
         IFNULL(th.error_descrip, 'Sin descripción'), -- Descripción
         fa.es_error_proceso, -- Si es error de proceso o no
