@@ -1233,13 +1233,13 @@ class TicketService
                 if (!file_exists($ruta)) {
                     mkdir($ruta, 0777, true);
                 }
-                
+
                 for ($index = 0; $index < $countfiles; $index++) {
                     // Skip if name is empty (e.g. empty slot)
                     if (empty($_FILES['files']['name'][$index])) {
                         continue;
                     }
-                    
+
                     $doc1 = $_FILES['files']['name'][$index];
                     $tmp_name = $_FILES['files']['tmp_name'][$index];
                     $destino = $ruta . $doc1;
@@ -1593,6 +1593,9 @@ class TicketService
             if ($es_error_proceso && $assigned_to) {
                 if ($assigned_to == $ticket_data['usu_id'] && $assigned_paso === null) {
                     $this->ticketModel->update_ticket($tick_id);
+                    // FIX: Actualizar el dueño en la cabecera para que coincida con el historial (evitar fantasmas)
+                    $this->ticketModel->update_owner_silent($tick_id, $assigned_to);
+
                     $this->ticketModel->insert_ticket_detalle_cerrar($tick_id, $usu_id_reporta);
                     $this->assignmentRepository->insertAssignment($tick_id, $assigned_to, $usu_id_reporta, null, 'Ticket cerrado por error de proceso en el primer paso.');
                     $this->notificationRepository->insertNotification($assigned_to, "El Ticket #{$tick_id} ha sido cerrado debido a un error en el proceso.", $tick_id);
@@ -1811,7 +1814,7 @@ class TicketService
 
             // Append user comment if provided
             if (!empty($data['tickd_descrip']) && trim(strip_tags($data['tickd_descrip'])) !== '') {
-                 $comentario .= "<br><br><b>Comentario de resolución:</b><br>" . $data['tickd_descrip'];
+                $comentario .= "<br><br><b>Comentario de resolución:</b><br>" . $data['tickd_descrip'];
             }
 
             $result_detalle = $this->ticketModel->insert_ticket_detalle($tick_id, $usu_resuelve_novedad, $comentario);

@@ -10,16 +10,42 @@ class Kpi extends Conectar
         $conectar = parent::Conexion();
         parent::set_names();
 
-        // Contamos TODAS las asignaciones recibidas, incluidas las auto-asignaciones.
-        // Esto equilibra la ecuación: Si el usuario se lo asigna (Entrada), y luego lo trabaja (Salida),
-        // ambos lados suman.
+        // 1. Asignaciones Reales (Base de Datos)
         $sql = "SELECT COUNT(*) as total FROM th_ticket_asignacion WHERE usu_asig = ? AND est = 1";
         $stmt = $conectar->prepare($sql);
         $stmt->bindValue(1, $usu_id);
         $stmt->execute();
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $assigned_real = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-        return $result['total'];
+        // 2. Asignaciones Implícitas (Salidas + Stock)
+        // Lógica: "Si lo terminé o lo tengo abierto, entonces me fue asignado (aunque no haya log)".
+        
+        // A. Movidos (Salidas)
+        $sql_mov = "SELECT COUNT(*) as total FROM th_ticket_asignacion WHERE how_asig = ? AND usu_asig != ? AND est = 1";
+        $stmt_mov = $conectar->prepare($sql_mov);
+        $stmt_mov->bindValue(1, $usu_id);
+        $stmt_mov->bindValue(2, $usu_id);
+        $stmt_mov->execute();
+        $moved = $stmt_mov->fetch(PDO::FETCH_ASSOC)['total'];
+
+        // B. Cerrados (Salidas)
+        $sql_closed = "SELECT COUNT(*) as total FROM tm_ticket WHERE usu_asig = ? AND tick_estado = 'Cerrado' AND est = 1";
+        $stmt_closed = $conectar->prepare($sql_closed);
+        $stmt_closed->bindValue(1, $usu_id);
+        $stmt_closed->execute();
+        $closed = $stmt_closed->fetch(PDO::FETCH_ASSOC)['total'];
+
+        // C. Abiertos (Stock)
+        $sql_open = "SELECT COUNT(*) as total FROM tm_ticket WHERE usu_asig = ? AND tick_estado = 'Abierto' AND est = 1";
+        $stmt_open = $conectar->prepare($sql_open);
+        $stmt_open->bindValue(1, $usu_id);
+        $stmt_open->execute();
+        $open = $stmt_open->fetch(PDO::FETCH_ASSOC)['total'];
+
+        $implied_total = $moved + $closed + $open;
+
+        // Retornamos el MAYOR. Esto cubre los "tickets fantasmas" (ej. errores de proceso antiguos)
+        return max($assigned_real, $implied_total);
     }
 
     /**

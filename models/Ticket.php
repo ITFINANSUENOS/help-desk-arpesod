@@ -771,6 +771,19 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
+    // Método para corregir el bug de "Error de Proceso":
+    // Actualiza el dueño actual SIN insertar en historial (porque TicketService ya lo inserta manualmente).
+    public function update_owner_silent($tick_id, $usu_asig)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "UPDATE tm_ticket SET usu_asig = ? WHERE tick_id = ?";
+        $stmt = $conectar->prepare($sql);
+        $stmt->bindValue(1, $usu_asig);
+        $stmt->bindValue(2, $tick_id);
+        $stmt->execute();
+    }
+
     public function update_ticket_asignacion($tick_id, $usu_asig, $how_asig)
     {
         $conectar = parent::Conexion();
