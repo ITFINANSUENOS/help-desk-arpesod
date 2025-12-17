@@ -33,13 +33,13 @@ if (isset($_SESSION["usu_id"])) {
                     </div>
                 </header>
 
-                <div class="box-typical box-typical-padding">
+                <div class="box-typical">
                     <section class="tabs-section">
-                        <div class="tabs-section-nav tabs-section-nav-inline">
-                            <ul class="nav" role="tablist">
+                        <div class="tabs-section-nav tabs-section-nav-inline" style="padding: 15px; padding-bottom: 5px;">
+                            <ul class="nav" role="tablist" style="padding: 15px; padding-bottom: 15px;">
                                 <li class="nav-item">
                                     <a class="nav-link active" href="#tabs-4-tab-1" role="tab" data-toggle="tab">
-                                        <span class="nav-link-in">
+                                        <span class="nav-link-in" style="padding: 5px;">
                                             Mis Errores (Recibidos)
                                             <span class="label label-danger" id="lbl_count_recibidos"></span>
                                         </span>
@@ -47,7 +47,7 @@ if (isset($_SESSION["usu_id"])) {
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" href="#tabs-4-tab-2" role="tab" data-toggle="tab">
-                                        <span class="nav-link-in">
+                                        <span class="nav-link-in" style="padding: 5px;">
                                             Errores Reportados (Enviados)
                                             <span class="label label-info" id="lbl_count_enviados"></span>
                                         </span>
@@ -59,42 +59,46 @@ if (isset($_SESSION["usu_id"])) {
                         <div class="tab-content">
                             <!-- TAB 1: Mis Errores (Recibidos) -->
                             <div role="tabpanel" class="tab-pane fade in active" id="tabs-4-tab-1">
-                                <table id="ticket_data_recibidos" class="table table-bordered table-striped table-vcenter js-dataTable-full">
-                                    <thead>
-                                        <tr role="row">
-                                            <th style="width: 5%;">N° Ticket</th>
-                                            <th style="width: 10%;">Categoria</th>
-                                            <th style="width: 10%;">Subcategoria</th>
-                                            <th style="width: 15%;">Titulo</th>
-                                            <th style="width: 25%;">Detalle Error</th>
-                                            <th style="width: 15%;">Reportado Por</th>
-                                            <th style="width: 10%;">Fecha Reporte</th>
-                                            <th style="width: 5%;">Accion</th>
-                                        </tr>
-                                    </thead>
-                                </table>
+                                <div class="box-typical-padding" style="padding-top: 0;">
+                                    <table id="ticket_data_recibidos" class="table table-bordered table-striped table-vcenter js-dataTable-full">
+                                        <thead>
+                                            <tr role="row">
+                                                <th style="width: 5%;">N° Ticket</th>
+                                                <th style="width: 10%;">Categoria</th>
+                                                <th style="width: 10%;">Subcategoria</th>
+                                                <th style="width: 15%;">Titulo</th>
+                                                <th style="width: 25%;">Detalle Error</th>
+                                                <th style="width: 15%;">Reportado Por</th>
+                                                <th style="width: 10%;">Fecha Reporte</th>
+                                                <th style="width: 5%;">Accion</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </div>
                             </div><!--.tab-pane-->
 
                             <!-- TAB 2: Errores Reportados (Enviados) -->
                             <div role="tabpanel" class="tab-pane fade" id="tabs-4-tab-2">
-                                <table id="ticket_data_enviados" class="table table-bordered table-striped table-vcenter js-dataTable-full">
-                                    <thead>
-                                        <tr role="row">
-                                            <th style="width: 5%;">N° Ticket</th>
-                                            <th style="width: 10%;">Categoria</th>
-                                            <th style="width: 10%;">Subcategoria</th>
-                                            <th style="width: 15%;">Titulo</th>
-                                            <th style="width: 25%;">Detalle Error</th>
-                                            <th style="width: 15%;">Responsable (Culpable)</th>
-                                            <th style="width: 10%;">Fecha Reporte</th>
-                                            <th style="width: 5%;">Accion</th>
-                                        </tr>
-                                    </thead>
-                                </table>
+                                <div class="box-typical-padding" style="padding-top: 0;">
+                                    <table id="ticket_data_enviados" class="table table-bordered table-striped table-vcenter js-dataTable-full">
+                                        <thead>
+                                            <tr role="row">
+                                                <th style="width: 5%;">N° Ticket</th>
+                                                <th style="width: 10%;">Categoria</th>
+                                                <th style="width: 10%;">Subcategoria</th>
+                                                <th style="width: 15%;">Titulo</th>
+                                                <th style="width: 25%;">Detalle Error</th>
+                                                <th style="width: 15%;">Responsable (Culpable)</th>
+                                                <th style="width: 10%;">Fecha Reporte</th>
+                                                <th style="width: 5%;">Accion</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </div>
                             </div><!--.tab-pane-->
                         </div><!--.tab-content-->
                     </section><!--.tabs-section-->
-                </div>
+                </div><!--.box-typical-->
             </div>
         </div>
         <?php require_once('../MainJs/js.php') ?>

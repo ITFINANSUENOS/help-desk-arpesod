@@ -100,6 +100,13 @@ $(document).ready(function () {
         }
     }).DataTable();
 
+    // Reajustar tablas al cambiar de pestaña para evitar error responsive
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        $($.fn.dataTable.tables(true)).DataTable()
+            .columns.adjust()
+            .responsive.recalc();
+    });
+
 });
 function ver(tick_id) {
     window.location.href = '/view/DetalleTicket/?ID=' + tick_id
