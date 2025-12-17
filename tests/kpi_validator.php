@@ -295,57 +295,70 @@ foreach ($moves as $m) {
 }
 if (!$found_anomaly_move) echo "Todos los tickets movidos tienen su registro de entrada.\n";
 
-echo "\n\n[6] ANALISIS DE BALANCE (DETECTANDO RE-TOMAS / AUTO-RECUPERACIONES)\n";
-echo "    Buscando tickets donde (Salidas + Abierto) > (Entradas Validas).\n";
-echo "    Esto ocurre cuando re-tomas un ticket (auto-asignacion) y lo vuelves a gestionar.\n";
+echo "\n\n[6] ANALISIS DE BALANCE (DETECTANDO FANTASMAS / SIN ENTRADA)\n";
+echo "    Buscando tickets que están en tu Salida/Stock (216) pero NO en tu Entrada (195).\n";
+echo "    Estos son los que causan la diferencia.\n";
 echo str_repeat("-", 80) . "\n";
-echo str_pad("Ticket", 10) . str_pad("Entradas (A)", 15) . str_pad("Salidas (F)", 15) . str_pad("Abierto (O)", 15) . "Extra (Recuperado)\n";
+echo str_pad("Ticket", 10) . str_pad("Rol", 15) . str_pad("Creado Por", 15) . "Diagnóstico\n";
 echo str_repeat("-", 80) . "\n";
 
 // 1. Consolidar todos los IDs involucrados
-$all_ids = array_unique(array_merge(array_keys($assigned_ids), array_column($moves_valid, 'tick_id'), array_column($open_tickets, 'tick_id')));
+$all_ids = array_unique(array_merge(array_keys($assigned_ids), array_column($moves_valid, 'tick_id'), array_column($open_tickets, 'tick_id'), array_column($closed_valid, 'tick_id')));
 sort($all_ids);
 
-$total_recovered_moves = 0;
+$total_ghosts = 0;
 
 foreach ($all_ids as $tid) {
-    // A: Entradas validas (Ya calculado en $assigned_ids)
+    // A: Entradas validas
     $in = isset($assigned_ids[$tid]) ? $assigned_ids[$tid] : 0;
 
-    // F: Salidas validas (Moves)
+    // F: Salidas validas (Moves + Cerrados)
     $out = 0;
     foreach ($moves_valid as $m) {
-        if ($m['tick_id'] == $tid) $out++; // Asumiendo que todos los moves listados arriba pasaron el filtro 'received'
+        if ($m['tick_id'] == $tid) $out++;
     }
-    // Sumar cierres validos tambien a F?
-    // El KPI 'Finalizados' suma Moves + Closes.
-    // Si cierro un ticket, es una salida.
     foreach ($closed_valid as $c) {
-        if ($c['tick_id'] == $tid && $c['how_asig'] != $usu_id) $out++;
+        if ($c['tick_id'] == $tid) $out++;
     }
 
-    // O: Abierto valido (Current State)
+    // O: Abierto valido (Stock)
     $open_val = 0;
     foreach ($open_tickets as $ot) {
-        if ($ot['tick_id'] == $tid) { // Solo chequear ID, todo cuenta
-            $open_val = 1;
-        }
+        if ($ot['tick_id'] == $tid) $open_val = 1;
     }
 
-    // Calculo del "Extra"
-    // Balance = (Out + Open) - In
+    // Balance
     $balance = ($out + $open_val) - $in;
 
     if ($balance > 0) {
-        $total_recovered_moves += $balance;
-        echo str_pad($tid, 10) . str_pad($in, 15) . str_pad($out, 15) . str_pad($open_val, 15) . "+$balance\n";
+        $total_ghosts += $balance;
+        
+        // Investigar Causa
+        $sql_info = "SELECT usu_id, fech_crea, (SELECT usu_nom FROM tm_usuario WHERE usu_id = tm_ticket.usu_id) as creador_nom FROM tm_ticket WHERE tick_id = ?";
+        $stmt_info = $conectar->prepare($sql_info);
+        $stmt_info->bindValue(1, $tid);
+        $stmt_info->execute();
+        $t_info = $stmt_info->fetch(PDO::FETCH_ASSOC);
+
+        $is_creator = ($t_info['usu_id'] == $usu_id);
+        $rol = $is_creator ? "Creador" : "Colaborador";
+        $creador_txt = $is_creator ? "TI MISMO" : substr($t_info['creador_nom'], 0, 14);
+
+        $diag = "";
+        if ($is_creator) {
+            $diag = "Creaste el ticket y lo trabajaste sin auto-anádirlo al historial.";
+        } else {
+            $diag = "Tomaste el ticket sin que el sistema registrara la asignación.";
+        }
+
+        echo str_pad($tid, 10) . str_pad($rol, 15) . str_pad($creador_txt, 15) . $diag . "\n";
     }
 }
 
 echo str_repeat("-", 80) . "\n";
-echo "TOTAL GESTIONES 'RECUPERADAS' (Auto-asignadas y vueltas a gestionar): $total_recovered_moves\n";
-echo "Esta cifra ($total_recovered_moves) deberia explicar la diferencia entre (Finalizados+Abiertos) - Asignados.\n";
-
+echo "TOTAL TICKETS 'FANTASMA': $total_ghosts\n";
+echo "Explicación: Estos tickets NO tienen registro de entrada en 'th_ticket_asignacion'.\n";
+echo "Por eso tus Asignados (Input) son menores que tu Trabajo Real (Output).\n";
 echo "\n================================================================================\n";
 ?>
 ```
