@@ -34,7 +34,8 @@ class Flujo extends Conectar
             T.flujo_id,
             T.flujo_nom,
             T.cats_id,
-            S.cats_nom
+            S.cats_nom,
+            T.usu_id_observador
             FROM tm_flujo AS T
             INNER JOIN tm_subcategoria AS S ON T.cats_id = S.cats_id
             WHERE T.est = 1";
@@ -44,15 +45,16 @@ class Flujo extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function insert_flujo($flujo_nom, $cats_id, $est = 1, $flujo_nom_adjunto = '')
+    public function insert_flujo($flujo_nom, $cats_id, $est = 1, $flujo_nom_adjunto = '', $usu_id_observador = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_flujo (flujo_nom, cats_id, est, flujo_nom_adjunto) VALUES (?, ?, 1, ?)";
+        $sql = "INSERT INTO tm_flujo (flujo_nom, cats_id, est, flujo_nom_adjunto, usu_id_observador) VALUES (?, ?, 1, ?, ?)";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $flujo_nom);
         $sql->bindValue(2, $cats_id);
         $sql->bindValue(3, $flujo_nom_adjunto);
+        $sql->bindValue(4, $usu_id_observador);
         $sql->execute();
         return $conectar->lastInsertId();
     }
@@ -69,7 +71,7 @@ class Flujo extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function update_flujo($flujo_id, $flujo_nom, $cats_id, $est = 1, $flujo_nom_adjunto = '')
+    public function update_flujo($flujo_id, $flujo_nom, $cats_id, $est = 1, $flujo_nom_adjunto = '', $usu_id_observador = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -82,18 +84,25 @@ class Flujo extends Conectar
             $sql .= ", flujo_nom_adjunto = ?";
         }
 
+        $sql .= ", usu_id_observador = ?"; // Add observer update
+
         $sql .= " WHERE flujo_id = ?";
 
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $flujo_nom);
         $sql->bindValue(2, $cats_id);
 
+        $params_index = 3;
+
         if (!empty($flujo_nom_adjunto)) {
-            $sql->bindValue(3, $flujo_nom_adjunto);
-            $sql->bindValue(4, $flujo_id);
-        } else {
-            $sql->bindValue(3, $flujo_id);
+            $sql->bindValue($params_index, $flujo_nom_adjunto);
+            $params_index++;
         }
+
+        $sql->bindValue($params_index, $usu_id_observador);
+        $params_index++;
+
+        $sql->bindValue($params_index, $flujo_id);
 
         $sql->execute();
         return $resultado = $sql->fetchAll();

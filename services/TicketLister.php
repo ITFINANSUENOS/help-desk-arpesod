@@ -387,4 +387,43 @@ class TicketLister
             "aaData" => $data
         ];
     }
+
+    public function listTicketsByObserver($userId)
+    {
+        $datos = $this->ticketModel->listar_tickets_observados($userId);
+        $data = array();
+        foreach ($datos as $row) {
+            $sub_array = array();
+            $sub_array[] = $row['tick_id'];
+            $sub_array[] = $row['cat_nom'];
+            $sub_array[] = $row['cats_nom'];
+            $sub_array[] = $row['tick_titulo'];
+
+            if ($row['tick_estado'] == 'Abierto') {
+                $sub_array[] = '<span class="label label-success">Abierto</span>';
+            } else {
+                $sub_array[] = '<span class="label label-danger">Cerrado</span>';
+            }
+
+            $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
+
+            if ($row['usu_asig'] == null || $row['usu_asig'] == '') {
+                $sub_array[] = '<span class="label label-danger">Sin asignar</span>';
+            } else {
+                $sub_array[] = $this->getFormattedUserNames($row['usu_asig'], 'label-success');
+            }
+
+            $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $data[] = $sub_array;
+        }
+
+        $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 1;
+
+        return [
+            "sEcho" => $draw,
+            "iTotalRecords" => count($data),
+            "iTotalDisplayRecords" => count($data),
+            "aaData" => $data
+        ];
+    }
 }

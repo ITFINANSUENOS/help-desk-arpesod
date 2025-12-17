@@ -58,6 +58,11 @@ switch ($_GET["op"]) {
         echo json_encode($result);
         break;
 
+    case "listar_observados":
+        $result = $lister->listTicketsByObserver($_POST['usu_id']);
+        echo json_encode($result);
+        break;
+
     case "listardetalle":
         $detailLister->listTicketDetails($_POST['tick_id']);
         break;

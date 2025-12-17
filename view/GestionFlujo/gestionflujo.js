@@ -21,6 +21,8 @@ function guardaryeditar(e) {
             $("#flujo_id").val('');
             $("#cats_id").val('');
             $('#cat_id').val('');
+            $('#usu_id_observador').val('');
+            $('#flujo_attachment_display').html('');
             $('#flujo_attachment_display').html('');
             $("#modalnuevoflujo").modal('hide');
             $("#flujo_data").DataTable().ajax.reload();
@@ -44,6 +46,11 @@ $(document).ready(function () {
     $.post("../../controller/categoria.php?op=combocat", function (data) {
         $('#cat_id').html('<option value="">Seleccionar</option>' + data);
         $("#cat_id").val(data.cat_id);
+    });
+
+    // Cargar usuarios para observador
+    $.post("../../controller/usuario.php?op=combo", function (data) {
+        $('#usu_id_observador').html('<option value="">Ninguno</option>' + data);
     });
 
     $("#cat_id").off('change').on('change', function () {
@@ -118,6 +125,15 @@ function editar(flujo_id) {
         $('#flujo_id').val(data.flujo.flujo_id);
         $('#flujo_nom').val(data.flujo.flujo_nom);
         $("#cat_id").val(data.flujo.cat_id);
+
+        // Set Observer
+        if (data.flujo.usu_id_observador) {
+            $("#usu_id_observador").val(data.flujo.usu_id_observador);
+            $("#usu_id_observador").trigger('change');
+        } else {
+            $("#usu_id_observador").val('').trigger('change');
+        }
+
         $.post("../../controller/subcategoria.php?op=combo", { cat_id: data.flujo.cat_id }, function (subcategoriadata) {
             $('#cats_id').html('<option value="">Seleccionar</option>' + subcategoriadata);
             $("#cats_id").val(data.flujo.cats_id);
@@ -194,6 +210,7 @@ $('#modalnuevoflujo').on('hidden.bs.modal', function () {
     $("#flujo_id").val('');
     $("#cats_id").val('');
     $('#cat_id').val('');
+    $('#usu_id_observador').val('');
     $('#tabla_plantillas_empresa tbody').empty();
 });
 

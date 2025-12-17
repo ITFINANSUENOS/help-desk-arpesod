@@ -37,6 +37,7 @@ switch ($_GET["op"]) {
         $flujo_id = isset($_POST["flujo_id"]) ? $_POST["flujo_id"] : null;
         $flujo_nom = $_POST["flujo_nom"];
         $cats_id = $_POST["cats_id"];
+        $usu_id_observador = isset($_POST["usu_id_observador"]) && !empty($_POST["usu_id_observador"]) ? $_POST["usu_id_observador"] : null; // Get observer ID
         $flujo_nom_adjunto = '';
 
         if (!empty($_FILES['flujo_nom_adjunto']['name'])) {
@@ -54,9 +55,9 @@ switch ($_GET["op"]) {
         }
 
         if (empty($flujo_id)) {
-            $flujo_id = $flujo->insert_flujo($flujo_nom, $cats_id, 0, $flujo_nom_adjunto);
+            $flujo_id = $flujo->insert_flujo($flujo_nom, $cats_id, 0, $flujo_nom_adjunto, $usu_id_observador);
         } else {
-            $flujo->update_flujo($flujo_id, $flujo_nom, $cats_id, 0, $flujo_nom_adjunto);
+            $flujo->update_flujo($flujo_id, $flujo_nom, $cats_id, 0, $flujo_nom_adjunto, $usu_id_observador);
         }
 
         // Manejo de Plantillas por Empresa

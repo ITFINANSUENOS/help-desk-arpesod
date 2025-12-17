@@ -27,6 +27,12 @@
                         </select>
                     </fieldset>
                     <fieldset class="form-group">
+                        <label class="form-label semibold" for="usu_id_observador">Observador (Notificaciones)</label>
+                        <select class="form-control" id="usu_id_observador" name="usu_id_observador">
+                            <option value="">Ninguno</option>
+                        </select>
+                    </fieldset>
+                    <fieldset class="form-group">
                         <label class="form-label semibold" for="flujo_nom_adjunto">Documento Plantilla (PDF) - Por Defecto</label>
                         <input type="file" class="form-control" id="flujo_nom_adjunto" name="flujo_nom_adjunto" accept=".pdf">
                         <div id="flujo_attachment_display"></div>

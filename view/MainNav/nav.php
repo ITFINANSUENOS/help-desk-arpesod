@@ -39,6 +39,12 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                     <span class="lbl">Consultar Novedades</span>
                 </a>
             </li>
+            <li class="blue-dirty">
+                <a href="..\ConsultarTicketObservador\">
+                    <i class="tag-color grey-blue"></i>
+                    <span class="lbl">Tickets Observados</span>
+                </a>
+            </li>
             <li class="menu-footer" style="padding: 20px 0; text-align: center; color: #a3a3a3; font-size: 12px; border-top: 1px solid #e0e0e0;">
                 <div>Desarrollado por departamento de Sistemas</div>
                 <div>&copy; <?php echo date("Y"); ?> Arpesod SAS</div>
@@ -93,6 +99,12 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                 </a>
             </li>
             <li class="blue-dirty">
+                <a href="..\ConsultarTicketObservador\">
+                    <i class="tag-color grey-blue"></i>
+                    <span class="lbl">Tickets Observados</span>
+                </a>
+            </li>
+            <li class="blue-dirty">
                 <a href="..\ConsultarHistorialTicket\">
                     <i class="tag-color grey-blue"></i>
                     <span class="lbl">Consultar Ticket Historial</span>
@@ -143,6 +155,12 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                 <a href="..\ConsultarNovedades\">
                     <i class="tag-color grey-blue"></i>
                     <span class="lbl">Consultar Novedades</span>
+                </a>
+            </li>
+            <li class="blue-dirty">
+                <a href="..\ConsultarTicketObservador\">
+                    <i class="tag-color grey-blue"></i>
+                    <span class="lbl">Tickets Observados</span>
                 </a>
             </li>
             <li class="grey with-sub">

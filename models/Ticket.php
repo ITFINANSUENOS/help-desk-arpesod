@@ -590,6 +590,36 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function listar_tickets_observados($usu_id)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT 
+                tm_ticket.tick_id,
+                tm_ticket.tick_titulo,
+                tm_ticket.tick_estado,
+                tm_ticket.fech_crea,
+                tm_ticket.usu_asig,
+                tm_usuario.usu_nom,
+                tm_usuario.usu_ape,
+                tm_categoria.cat_nom,
+                tm_subcategoria.cats_nom
+                FROM 
+                tm_ticket
+                INNER JOIN tm_categoria ON tm_ticket.cat_id = tm_categoria.cat_id
+                INNER JOIN tm_subcategoria ON tm_ticket.cats_id = tm_subcategoria.cats_id
+                INNER JOIN tm_flujo ON tm_subcategoria.cats_id = tm_flujo.cats_id
+                LEFT JOIN tm_usuario ON tm_ticket.usu_id = tm_usuario.usu_id
+                WHERE
+                tm_ticket.est = 1
+                AND tm_flujo.usu_id_observador = ?
+                ORDER BY tm_ticket.tick_id DESC";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $usu_id);
+        $sql->execute();
+        return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function listar_tickets_involucrados_por_usuario($usu_id, $search_term = null)
     {
         $conectar = parent::conexion();

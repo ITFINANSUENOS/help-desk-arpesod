@@ -331,6 +331,9 @@ class TicketService
                 }
             }
 
+            // Notify Observer
+            $this->notifyObserver($datos, "Se ha abierto un nuevo ticket #{$datos} - {$cats_nom}", $cats_id);
+
             // Insertar documentos si los hay
             if (isset($_FILES['files'])) {
                 $this->insertDocument($datos);
@@ -766,6 +769,9 @@ class TicketService
                     $this->notificationRepository->insertNotification($uid, $mensaje_notificacion, $ticket_id);
                 }
 
+                // Notify Observer (Parallel)
+                $this->notifyObserver($ticket_id, "El ticket #{$ticket_id} ha avanzado a un paso paralelo.");
+
                 return; // Terminamos aquí, no seguimos la lógica normal
             } else {
                 throw new Exception("El paso es paralelo pero no se encontraron usuarios para asignar.");
@@ -842,6 +848,10 @@ class TicketService
 
             $mensaje_notificacion = "Se le ha trasladado el ticket #{$ticket_id} - {$cats_nom}.";
             $this->notificationRepository->insertNotification($nuevo_usuario_asignado, $mensaje_notificacion, $ticket_id);
+
+            // Notify Observer (Linear)
+            $this->notifyObserver($ticket_id, "El ticket #{$ticket_id} ha sido reasignado.");
+
             return $nuevo_paso_id;
         } else {
             throw new Exception("No se encontró un usuario para asignar al cargo ID: $siguiente_cargo_id.");
@@ -1401,6 +1411,9 @@ class TicketService
         $paso_actual = $ticket_data['paso_actual_id'];
 
         $this->assignmentRepository->insertAssignment($ticket_id, $usu_asig, $_SESSION['usu_id'], $paso_actual, 'Ticket cerrado');
+
+        // Notify Observer
+        $this->notifyObserver($ticket_id, "El ticket #{$ticket_id} ha sido cerrado.");
     }
 
     public function updateTicket($tickId)
@@ -2142,5 +2155,24 @@ class TicketService
 
         // 7. Insert into tm_documento_flujo (NOT td_documento_detalle)
         $documentoFlujoModel->insert_documento_flujo($tick_id, $flujo_id, $paso_id, $usu_id, $new_filename);
+    }
+
+
+    private function notifyObserver($ticket_id, $message, $cats_id = null)
+    {
+        if (!$cats_id) {
+            $ticket_data = $this->ticketModel->listar_ticket_x_id($ticket_id);
+            if ($ticket_data) {
+                $cats_id = $ticket_data['cats_id'];
+            }
+        }
+
+        if ($cats_id) {
+            $flujo = $this->flujoModel->get_flujo_por_subcategoria($cats_id);
+            if ($flujo && !empty($flujo['usu_id_observador'])) {
+                $observer_id = $flujo['usu_id_observador'];
+                $this->notificationRepository->insertNotification($observer_id, $message, $ticket_id);
+            }
+        }
     }
 }
