@@ -2170,8 +2170,14 @@ class TicketService
         if ($cats_id) {
             $flujo = $this->flujoModel->get_flujo_por_subcategoria($cats_id);
             if ($flujo && !empty($flujo['usu_id_observador'])) {
-                $observer_id = $flujo['usu_id_observador'];
-                $this->notificationRepository->insertNotification($observer_id, $message, $ticket_id);
+                // Handle multiple observers (stored as CSV string)
+                $observer_ids = explode(',', $flujo['usu_id_observador']);
+
+                foreach ($observer_ids as $observer_id) {
+                    if (!empty(trim($observer_id))) {
+                        $this->notificationRepository->insertNotification(trim($observer_id), $message, $ticket_id);
+                    }
+                }
             }
         }
     }

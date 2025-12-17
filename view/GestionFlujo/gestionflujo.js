@@ -21,7 +21,7 @@ function guardaryeditar(e) {
             $("#flujo_id").val('');
             $("#cats_id").val('');
             $('#cat_id').val('');
-            $('#usu_id_observador').val('');
+            $('#usu_id_observador').val(null).trigger('change');
             $('#flujo_attachment_display').html('');
             $('#flujo_attachment_display').html('');
             $("#modalnuevoflujo").modal('hide');
@@ -42,6 +42,11 @@ function ver(flujo_id) {
 
 
 $(document).ready(function () {
+    // Initialize Select2
+    $('.select2').select2({
+        placeholder: "Seleccionar",
+        allowClear: true
+    });
 
     $.post("../../controller/categoria.php?op=combocat", function (data) {
         $('#cat_id').html('<option value="">Seleccionar</option>' + data);
@@ -126,12 +131,13 @@ function editar(flujo_id) {
         $('#flujo_nom').val(data.flujo.flujo_nom);
         $("#cat_id").val(data.flujo.cat_id);
 
-        // Set Observer
+        // Set Observer (Multi-select)
         if (data.flujo.usu_id_observador) {
-            $("#usu_id_observador").val(data.flujo.usu_id_observador);
-            $("#usu_id_observador").trigger('change');
+            // Check if it contains commas
+            var observers = String(data.flujo.usu_id_observador).split(',');
+            $("#usu_id_observador").val(observers).trigger('change');
         } else {
-            $("#usu_id_observador").val('').trigger('change');
+            $("#usu_id_observador").val([]).trigger('change');
         }
 
         $.post("../../controller/subcategoria.php?op=combo", { cat_id: data.flujo.cat_id }, function (subcategoriadata) {
@@ -210,7 +216,7 @@ $('#modalnuevoflujo').on('hidden.bs.modal', function () {
     $("#flujo_id").val('');
     $("#cats_id").val('');
     $('#cat_id').val('');
-    $('#usu_id_observador').val('');
+    $('#usu_id_observador').val(null).trigger('change');
     $('#tabla_plantillas_empresa tbody').empty();
 });
 

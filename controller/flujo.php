@@ -37,7 +37,14 @@ switch ($_GET["op"]) {
         $flujo_id = isset($_POST["flujo_id"]) ? $_POST["flujo_id"] : null;
         $flujo_nom = $_POST["flujo_nom"];
         $cats_id = $_POST["cats_id"];
-        $usu_id_observador = isset($_POST["usu_id_observador"]) && !empty($_POST["usu_id_observador"]) ? $_POST["usu_id_observador"] : null; // Get observer ID
+        $usu_id_observador = null;
+        if (isset($_POST["usu_id_observador"]) && !empty($_POST["usu_id_observador"])) {
+            if (is_array($_POST["usu_id_observador"])) {
+                $usu_id_observador = implode(',', $_POST["usu_id_observador"]);
+            } else {
+                $usu_id_observador = $_POST["usu_id_observador"];
+            }
+        }
         $flujo_nom_adjunto = '';
 
         if (!empty($_FILES['flujo_nom_adjunto']['name'])) {

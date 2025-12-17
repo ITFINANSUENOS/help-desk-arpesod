@@ -28,7 +28,7 @@
                     </fieldset>
                     <fieldset class="form-group">
                         <label class="form-label semibold" for="usu_id_observador">Observador (Notificaciones)</label>
-                        <select class="form-control" id="usu_id_observador" name="usu_id_observador">
+                        <select class="form-control select2" id="usu_id_observador" name="usu_id_observador[]" multiple="multiple">
                             <option value="">Ninguno</option>
                         </select>
                     </fieldset>

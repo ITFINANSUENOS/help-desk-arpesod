@@ -608,11 +608,11 @@ class Ticket extends Conectar
                 tm_ticket
                 INNER JOIN tm_categoria ON tm_ticket.cat_id = tm_categoria.cat_id
                 INNER JOIN tm_subcategoria ON tm_ticket.cats_id = tm_subcategoria.cats_id
-                INNER JOIN tm_flujo ON tm_subcategoria.cats_id = tm_flujo.cats_id
+                INNER JOIN tm_flujo f ON tm_ticket.cats_id = f.cats_id
                 LEFT JOIN tm_usuario ON tm_ticket.usu_id = tm_usuario.usu_id
-                WHERE
-                tm_ticket.est = 1
-                AND tm_flujo.usu_id_observador = ?
+                WHERE 
+                FIND_IN_SET(?, f.usu_id_observador)
+                AND f.est = 1
                 ORDER BY tm_ticket.tick_id DESC";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
