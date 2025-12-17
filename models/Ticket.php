@@ -238,8 +238,14 @@ class Ticket extends Conectar
                 INNER join td_prioridad as pdd on tm_subcategoria.pd_id = pdd.pd_id
 
                 WHERE 
-                tm_ticket.est = 1
-                AND FIND_IN_SET(?, tm_ticket.usu_asig)";
+                tm_ticket.est = 1";
+
+        // MÓDULO EXPANDIDO: Si es 'Cerrado', buscar también en historial.
+        if ($status == 'Cerrado') {
+            $sql .= " AND ( FIND_IN_SET(?, tm_ticket.usu_asig) OR EXISTS (SELECT 1 FROM th_ticket_asignacion WHERE th_ticket_asignacion.tick_id = tm_ticket.tick_id AND th_ticket_asignacion.usu_asig = ?) )";
+        } else {
+            $sql .= " AND FIND_IN_SET(?, tm_ticket.usu_asig)";
+        }
 
         if (!empty($status)) {
             $sql .= " AND tm_ticket.tick_estado = ?";
@@ -259,9 +265,19 @@ class Ticket extends Conectar
 
 
         $sql = $conectar->prepare($sql);
-        $sql->bindValue(1, $usu_asig);
 
-        $paramIndex = 2;
+        $paramIndex = 1;
+
+        if ($status == 'Cerrado') {
+            $sql->bindValue($paramIndex, $usu_asig); // FIND_IN_SET
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $usu_asig); // EXISTS
+            $paramIndex++;
+        } else {
+            $sql->bindValue($paramIndex, $usu_asig);
+            $paramIndex++;
+        }
+
         if (!empty($status)) {
             $sql->bindValue($paramIndex, $status);
             $paramIndex++;
