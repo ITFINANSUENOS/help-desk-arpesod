@@ -34,9 +34,9 @@
 							<div id="lblmenulist" class="dropdown-menu-notif-list">
 
 							</div>
-							<!-- <div class="dropdown-menu-notif-more">
-								<a href="#">See more</a>
-							</div> -->
+							<div class="dropdown-menu-notif-more">
+								<a href="../ConsultarNotificaciones/">Ver Todo</a>
+							</div>
 						</div>
 					</div>
 
