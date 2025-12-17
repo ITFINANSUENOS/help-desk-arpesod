@@ -230,21 +230,21 @@ function guardaryeditar(e) {
     if ($('#tick_titulo').val().trim() == '') {
         swal("Atención", "Debe ingresar un título", "warning");
         return false;
-    } else if ($('#emp_id').val() == null || $('#emp_id').val() == '') {
+    } else if ($('#emp_id').val() == null || $('#emp_id').val() == '' || $('#emp_id').val() == 'Select') {
         swal("Atención", "Debe seleccionar una empresa", "warning");
         return false;
 
-    } else if ($('#cats_id').val() == null || $('#cats_id').val() == '') {
+    } else if ($('#cats_id').val() == null || $('#cats_id').val() == '' || $('#cats_id').val() == 'Select') {
         swal("Atención", "Debe seleccionar una subcategoría", "warning");
         return false;
-    } else if ($('#es_nacional').val() == 1 && ($('#reg_id').val() == null || $('#reg_id').val() == '')) {
+    } else if ($('#es_nacional').val() == 1 && ($('#reg_id').val() == null || $('#reg_id').val() == '' || $('#reg_id').val() == 'Select')) {
         swal("Atención", "Debe seleccionar una regional", "warning");
         return false;
-    } else if ($('#panel_asignacion_manual').is(':visible') && ($('#usu_asig').val() == null || $('#usu_asig').val() == '')) {
+    } else if ($('#panel_asignacion_manual').is(':visible') && ($('#usu_asig').val() == null || $('#usu_asig').val() == '' || $('#usu_asig').val() == 'Select')) {
         swal("Atención", "Esta subcategoría requiere que seleccione un agente para la asignación.", "warning");
         return false;
 
-    } else if ($('#pd_id').val() == null || $('#pd_id').val() == '') {
+    } else if ($('#pd_id').val() == null || $('#pd_id').val() == '' || $('#pd_id').val() == 'Select') {
         swal("Atención", "Debe seleccionar una prioridad", "warning");
         return false;
 

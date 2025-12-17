@@ -257,7 +257,8 @@ class TicketService
             $session_usu = $_SESSION['usu_id'] ?? null;
             $emp_id = $postData['emp_id'] ?? null;
             $dp_id = $postData['dp_id'] ?? null;
-            $usu_asig = $postData['usu_asig'] ?? null;
+            $usu_asig_raw = $postData['usu_asig'] ?? null;
+            $usu_asig = ($usu_asig_raw === 'Select') ? null : $usu_asig_raw;
             $usu_asig_final = null;
 
             $cats_nom = $this->subcategoriaModel->get_nombre_subcategoria($cats_id);
