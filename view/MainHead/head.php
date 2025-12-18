@@ -15,7 +15,7 @@
 
 	<link rel="stylesheet" href="../../public/css/lib/font-awesome/font-awesome.min.css">
 	<link rel="stylesheet" href="../../public/css/lib/bootstrap/bootstrap.min.css">
-	
+
 	<link rel="stylesheet" href="../../public/css/lib/bootstrap-sweetalert/sweetalert.css">
 	<link rel="stylesheet" href="../../public/css/separate/vendor/sweet-alert-animations.min.css">
 
@@ -37,7 +37,7 @@
 	<link rel="stylesheet" href="../style.css" />
 
 	<link href="../../public/css/lib/charts-c3js/c3.min.css" rel="stylesheet" type="text/css">
-	
-	<link rel="stylesheet" href="../../public/css/main.css">
+
+	<link rel="stylesheet" href="../../public/css/main.css?v=<?php echo time(); ?>">
 
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
