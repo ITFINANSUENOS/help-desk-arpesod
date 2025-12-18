@@ -257,6 +257,9 @@ function agregarFilaPlantillaEmpresa(emp_id = '', plantilla_nom = '') {
     }
 
     $('#tabla_plantillas_empresa tbody').append(row);
+
+    // Asignar Select2 al select recién creado
+    row.find('select').select2();
 }
 
 $(document).on('click', '.btn-delete-row', function () {

@@ -207,8 +207,12 @@ categoriasAnidadas = function () {
                                 </div>
                             `;
                         }
-                        $('#campos_plantilla_inputs').append(inputHtml);
+                    $('#campos_plantilla_inputs').append(inputHtml);
                     });
+                    
+                    // Initialize Select2 for newly added dynamic fields
+                    $('#campos_plantilla_inputs select').select2();
+                    
                     $('#campos_plantilla_container').show();
                 } else {
                     $('#campos_plantilla_container').hide();

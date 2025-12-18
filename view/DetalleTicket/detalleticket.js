@@ -226,6 +226,13 @@ $(document).ready(function () {
         $('#modal_crear_novedad').modal('show');
     });
 
+    // Fix Select2 focus issue in Modal
+    $('#modal_crear_novedad').on('shown.bs.modal', function () {
+        $('#usu_asig_novedad').select2({
+            dropdownParent: $('#modal_crear_novedad')
+        });
+    });
+
     // Evento para guardar la novedad
     $('#novedad_form').on('submit', function (e) {
         e.preventDefault();

@@ -1,7 +1,7 @@
-$(document).ready(function(){
-/* ==========================================================================
-	Scroll
-	========================================================================== */
+$(document).ready(function () {
+	/* ==========================================================================
+		Scroll
+		========================================================================== */
 
 	if (!("ontouchstart" in document.documentElement)) {
 
@@ -18,35 +18,35 @@ $(document).ready(function(){
 		$('.scrollable-block').jScrollPane(jScrollOptions);
 	}
 
-/* ==========================================================================
-    Header search
-    ========================================================================== */
+	/* ==========================================================================
+		Header search
+		========================================================================== */
 
-	$('.site-header .site-header-search').each(function(){
+	$('.site-header .site-header-search').each(function () {
 		var parent = $(this),
 			overlay = parent.find('.overlay');
 
-		overlay.click(function(){
+		overlay.click(function () {
 			parent.removeClass('closed');
 		});
 
-		parent.clickoutside(function(){
+		parent.clickoutside(function () {
 			if (!parent.hasClass('closed')) {
 				parent.addClass('closed');
 			}
 		});
 	});
 
-/* ==========================================================================
-    Header mobile menu
-    ========================================================================== */
+	/* ==========================================================================
+		Header mobile menu
+		========================================================================== */
 
 	// Dropdowns
-	$('.site-header-collapsed .dropdown').each(function(){
+	$('.site-header-collapsed .dropdown').each(function () {
 		var parent = $(this),
 			btn = parent.find('.dropdown-toggle');
 
-		btn.click(function(){
+		btn.click(function () {
 			if (parent.hasClass('mobile-opened')) {
 				parent.removeClass('mobile-opened');
 			} else {
@@ -55,12 +55,12 @@ $(document).ready(function(){
 		});
 	});
 
-	$('.dropdown-more').each(function(){
+	$('.dropdown-more').each(function () {
 		var parent = $(this),
 			more = parent.find('.dropdown-more-caption'),
 			classOpen = 'opened';
 
-		more.click(function(){
+		more.click(function () {
 			if (parent.hasClass(classOpen)) {
 				parent.removeClass(classOpen);
 			} else {
@@ -70,54 +70,54 @@ $(document).ready(function(){
 	});
 
 	// Left mobile menu
-	$('.hamburger').click(function(){
+	$('.hamburger').click(function () {
 		if ($('body').hasClass('menu-left-opened')) {
 			$(this).removeClass('is-active');
 			$('body').removeClass('menu-left-opened');
-			$('html').css('overflow','auto');
+			$('html').css('overflow', 'auto');
 		} else {
 			$(this).addClass('is-active');
 			$('body').addClass('menu-left-opened');
-			$('html').css('overflow','hidden');
+			$('html').css('overflow', 'hidden');
 		}
 	});
 
-	$('.mobile-menu-left-overlay').click(function(){
+	$('.mobile-menu-left-overlay').click(function () {
 		$('.hamburger').removeClass('is-active');
 		$('body').removeClass('menu-left-opened');
-		$('html').css('overflow','auto');
+		$('html').css('overflow', 'auto');
 	});
 
 	// Right mobile menu
-	$('.site-header .burger-right').click(function(){
+	$('.site-header .burger-right').click(function () {
 		if ($('body').hasClass('menu-right-opened')) {
 			$('body').removeClass('menu-right-opened');
-			$('html').css('overflow','auto');
+			$('html').css('overflow', 'auto');
 		} else {
 			$('.hamburger').removeClass('is-active');
 			$('body').removeClass('menu-left-opened');
 			$('body').addClass('menu-right-opened');
-			$('html').css('overflow','hidden');
+			$('html').css('overflow', 'hidden');
 		}
 	});
 
-	$('.mobile-menu-right-overlay').click(function(){
+	$('.mobile-menu-right-overlay').click(function () {
 		$('body').removeClass('menu-right-opened');
-		$('html').css('overflow','auto');
+		$('html').css('overflow', 'auto');
 	});
 
-/* ==========================================================================
-    Header help
-    ========================================================================== */
+	/* ==========================================================================
+		Header help
+		========================================================================== */
 
-	$('.help-dropdown').each(function(){
+	$('.help-dropdown').each(function () {
 		var parent = $(this),
 			btn = parent.find('>button'),
 			popup = parent.find('.help-dropdown-popup'),
 			jscroll
-		;
+			;
 
-		btn.click(function(){
+		btn.click(function () {
 			if (parent.hasClass('opened')) {
 				parent.removeClass('opened');
 				jscroll.destroy();
@@ -125,41 +125,41 @@ $(document).ready(function(){
 				parent.addClass('opened');
 
 				if (!("ontouchstart" in document.documentElement)) {
-					setTimeout(function(){
+					setTimeout(function () {
 						jscroll = parent.find('.jscroll').jScrollPane(jScrollOptions).data().jsp;
-					},0);
+					}, 0);
 				}
 			}
 		});
 
-		$('html').click(function(event) {
-		    if (
-		        !$(event.target).closest('.help-dropdown-popup').length
-		        &&
-		        !$(event.target).closest('.help-dropdown>button').length
-		        &&
-		        !$(event.target).is('.help-dropdown-popup')
-		        &&
-		        !$(event.target).is('.help-dropdown>button')
-		    ) {
+		$('html').click(function (event) {
+			if (
+				!$(event.target).closest('.help-dropdown-popup').length
+				&&
+				!$(event.target).closest('.help-dropdown>button').length
+				&&
+				!$(event.target).is('.help-dropdown-popup')
+				&&
+				!$(event.target).is('.help-dropdown>button')
+			) {
 				if (parent.hasClass('opened')) {
 					parent.removeClass('opened');
 					jscroll.destroy();
-		        }
-		    }
+				}
+			}
 		});
 	});
 
-/* ==========================================================================
-    Side menu list
-    ========================================================================== */
+	/* ==========================================================================
+		Side menu list
+		========================================================================== */
 
-	$('.side-menu-list li.with-sub').each(function(){
+	$('.side-menu-list li.with-sub').each(function () {
 		var parent = $(this),
 			clickLink = parent.find('>span'),
 			subMenu = parent.find('>ul');
 
-		clickLink.click(function() {
+		clickLink.click(function () {
 			if (parent.hasClass('opened')) {
 				parent.removeClass('opened');
 				subMenu.slideUp();
@@ -175,20 +175,20 @@ $(document).ready(function(){
 	});
 
 
-/* ==========================================================================
-    Dashboard
-    ========================================================================== */
+	/* ==========================================================================
+		Dashboard
+		========================================================================== */
 
-	$(window).resize(function(){
+	$(window).resize(function () {
 		$('body').click('click');
 	});
 
 	// Collapse box
-	$('.box-typical-dashboard').each(function(){
+	$('.box-typical-dashboard').each(function () {
 		var parent = $(this),
 			btnCollapse = parent.find('.action-btn-collapse');
 
-		btnCollapse.click(function(){
+		btnCollapse.click(function () {
 			if (parent.hasClass('box-typical-collapsed')) {
 				parent.removeClass('box-typical-collapsed');
 			} else {
@@ -198,25 +198,25 @@ $(document).ready(function(){
 	});
 
 	// Full screen box
-	$('.box-typical-dashboard').each(function(){
+	$('.box-typical-dashboard').each(function () {
 		var parent = $(this),
 			btnExpand = parent.find('.action-btn-expand'),
 			classExpand = 'box-typical-full-screen';
 
-		btnExpand.click(function(){
+		btnExpand.click(function () {
 			if (parent.hasClass(classExpand)) {
 				parent.removeClass(classExpand);
-				$('html').css('overflow','auto');
+				$('html').css('overflow', 'auto');
 			} else {
 				parent.addClass(classExpand);
-				$('html').css('overflow','hidden');
+				$('html').css('overflow', 'hidden');
 			}
 		});
 	});
 
-/* ==========================================================================
-	Select
-	========================================================================== */
+	/* ==========================================================================
+		Select
+		========================================================================== */
 
 	if ($('.bootstrap-select').size()) {
 		// Bootstrap-select
@@ -227,11 +227,9 @@ $(document).ready(function(){
 		});
 	}
 
-	if ($('.select2').size()) {
+	if ($('select').length) {
 		// Select2
 		//$.fn.select2.defaults.set("minimumResultsForSearch", "Infinity");
-
-		$('.select2').not('.manual').select2();
 
 		$(".select2-icon").not('.manual').select2({
 			templateSelection: select2Icons,
@@ -259,9 +257,12 @@ $(document).ready(function(){
 			templateSelection: select2Photos,
 			templateResult: select2Photos
 		});
+
+		// Initialize all other selects that haven't been initialized yet
+		$('select').not('.manual').not('.select2-hidden-accessible').not('.bootstrap-select').select2();
 	}
 
-	function select2Icons (state) {
+	function select2Icons(state) {
 		if (!state.id) { return state.text; }
 		var $state = $(
 			'<span class="font-icon ' + state.element.getAttribute('data-icon') + '"></span><span>' + state.text + '</span>'
@@ -269,7 +270,7 @@ $(document).ready(function(){
 		return $state;
 	}
 
-	function select2Photos (state) {
+	function select2Photos(state) {
 		if (!state.id) { return state.text; }
 		var $state = $(
 			'<span class="user-item"><img src="' + state.element.getAttribute('data-photo') + '"/>' + state.text + '</span>'
@@ -277,9 +278,9 @@ $(document).ready(function(){
 		return $state;
 	}
 
-/* ==========================================================================
-	Tooltips
-	========================================================================== */
+	/* ==========================================================================
+		Tooltips
+		========================================================================== */
 
 	// Tooltip
 	$('[data-toggle="tooltip"]').tooltip({
@@ -290,10 +291,10 @@ $(document).ready(function(){
 	$('[data-toggle="popover"]').popover({
 		trigger: 'focus'
 	});
-	
-/* ==========================================================================
-	Full height box
-	========================================================================== */
+
+	/* ==========================================================================
+		Full height box
+		========================================================================== */
 
 	function boxFullHeight() {
 		var sectionHeader = $('.section-header');
@@ -315,13 +316,13 @@ $(document).ready(function(){
 
 	boxFullHeight();
 
-	$(window).resize(function(){
+	$(window).resize(function () {
 		boxFullHeight();
 	});
 
-/* ==========================================================================
-	Chat
-	========================================================================== */
+	/* ==========================================================================
+		Chat
+		========================================================================== */
 
 	function chatHeights() {
 		$('.chat-dialog-area').height(
@@ -345,13 +346,13 @@ $(document).ready(function(){
 
 	chatHeights();
 
-	$(window).resize(function(){
+	$(window).resize(function () {
 		chatHeights();
 	});
 
-/* ==========================================================================
-	Box typical full height with header
-	========================================================================== */
+	/* ==========================================================================
+		Box typical full height with header
+		========================================================================== */
 
 	function boxWithHeaderFullHeight() {
 		/*$('.box-typical-full-height-with-header').each(function(){
@@ -371,16 +372,16 @@ $(document).ready(function(){
 
 	boxWithHeaderFullHeight();
 
-	$(window).resize(function() {
+	$(window).resize(function () {
 		boxWithHeaderFullHeight();
 	});
 
-/* ==========================================================================
-	File manager
-	========================================================================== */
+	/* ==========================================================================
+		File manager
+		========================================================================== */
 
 	function fileManagerHeight() {
-		$('.files-manager').each(function(){
+		$('.files-manager').each(function () {
 			var box = $(this),
 				boxColLeft = box.find('.files-manager-side'),
 				boxSubHeader = box.find('.files-manager-header'),
@@ -388,20 +389,20 @@ $(document).ready(function(){
 				boxColRight = box.find('.files-manager-aside');
 
 			var paddings = parseInt($('.page-content').css('padding-top')) +
-							parseInt($('.page-content').css('padding-bottom')) +
-							parseInt(box.css('margin-bottom')) + 2;
+				parseInt($('.page-content').css('padding-bottom')) +
+				parseInt(box.css('margin-bottom')) + 2;
 
 			boxColLeft.height('auto');
 			boxCont.height('auto');
 			boxColRight.height('auto');
 
-			if ( boxColLeft.height() <= ($(window).height() - paddings) ) {
+			if (boxColLeft.height() <= ($(window).height() - paddings)) {
 				boxColLeft.height(
 					$(window).height() - paddings
 				);
 			}
 
-			if ( boxColRight.height() <= ($(window).height() - paddings - boxSubHeader.outerHeight()) ) {
+			if (boxColRight.height() <= ($(window).height() - paddings - boxSubHeader.outerHeight())) {
 				boxColRight.height(
 					$(window).height() -
 					paddings -
@@ -417,16 +418,16 @@ $(document).ready(function(){
 
 	fileManagerHeight();
 
-	$(window).resize(function(){
+	$(window).resize(function () {
 		fileManagerHeight();
 	});
 
-/* ==========================================================================
-	Mail
-	========================================================================== */
+	/* ==========================================================================
+		Mail
+		========================================================================== */
 
 	function mailBoxHeight() {
-		$('.mail-box').each(function(){
+		$('.mail-box').each(function () {
 			var box = $(this),
 				boxHeader = box.find('.mail-box-header'),
 				boxColLeft = box.find('.mail-box-list'),
@@ -454,36 +455,36 @@ $(document).ready(function(){
 
 	mailBoxHeight();
 
-	$(window).resize(function(){
+	$(window).resize(function () {
 		mailBoxHeight();
 	});
 
-/* ==========================================================================
-	Nestable
-	========================================================================== */
+	/* ==========================================================================
+		Nestable
+		========================================================================== */
 
-	$('.dd-handle').hover(function(){
+	$('.dd-handle').hover(function () {
 		$(this).prev('button').addClass('hover');
 		$(this).prev('button').prev('button').addClass('hover');
-	}, function(){
+	}, function () {
 		$(this).prev('button').removeClass('hover');
 		$(this).prev('button').prev('button').removeClass('hover');
 	});
 
-/* ==========================================================================
-	Addl side menu
-	========================================================================== */
+	/* ==========================================================================
+		Addl side menu
+		========================================================================== */
 
-	setTimeout(function(){
+	setTimeout(function () {
 		if (!("ontouchstart" in document.documentElement)) {
 			$('.side-menu-addl').jScrollPane(jScrollOptions);
 		}
-	},1000);
+	}, 1000);
 
 
-/* ==========================================================================
-	Header notifications
-	========================================================================== */
+	/* ==========================================================================
+		Header notifications
+		========================================================================== */
 
 	// Tabs hack
 	$('.dropdown-menu-messages a[data-toggle="tab"]').click(function (e) {
@@ -525,17 +526,17 @@ $(document).ready(function(){
 		}
 	});
 
-/* ==========================================================================
-	Steps progress
-	========================================================================== */
+	/* ==========================================================================
+		Steps progress
+		========================================================================== */
 
 	function stepsProgresMarkup() {
-		$('.steps-icon-progress').each(function(){
+		$('.steps-icon-progress').each(function () {
 			var parent = $(this),
 				cont = parent.find('ul'),
 				padding = 0,
-				padLeft = (parent.find('li:first-child').width() - parent.find('li:first-child .caption').width())/2,
-				padRight = (parent.find('li:last-child').width() - parent.find('li:last-child .caption').width())/2;
+				padLeft = (parent.find('li:first-child').width() - parent.find('li:first-child .caption').width()) / 2,
+				padRight = (parent.find('li:last-child').width() - parent.find('li:last-child .caption').width()) / 2;
 
 			padding = padLeft;
 
@@ -550,15 +551,15 @@ $(document).ready(function(){
 
 	stepsProgresMarkup();
 
-	$(window).resize(function(){
+	$(window).resize(function () {
 		stepsProgresMarkup();
 	});
 
-/* ========================================================================== */
+	/* ========================================================================== */
 
-	$('.control-panel-toggle').on('click', function() {
+	$('.control-panel-toggle').on('click', function () {
 		var self = $(this);
-		
+
 		if (self.hasClass('open')) {
 			self.removeClass('open');
 			$('.control-panel').removeClass('open');
@@ -568,7 +569,7 @@ $(document).ready(function(){
 		}
 	});
 
-	$('.control-item-header .icon-toggle, .control-item-header .text').on('click', function() {
+	$('.control-item-header .icon-toggle, .control-item-header .text').on('click', function () {
 		var content = $(this).closest('li').find('.control-item-content');
 
 		if (content.hasClass('open')) {
@@ -592,7 +593,7 @@ $(document).ready(function(){
 		$('body').addClass('mozilla-browser');
 	}
 
-	$('#show-hide-sidebar-toggle').on('click', function() {
+	$('#show-hide-sidebar-toggle').on('click', function () {
 		if (!$('body').hasClass('sidebar-hidden')) {
 			$('body').addClass('sidebar-hidden');
 		} else {
