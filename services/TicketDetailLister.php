@@ -145,14 +145,18 @@ class TicketDetailLister
 
                                 <?php elseif ($row['tipo'] == 'cierre') : ?>
                                     <p style="color:red;"><strong><?php echo $row['descripcion']; ?></strong></p>
+                                <?php elseif ($row['tipo'] == 'creacion') : ?>
+                                    <p><strong>Ticket Creado:</strong></p>
+                                    <p><?php echo $row['descripcion']; ?></p>
                                 <?php else: // Es un comentario
                                 ?>
                                     <p><?php echo $row['descripcion']; ?></p>
                                 <?php endif; ?>
                                 <?php
-                                // Muestra adjuntos solo para comentarios
-                                if ($row['tipo'] == 'comentario' && !empty($row['det_noms'])) {
+                                // Muestra adjuntos para comentarios y creación
+                                if (($row['tipo'] == 'comentario' || $row['tipo'] == 'creacion') && !empty($row['det_noms'])) {
                                     $docs = explode('|', $row['det_noms']);
+                                    $path = ($row['tipo'] == 'creacion') ? 'ticket' : 'detalle';
                                     foreach ($docs as $det_nom) {
                                         if (empty($det_nom)) continue;
                                 ?>
@@ -161,10 +165,10 @@ class TicketDetailLister
                                                 <i class="fa fa-paperclip"></i> Documento adjunto
                                             </p>
                                             <div class="d-flex justify-content-between align-items-center p-2 bg-white border rounded">
-                                                <a href="../../public/document/detalle/<?php echo $row['tickd_id']; ?>/<?php echo $det_nom; ?>" target="_blank" class="text-decoration-none fw-semibold text-dark">
+                                                <a href="../../public/document/<?php echo $path; ?>/<?php echo $row['tickd_id']; ?>/<?php echo $det_nom; ?>" target="_blank" class="text-decoration-none fw-semibold text-dark">
                                                     <i class="fa fa-file-text-o me-2"></i> <?php echo $det_nom; ?>
                                                 </a>
-                                                <a href="../../public/document/detalle/<?php echo $row['tickd_id']; ?>/<?php echo $det_nom; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                <a href="../../public/document/<?php echo $path; ?>/<?php echo $row['tickd_id']; ?>/<?php echo $det_nom; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
                                                     <i class="fa fa-eye"></i> Ver
                                                 </a>
                                             </div>

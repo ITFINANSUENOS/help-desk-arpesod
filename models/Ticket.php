@@ -442,6 +442,27 @@ class Ticket extends Conectar
         parent::set_names();
         $sql = "
             (SELECT
+                t.fech_crea AS fecha_evento,
+                'creacion' AS tipo,
+                u.usu_nom,
+                u.usu_ape,
+                u.rol_id,
+                t.tick_descrip AS descripcion,
+                NULL AS nom_receptor,
+                NULL AS ape_receptor,
+                GROUP_CONCAT(doc.doc_nom SEPARATOR '|') AS det_noms,
+                t.tick_id AS tickd_id, -- We use tick_id here for the ID reference, but we must handle the path difference in the view
+                NULL AS estado_tiempo_paso,
+                NULL AS error_descrip
+            FROM tm_ticket t
+            INNER JOIN tm_usuario u ON t.usu_id = u.usu_id
+            LEFT JOIN td_documento doc ON t.tick_id = doc.tick_id
+            WHERE t.tick_id = ?
+            GROUP BY t.tick_id)
+
+            UNION ALL
+
+            (SELECT
                 d.fech_crea AS fecha_evento,
                 'comentario' AS tipo,
                 u.usu_nom,
@@ -545,6 +566,7 @@ class Ticket extends Conectar
         $sql->bindValue(3, $tick_id);
         $sql->bindValue(4, $tick_id);
         $sql->bindValue(5, $tick_id);
+        $sql->bindValue(6, $tick_id);
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
