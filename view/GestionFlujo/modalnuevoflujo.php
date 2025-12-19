@@ -18,12 +18,12 @@
                     <input type="hidden" id="flujo_id" name="flujo_id">
                     <fieldset class="form-group">
                         <label class="form-label semibold" for="cat_id">Categoria</label>
-                        <select class="form-control" id="cat_id" name="cat_id" placeholder="Seleccione una categoria" required>
+                        <select class="form-control select2" id="cat_id" name="cat_id" placeholder="Seleccione una categoria" required>
                         </select>
                     </fieldset>
                     <fieldset class="form-group">
                         <label class="form-label semibold" for="cats_id">Subcategoria</label>
-                        <select class="form-control" id="cats_id" name="cats_id" placeholder="Seleccione una categoria" required>
+                        <select class="form-control select2" id="cats_id" name="cats_id" placeholder="Seleccione una categoria" required>
                         </select>
                     </fieldset>
                     <fieldset class="form-group">

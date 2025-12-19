@@ -45,7 +45,8 @@ $(document).ready(function () {
     // Initialize Select2
     $('.select2').select2({
         placeholder: "Seleccionar",
-        allowClear: true
+        allowClear: true,
+        dropdownParent: $('#modalnuevoflujo')
     });
 
     $.post("../../controller/categoria.php?op=combocat", function (data) {
