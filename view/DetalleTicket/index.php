@@ -226,6 +226,20 @@ if (isset($_SESSION["usu_id"])) {
                             </fieldset>
                         </div>
                         <div class="col-lg-12">
+                            <fieldset class="form-group pb-1">
+                                <label class="form-label semibold" for="ticket_etiquetas">Etiquetas</label>
+                                <div class="input-group">
+                                    <select class="select2" id="ticket_etiquetas" name="ticket_etiquetas[]" multiple="multiple" style="width: 100%;">
+                                    </select>
+                                    <span class="input-group-btn" style="vertical-align: top;">
+                                        <button class="btn btn-inline btn-primary-outline" type="button" id="btn_gestionar_etiquetas" title="Crear/Gestionar Etiquetas">
+                                            <i class="fa fa-cog"></i>
+                                        </button>
+                                    </span>
+                                </div>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-12">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="tick_titulo">Documentos adicionales</label>
                                 <table id="documentos_data" class="table table-bondered table-striped table-vcenter js-datatable-full">
@@ -468,6 +482,48 @@ if (isset($_SESSION["usu_id"])) {
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Guardar Novedad</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Modal Para Gestionar Etiquetas -->
+        <div class="modal fade" id="modal_crear_etiqueta" tabindex="-1" role="dialog" aria-labelledby="modal_crear_etiqueta_label" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal_crear_etiqueta_label">Gestionar Etiquetas</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form id="etiqueta_form">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="eti_nom">Nombre de la Etiqueta</label>
+                                <input type="text" class="form-control" id="eti_nom" name="eti_nom" placeholder="Ej: Urgente, Revisión, Pendiente..." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="eti_color">Color</label>
+                                <select class="form-control" id="eti_color" name="eti_color" required>
+                                    <option value="primary">Azul (Primary)</option>
+                                    <option value="secondary">Gris (Secondary)</option>
+                                    <option value="success">Verde (Success)</option>
+                                    <option value="danger">Rojo (Danger)</option>
+                                    <option value="warning">Amarillo (Warning)</option>
+                                    <option value="info">Celeste (Info)</option>
+                                    <option value="dark">Oscuro (Dark)</option>
+                                </select>
+                            </div>
+                            <hr>
+                            <h6>Etiquetas Existentes</h6>
+                            <ul id="lista_etiquetas_existentes" class="list-group">
+                                <!-- Loaded via JS -->
+                            </ul>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                            <button type="submit" class="btn btn-primary">Guardar Nueva Etiqueta</button>
                         </div>
                     </form>
                 </div>

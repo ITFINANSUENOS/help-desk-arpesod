@@ -60,12 +60,62 @@ if (isset($_SESSION["usu_id"])) {
                                 <th style="width: 10%;">Fecha creacion</th>
                                 <th id="lblusertable" style="width: 5%;">Soporte</th>
                                 <th id="lblusucrea" style="width: 5%;">Usuario</th>
+                                <th style="width: 10%;">Etiquetas</th>
                                 <th style="width: 5%;">Accion</th>
                             </tr>
                         </thead>
                     </table>
                 </div>
             </div>
+
+            <!-- Modal Para Gestionar Etiquetas (Reutilizado) -->
+            <div class="modal fade" id="modal_crear_etiqueta" tabindex="-1" role="dialog" aria-labelledby="modal_crear_etiqueta_label" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modal_crear_etiqueta_label">Gestionar Etiquetas</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <!-- Modal Body for Select/Create -->
+                        <div class="modal-body">
+                            <form id="etiqueta_form">
+                                <h6>Nueva Etiqueta</h6>
+                                <div class="form-group">
+                                    <label for="eti_nom">Nombre</label>
+                                    <input type="text" class="form-control" id="eti_nom" name="eti_nom" placeholder="Ej: Urgente" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="eti_color">Color</label>
+                                    <select class="form-control" id="eti_color" name="eti_color" required>
+                                        <option value="primary">Azul (Primary)</option>
+                                        <option value="secondary">Gris (Secondary)</option>
+                                        <option value="success">Verde (Success)</option>
+                                        <option value="danger">Rojo (Danger)</option>
+                                        <option value="warning">Amarillo (Warning)</option>
+                                        <option value="info">Celeste (Info)</option>
+                                        <option value="dark">Oscuro (Dark)</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm">Crear</button>
+                            </form>
+                            <hr>
+                            <h6>Asignar Etiquetas al Ticket <span id="lbl_ticket_id"></span></h6>
+                            <div class="form-group pb-1">
+                                <div class="input-group">
+                                    <select class="select2" id="ticket_etiquetas" name="ticket_etiquetas[]" multiple="multiple" style="width: 100%;">
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
         <?php require_once('../MainJs/js.php') ?>
 
