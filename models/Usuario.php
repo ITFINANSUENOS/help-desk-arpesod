@@ -20,7 +20,11 @@ class Usuario extends Conectar
                 header("Location: " . Conectar::ruta() . "index.php?m=2");
                 exit();
             } else {
-                $sql = "SELECT * FROM tm_usuario WHERE usu_correo = ? AND est = 1";
+                $sql = "SELECT u.*, c.car_nom, r.reg_nom 
+                        FROM tm_usuario u
+                        LEFT JOIN tm_cargo c ON u.car_id = c.car_id
+                        LEFT JOIN tm_regional r ON u.reg_id = r.reg_id
+                        WHERE u.usu_correo = ? AND u.est = 1";
                 $stmt = $conectar->prepare($sql);
                 $stmt->bindValue(1, $correo);
                 $stmt->execute();
@@ -48,6 +52,8 @@ class Usuario extends Conectar
                         $_SESSION["rol_id_real"] = $rol_real_del_usuario;
                         $_SESSION["dp_id"] = $resultado["dp_id"]; // Se mantiene el depto al que pertenece
                         $_SESSION["car_id"] = $resultado["car_id"];
+                        $_SESSION["car_nom"] = $resultado["car_nom"];
+                        $_SESSION["reg_nom"] = $resultado["reg_nom"];
                         $_SESSION["es_nacional"] = $resultado["es_nacional"];
 
                         header("Location: " . Conectar::ruta() . "view/Home/");

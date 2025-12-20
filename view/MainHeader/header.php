@@ -59,7 +59,7 @@
 							<img src="../../public/img/user-<?php echo $_SESSION["rol_id"] ?>.png" alt="">
 						</button>
 						<div class="dropdown-menu dropdown-menu-right" aria-labelledby="dd-user-menu">
-							<a class="dropdown-item" href="../../view/Perfil/"><span class="font-icon glyphicon glyphicon-user"></span><?php echo $_SESSION["usu_nom"] ?> <?php echo $_SESSION["usu_ape"] ?></a>
+							<a class="dropdown-item" href="../../view/Perfil/"><span class="font-icon glyphicon glyphicon-user"></span><?php echo isset($_SESSION["car_nom"]) ? $_SESSION["car_nom"] : "" ?> <?php echo isset($_SESSION["reg_nom"]) ? "(" . $_SESSION["reg_nom"] . ")" : "" ?></a>
 							<a class="dropdown-item" href="#"><span class="font-icon glyphicon glyphicon-cog"></span>Ayuda</a>
 							<div class="dropdown-divider"></div>
 							<a class="dropdown-item" href="../Logout/logout.php"><span class="font-icon glyphicon glyphicon-log-out"></span>Cerrar sesion</a>
