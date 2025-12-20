@@ -60,8 +60,13 @@ if (isset($_SESSION["usu_id"])) {
                 </div>
             </div>
         </div>
+        <?php require_once("../MainModal/modal_etiquetas.php"); ?>
+        </div>
+
+
 
         <?php require_once('../MainJs/js.php') ?>
+        <script type="text/javascript" src="../MainJs/etiquetas.js"></script>
         <script type="text/javascript" src="consultarhistorialticket.js"></script>
 
     </body>
