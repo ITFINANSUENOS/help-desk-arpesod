@@ -72,7 +72,7 @@ switch ($_GET["op"]) {
         break;
 
     case "listar_historial_tabla":
-        $result = $lister->listAllTicketsRecord();
+        $result = $lister->listAllTicketsRecord($_SESSION['usu_id']);
         echo json_encode($result);
         break;
 

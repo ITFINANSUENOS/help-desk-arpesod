@@ -52,7 +52,8 @@ if (isset($_SESSION["usu_id"])) {
                                 <th style="width: 10%;">Estado</th>
                                 <th style="width: 10%;">Fecha Creación</th>
                                 <th style="width: 15%;">Asignado a</th>
-                                <th style="width: 5%;">Ver</th>
+                                <th style="width: 10%;">Etiquetas</th>
+                                <th style="width: 10%;">Ver</th>
                             </tr>
                         </thead>
                     </table>
@@ -64,6 +65,7 @@ if (isset($_SESSION["usu_id"])) {
         <script type="text/javascript" src="consultarhistorialticket.js"></script>
 
     </body>
+
     </html>
 <?php
 } else {

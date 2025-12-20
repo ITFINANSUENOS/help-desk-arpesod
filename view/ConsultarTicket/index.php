@@ -61,7 +61,7 @@ if (isset($_SESSION["usu_id"])) {
                                 <th id="lblusertable" style="width: 5%;">Soporte</th>
                                 <th id="lblusucrea" style="width: 5%;">Usuario</th>
                                 <th style="width: 10%;">Etiquetas</th>
-                                <th style="width: 5%;">Accion</th>
+                                <th style="width: 10%;">Accion</th>
                             </tr>
                         </thead>
                     </table>
@@ -98,7 +98,7 @@ if (isset($_SESSION["usu_id"])) {
                                         <option value="dark">Oscuro (Dark)</option>
                                     </select>
                                 </div>
-                                <button type="submit" class="btn btn-primary btn-sm">Crear</button>
+                                <button type="button" id="btn_guardar_etiqueta" class="btn btn-primary btn-sm">Crear</button>
                             </form>
                             <hr>
                             <h6>Asignar Etiquetas al Ticket <span id="lbl_ticket_id"></span></h6>
@@ -115,6 +115,50 @@ if (isset($_SESSION["usu_id"])) {
                     </div>
                 </div>
             </div>
+
+            <style>
+                /* Override Select2 Styling for Tags */
+                .select2-selection__choice {
+                    background-color: transparent !important;
+                    border: none !important;
+                    position: relative !important;
+                    padding: 0 !important;
+                    margin-right: 5px !important;
+                }
+
+                /* The Label (Text) */
+                .select2-selection__choice .label {
+                    font-size: 100% !important;
+                    display: inline-block !important;
+                    padding: 6px 15px 6px 8px !important;
+                    /* Right padding space for X */
+                    position: relative !important;
+                    border-radius: 4px !important;
+                }
+
+                /* The X (Remove Button) - Top Right & Small */
+                .select2-selection__choice__remove {
+                    position: absolute !important;
+                    top: 1px !important;
+                    right: 2px !important;
+                    z-index: 10 !important;
+                    color: rgba(255, 255, 255, 0.7) !important;
+                    font-size: 10px !important;
+                    /* Smaller */
+                    font-weight: bold !important;
+                    width: auto !important;
+                    height: auto !important;
+                    line-height: 1 !important;
+                    margin: 0 !important;
+                    float: none !important;
+                    background-color: transparent !important;
+                }
+
+                .select2-selection__choice__remove:hover {
+                    color: #fff !important;
+                    cursor: pointer !important;
+                }
+            </style>
 
         </div>
         <?php require_once('../MainJs/js.php') ?>

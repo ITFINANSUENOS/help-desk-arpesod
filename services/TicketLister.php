@@ -72,10 +72,14 @@ class TicketLister
                 if ($color == "dark") $labelClass = "label label-primary";
                 $html_tags .= '<span class="' . $labelClass . '" style="margin-right: 2px;">' . $tag['eti_nom'] . '</span> ';
             }
-            $html_tags .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" style="margin-left:5px;"><i class="fa fa-tag"></i></a>';
+            // Removed icon from here
             $sub_array[] = $html_tags;
 
-            $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $action_buttons = '<div style="white-space: nowrap;">';
+            $action_buttons .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" class="btn btn-inline btn-default btn-sm ladda-button"><i class="fa fa-tag"></i></a>';
+            $action_buttons .= ' <button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $action_buttons .= '</div>';
+            $sub_array[] = $action_buttons;
             $data[] = $sub_array;
         }
         $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 1;
@@ -142,10 +146,14 @@ class TicketLister
                 if ($color == "dark") $labelClass = "label label-primary";
                 $html_tags .= '<span class="' . $labelClass . '" style="margin-right: 2px;">' . $tag['eti_nom'] . '</span> ';
             }
-            $html_tags .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" style="margin-left:5px;"><i class="fa fa-tag"></i></a>';
+            // Removed icon from here
             $sub_array[] = $html_tags;
 
-            $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $action_buttons = '<div style="white-space: nowrap;">';
+            $action_buttons .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" class="btn btn-inline btn-default btn-sm ladda-button"><i class="fa fa-tag"></i></a>';
+            $action_buttons .= ' <button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $action_buttons .= '</div>';
+            $sub_array[] = $action_buttons;
 
             $data[] = $sub_array;
         }
@@ -221,10 +229,14 @@ class TicketLister
                     $html_tags .= '<span class="' . $labelClass . '" style="margin-right: 2px;">' . $tag['eti_nom'] . '</span> ';
                 }
             }
-            $html_tags .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" style="margin-left:5px;"><i class="fa fa-tag"></i></a>';
+            // Removed icon from here
             $sub_array[] = $html_tags;
 
-            $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $action_buttons = '<div style="white-space: nowrap;">';
+            $action_buttons .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" class="btn btn-inline btn-default btn-sm ladda-button"><i class="fa fa-tag"></i></a>';
+            $action_buttons .= ' <button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $action_buttons .= '</div>';
+            $sub_array[] = $action_buttons;
             $data[] = $sub_array;
         }
 
@@ -264,7 +276,24 @@ class TicketLister
                 $sub_array[] = $row['usu_nom'] . ' ' . $row['usu_ape'];
             }
 
-            $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Historial Detallado"><i class="fa fa-eye"></i></button>';
+            // Etiquetas (Record Agent)
+            $tags = $this->etiquetaModel->listar_etiquetas_x_ticket($row['tick_id'], $usuId);
+            $html_tags = '';
+            foreach ($tags as $tag) {
+                $color = $tag['eti_color'];
+                $labelClass = "label label-" . $color;
+                if ($color == "secondary") $labelClass = "label label-default";
+                if ($color == "dark") $labelClass = "label label-primary";
+                $html_tags .= '<span class="' . $labelClass . '" style="margin-right: 2px;">' . $tag['eti_nom'] . '</span> ';
+            }
+            // Removed icon from here
+            $sub_array[] = $html_tags;
+
+            $action_buttons = '<div style="white-space: nowrap;">';
+            $action_buttons .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" class="btn btn-inline btn-default btn-sm ladda-button"><i class="fa fa-tag"></i></a>';
+            $action_buttons .= ' <button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Historial Detallado"><i class="fa fa-eye"></i></button>';
+            $action_buttons .= '</div>';
+            $sub_array[] = $action_buttons;
 
             $data[] = $sub_array;
         }
@@ -277,7 +306,7 @@ class TicketLister
         ];
     }
 
-    public function listAllTicketsRecord()
+    public function listAllTicketsRecord($viewerId = null)
     {
         // Prioritize custom search if not empty, otherwise fallback to DataTables search
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
@@ -303,7 +332,26 @@ class TicketLister
                 $sub_array[] = $row['usu_nom'] . ' ' . $row['usu_ape'];
             }
 
-            $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Historial Detallado"><i class="fa fa-eye"></i></button>';
+            // Etiquetas (Record All)
+            $html_tags = '';
+            if ($viewerId) {
+                $tags = $this->etiquetaModel->listar_etiquetas_x_ticket($row['tick_id'], $viewerId);
+                foreach ($tags as $tag) {
+                    $color = $tag['eti_color'];
+                    $labelClass = "label label-" . $color;
+                    if ($color == "secondary") $labelClass = "label label-default";
+                    if ($color == "dark") $labelClass = "label label-primary";
+                    $html_tags .= '<span class="' . $labelClass . '" style="margin-right: 2px;">' . $tag['eti_nom'] . '</span> ';
+                }
+            }
+            // Removed icon from here
+            $sub_array[] = $html_tags;
+
+            $action_buttons = '<div style="white-space: nowrap;">';
+            $action_buttons .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" class="btn btn-inline btn-default btn-sm ladda-button"><i class="fa fa-tag"></i></a>';
+            $action_buttons .= ' <button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Historial Detallado"><i class="fa fa-eye"></i></button>';
+            $action_buttons .= '</div>';
+            $sub_array[] = $action_buttons;
 
             $data[] = $sub_array;
         }

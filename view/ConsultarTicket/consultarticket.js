@@ -5,6 +5,61 @@ var rol_id = $('#rol_idx').val()
 var rol_real_id = $('#rol_real_idx').val()
 
 function init() {
+    // Event Handler for Create Tag Button
+    $('#btn_guardar_etiqueta').on('click', function (e) {
+        e.preventDefault();
+        var formData = new FormData($('#etiqueta_form')[0]);
+        $.ajax({
+            url: "../../controller/etiqueta.php?op=guardar",
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (response) {
+                if (response == "1") {
+                    swal("Éxito", "Etiqueta creada", "success");
+                    $('#etiqueta_form')[0].reset();
+                    // Reload options
+                    loadListEtiquetasDisponibles();
+                } else {
+                    swal("Error", "No se pudo crear", "error");
+                }
+            }
+        });
+    });
+
+
+    // Initialize Select2 for Tags
+    $('#ticket_etiquetas').select2({
+        placeholder: "Agregar etiqueta...",
+        tags: false,
+        tokenSeparators: [','],
+        templateSelection: formatEtiquetaState,
+        templateResult: formatEtiquetaState,
+        dropdownParent: $('#modal_crear_etiqueta')
+    });
+
+    // Select2 Select Event
+    $('#ticket_etiquetas').on('select2:select', function (e) {
+        var eti_id = e.params.data.id;
+        var usu_id = $('#user_idx').val();
+        if (!eti_id || !current_list_tick_id) return;
+
+        $.post("../../controller/etiqueta.php?op=asignar", { tick_id: current_list_tick_id, eti_id: eti_id, usu_id: usu_id }, function (data) {
+            $('#ticket_data').DataTable().ajax.reload(null, false);
+        });
+    });
+
+    // Select2 Unselect Event
+    $('#ticket_etiquetas').on('select2:unselect', function (e) {
+        var eti_id = e.params.data.id;
+        if (!eti_id || !current_list_tick_id) return;
+
+        $.post("../../controller/etiqueta.php?op=desligar", { tick_id: current_list_tick_id, eti_id: eti_id }, function (data) {
+            console.log("Etiqueta desligada listado");
+            $('#ticket_data').DataTable().ajax.reload(null, false);
+        });
+    });
 }
 
 
@@ -253,62 +308,7 @@ function gestionarEtiquetas(tick_id) {
     $('#lbl_ticket_id').text('#' + tick_id);
     $('#modal_crear_etiqueta').modal('show');
 
-    // Init Select2 if not initialized
-    if (!$('#ticket_etiquetas').data('select2')) {
-        $('#ticket_etiquetas').select2({
-            placeholder: "Agregar etiqueta...",
-            tags: false,
-            tokenSeparators: [','],
-            templateSelection: formatEtiquetaState,
-            templateResult: formatEtiquetaState,
-            dropdownParent: $('#modal_crear_etiqueta')
-        });
 
-        // Event Listeners (Solo una vez)
-        $('#ticket_etiquetas').on('select2:select', function (e) {
-            var eti_id = e.params.data.id;
-            var usu_id = $('#user_idx').val();
-            if (!eti_id || !current_list_tick_id) return;
-
-            $.post("../../controller/etiqueta.php?op=asignar", { tick_id: current_list_tick_id, eti_id: eti_id, usu_id: usu_id }, function (data) {
-                console.log("Etiqueta asignada listado");
-                $('#ticket_data').DataTable().ajax.reload(null, false); // Reload table logic without reset paging
-            });
-        });
-
-        $('#ticket_etiquetas').on('select2:unselect', function (e) {
-            var eti_id = e.params.data.id;
-            if (!eti_id || !current_list_tick_id) return;
-
-            $.post("../../controller/etiqueta.php?op=desligar", { tick_id: current_list_tick_id, eti_id: eti_id }, function (data) {
-                console.log("Etiqueta desligada listado");
-                $('#ticket_data').DataTable().ajax.reload(null, false);
-            });
-        });
-
-        // Form Create Tag
-        $('#etiqueta_form').on('submit', function (e) {
-            e.preventDefault();
-            var formData = new FormData(this);
-            $.ajax({
-                url: "../../controller/etiqueta.php?op=guardar",
-                type: "POST",
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function (response) {
-                    if (response == "1") {
-                        swal("Éxito", "Etiqueta creada", "success");
-                        $('#etiqueta_form')[0].reset();
-                        // Reload options
-                        loadListEtiquetasDisponibles();
-                    } else {
-                        swal("Error", "No se pudo crear", "error");
-                    }
-                }
-            });
-        });
-    }
 
     // Load Data
     loadListEtiquetasDisponibles(function () {

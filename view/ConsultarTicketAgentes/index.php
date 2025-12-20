@@ -57,7 +57,8 @@ if (isset($_SESSION["usu_id"])) {
                                 <th style="width: 5%;">Prioridad Defecto</th>
                                 <th style="width: 10%;">Fecha creacion</th>
                                 <th style="width: 5%;">Soporte</th>
-                                <th style="width: 5%;">Accion</th>
+                                <th style="width: 10%;">Etiquetas</th>
+                                <th style="width: 10%;">Accion</th>
                             </tr>
                         </thead>
                     </table>
