@@ -9,25 +9,52 @@
             </div>
             <div class="modal-body">
                 <form method="post" id="etiqueta_form">
-                    <h6>Nueva Etiqueta</h6>
-                    <div class="form-group">
-                        <label for="eti_nom">Nombre</label>
-                        <input type="text" class="form-control" id="eti_nom" name="eti_nom" placeholder="Ej: Urgente" required>
+                    <input type="hidden" id="eti_id" name="eti_id">
+                    <h6>Gestión de Etiquetas</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="eti_nom">Nombre</label>
+                                <input type="text" class="form-control" id="eti_nom" name="eti_nom" placeholder="Ej: Urgente" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="eti_color">Color</label>
+                                <select class="form-control" id="eti_color" name="eti_color" required>
+                                    <option value="primary">Azul (Primary)</option>
+                                    <option value="secondary">Gris (Secondary)</option>
+                                    <option value="success">Verde (Success)</option>
+                                    <option value="danger">Rojo (Danger)</option>
+                                    <option value="warning">Amarillo (Warning)</option>
+                                    <option value="info">Celeste (Info)</option>
+                                    <option value="dark">Oscuro (Dark)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group" style="padding-top: 25px;">
+                                <button type="button" id="btn_guardar_etiqueta" class="btn btn-primary btn-sm btn-block">Guardar</button>
+                                <button type="button" id="btn_cancelar_etiqueta" class="btn btn-secondary btn-sm btn-block" style="display:none; margin-top:5px;">Cancelar</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="eti_color">Color</label>
-                        <select class="form-control" id="eti_color" name="eti_color" required>
-                            <option value="primary">Azul (Primary)</option>
-                            <option value="secondary">Gris (Secondary)</option>
-                            <option value="success">Verde (Success)</option>
-                            <option value="danger">Rojo (Danger)</option>
-                            <option value="warning">Amarillo (Warning)</option>
-                            <option value="info">Celeste (Info)</option>
-                            <option value="dark">Oscuro (Dark)</option>
-                        </select>
-                    </div>
-                    <button type="button" id="btn_guardar_etiqueta" class="btn btn-primary btn-sm">Crear</button>
                 </form>
+                <div class="row mt-2">
+                    <div class="col-md-12">
+                        <table id="tabla_etiquetas_usuario" class="table table-bordered table-striped table-vcenter js-dataTable-full" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 70%;">Etiqueta</th>
+                                    <th style="width: 15%;"></th>
+                                    <th style="width: 15%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 <hr>
                 <h6>Asignar Etiquetas al Ticket <span id="lbl_ticket_id"></span></h6>
                 <div class="form-group pb-1">

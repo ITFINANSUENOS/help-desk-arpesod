@@ -15,6 +15,32 @@ class Etiqueta extends Conectar
         return $conectar->lastInsertId();
     }
 
+    // Actualizar etiqueta
+    public function update_etiqueta($eti_id, $eti_nom, $eti_color)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "UPDATE tm_etiqueta SET eti_nom = ?, eti_color = ? WHERE eti_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $eti_nom);
+        $sql->bindValue(2, $eti_color);
+        $sql->bindValue(3, $eti_id);
+        $sql->execute();
+        return $sql->rowCount();
+    }
+
+    // Obtener etiqueta por ID
+    public function get_etiqueta_x_id($eti_id)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT * FROM tm_etiqueta WHERE eti_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $eti_id);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
     // Listar todas las etiquetas activas del usuario
     public function listar_etiquetas($usu_id)
     {

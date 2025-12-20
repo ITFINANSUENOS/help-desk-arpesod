@@ -54,12 +54,60 @@ switch ($_GET["op"]) {
         }
         break;
 
-    // Crear nueva etiqueta global (si hiciéramos mantenimiento de etiquetas)
+    // Guardar o Editar etiqueta (Si trae eti_id es edición)
     case "guardar":
         if (isset($_POST["eti_nom"])) {
             $usu_id = $_SESSION["usu_id"];
-            $etiqueta->insert_etiqueta($usu_id, $_POST["eti_nom"], $_POST["eti_color"]);
+            if (empty($_POST["eti_id"])) {
+                // Crear
+                $etiqueta->insert_etiqueta($usu_id, $_POST["eti_nom"], $_POST["eti_color"]);
+            } else {
+                // Actualizar
+                $etiqueta->update_etiqueta($_POST["eti_id"], $_POST["eti_nom"], $_POST["eti_color"]);
+            }
             echo "1";
         }
+        break;
+
+    // Mostrar una etiqueta específica para edición
+    case "mostrar":
+        if (isset($_POST["eti_id"])) {
+            $datos = $etiqueta->get_etiqueta_x_id($_POST["eti_id"]);
+            echo json_encode($datos);
+        }
+        break;
+
+    // Eliminar etiqueta globalmente (solo la propia del usuario)
+    case "eliminar":
+        if (isset($_POST["eti_id"])) {
+            $etiqueta->delete_etiqueta($_POST["eti_id"]);
+            echo "1";
+        }
+        break;
+
+    // Listar mis etiquetas para gestión (Tabla)
+    case "listar_mis_etiquetas":
+        $usu_id = $_SESSION["usu_id"];
+        $datos = $etiqueta->listar_etiquetas($usu_id);
+        $data = array();
+        foreach ($datos as $row) {
+            $sub_array = array();
+            $labelClass = "label label-" . $row['eti_color'];
+            if ($row['eti_color'] == "secondary") $labelClass = "label label-default";
+            if ($row['eti_color'] == "dark") $labelClass = "label label-primary";
+
+            $sub_array[] = '<span class="' . $labelClass . '">' . $row['eti_nom'] . '</span>';
+            $sub_array[] = '<button type="button" onClick="editarEtiqueta(' . $row['eti_id'] . ');"  id="' . $row['eti_id'] . '" class="btn btn-inline btn-warning btn-sm ladda-button"><i class="fa fa-edit"></i></button>';
+            $sub_array[] = '<button type="button" onClick="eliminarEtiqueta(' . $row['eti_id'] . ');"  id="' . $row['eti_id'] . '" class="btn btn-inline btn-danger btn-sm ladda-button"><i class="fa fa-trash"></i></button>';
+            $data[] = $sub_array;
+        }
+
+        $results = array(
+            "sEcho" => 1,
+            "iTotalRecords" => count($data),
+            "iTotalDisplayRecords" => count($data),
+            "aaData" => $data
+        );
+        echo json_encode($results);
         break;
 }
