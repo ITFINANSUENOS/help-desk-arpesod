@@ -39,7 +39,7 @@ switch ($_GET["op"]) {
 
     case "listar":
         $status = isset($_POST['tick_estado']) ? $_POST['tick_estado'] : null;
-        $result = $lister->listAllTickets($status);
+        $result = $lister->listAllTickets($status, $_SESSION['usu_id']);
         echo json_encode($result);
         break;
 

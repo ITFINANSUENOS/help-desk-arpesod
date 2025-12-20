@@ -2,16 +2,19 @@
 
 require_once('../models/Ticket.php');
 require_once('../models/Usuario.php');
+require_once('../models/Etiqueta.php');
 
 class TicketLister
 {
     private $ticketModel;
     private $usuarioModel;
+    private $etiquetaModel;
 
     public function __construct()
     {
         $this->ticketModel = new Ticket();
         $this->usuarioModel = new Usuario();
+        $this->etiquetaModel = new Etiqueta();
     }
 
     public function listTicketsByUser($userId, $status = null)
@@ -58,6 +61,19 @@ class TicketLister
             } else {
                 $sub_array[] = $this->getFormattedUserNames($row['usu_asig'], 'label-success');
             }
+
+            // Etiquetas
+            $tags = $this->etiquetaModel->listar_etiquetas_x_ticket($row['tick_id'], $userId);
+            $html_tags = '';
+            foreach ($tags as $tag) {
+                $color = $tag['eti_color'];
+                $labelClass = "label label-" . $color;
+                if ($color == "secondary") $labelClass = "label label-default";
+                if ($color == "dark") $labelClass = "label label-primary";
+                $html_tags .= '<span class="' . $labelClass . '" style="margin-right: 2px;">' . $tag['eti_nom'] . '</span> ';
+            }
+            $html_tags .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" style="margin-left:5px;"><i class="fa fa-tag"></i></a>';
+            $sub_array[] = $html_tags;
 
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
             $data[] = $sub_array;
@@ -116,6 +132,18 @@ class TicketLister
                 $sub_array[] = $this->getFormattedUserNames($row['usu_id'], 'label-primary');
             }
 
+            // Etiquetas (Agent Viewer)
+            $tags = $this->etiquetaModel->listar_etiquetas_x_ticket($row['tick_id'], $agentId);
+            $html_tags = '';
+            foreach ($tags as $tag) {
+                $color = $tag['eti_color'];
+                $labelClass = "label label-" . $color;
+                if ($color == "secondary") $labelClass = "label label-default";
+                if ($color == "dark") $labelClass = "label label-primary";
+                $html_tags .= '<span class="' . $labelClass . '" style="margin-right: 2px;">' . $tag['eti_nom'] . '</span> ';
+            }
+            $html_tags .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" style="margin-left:5px;"><i class="fa fa-tag"></i></a>';
+            $sub_array[] = $html_tags;
 
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
 
@@ -132,7 +160,7 @@ class TicketLister
         ];
     }
 
-    public function listAllTickets($status = null)
+    public function listAllTickets($status = null, $viewerId = null)
     {
         // Prioritize custom search if not empty, otherwise fallback to DataTables search
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
@@ -180,6 +208,22 @@ class TicketLister
             } else {
                 $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" >' . $this->getFormattedUserNames($row['usu_id'], 'label-success') . '</a> ';
             }
+
+            // Etiquetas (Generic Viewer)
+            $html_tags = '';
+            if ($viewerId) {
+                $tags = $this->etiquetaModel->listar_etiquetas_x_ticket($row['tick_id'], $viewerId);
+                foreach ($tags as $tag) {
+                    $color = $tag['eti_color'];
+                    $labelClass = "label label-" . $color;
+                    if ($color == "secondary") $labelClass = "label label-default";
+                    if ($color == "dark") $labelClass = "label label-primary";
+                    $html_tags .= '<span class="' . $labelClass . '" style="margin-right: 2px;">' . $tag['eti_nom'] . '</span> ';
+                }
+            }
+            $html_tags .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" style="margin-left:5px;"><i class="fa fa-tag"></i></a>';
+            $sub_array[] = $html_tags;
+
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
             $data[] = $sub_array;
         }

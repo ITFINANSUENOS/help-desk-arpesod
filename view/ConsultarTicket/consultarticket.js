@@ -245,3 +245,107 @@ function cambiarEstado(tick_id) {
 
 
 init();
+// --- LOGICA DE ETIQUETAS (LISTADO) ---
+var current_list_tick_id = null;
+
+function gestionarEtiquetas(tick_id) {
+    current_list_tick_id = tick_id;
+    $('#lbl_ticket_id').text('#' + tick_id);
+    $('#modal_crear_etiqueta').modal('show');
+
+    // Init Select2 if not initialized
+    if (!$('#ticket_etiquetas').data('select2')) {
+        $('#ticket_etiquetas').select2({
+            placeholder: "Agregar etiqueta...",
+            tags: false,
+            tokenSeparators: [','],
+            templateSelection: formatEtiquetaState,
+            templateResult: formatEtiquetaState,
+            dropdownParent: $('#modal_crear_etiqueta')
+        });
+
+        // Event Listeners (Solo una vez)
+        $('#ticket_etiquetas').on('select2:select', function (e) {
+            var eti_id = e.params.data.id;
+            var usu_id = $('#user_idx').val();
+            if (!eti_id || !current_list_tick_id) return;
+
+            $.post("../../controller/etiqueta.php?op=asignar", { tick_id: current_list_tick_id, eti_id: eti_id, usu_id: usu_id }, function (data) {
+                console.log("Etiqueta asignada listado");
+                $('#ticket_data').DataTable().ajax.reload(null, false); // Reload table logic without reset paging
+            });
+        });
+
+        $('#ticket_etiquetas').on('select2:unselect', function (e) {
+            var eti_id = e.params.data.id;
+            if (!eti_id || !current_list_tick_id) return;
+
+            $.post("../../controller/etiqueta.php?op=desligar", { tick_id: current_list_tick_id, eti_id: eti_id }, function (data) {
+                console.log("Etiqueta desligada listado");
+                $('#ticket_data').DataTable().ajax.reload(null, false);
+            });
+        });
+
+        // Form Create Tag
+        $('#etiqueta_form').on('submit', function (e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            $.ajax({
+                url: "../../controller/etiqueta.php?op=guardar",
+                type: "POST",
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    if (response == "1") {
+                        swal("Éxito", "Etiqueta creada", "success");
+                        $('#etiqueta_form')[0].reset();
+                        // Reload options
+                        loadListEtiquetasDisponibles();
+                    } else {
+                        swal("Error", "No se pudo crear", "error");
+                    }
+                }
+            });
+        });
+    }
+
+    // Load Data
+    loadListEtiquetasDisponibles(function () {
+        loadListEtiquetasAsignadas(current_list_tick_id);
+    });
+}
+
+function loadListEtiquetasDisponibles(callback) {
+    $.post("../../controller/etiqueta.php?op=combo", function (data) {
+        $('#ticket_etiquetas').html(data);
+        $('#ticket_etiquetas').trigger('change.select2');
+        if (callback) callback();
+    });
+}
+
+function loadListEtiquetasAsignadas(tick_id) {
+    $.post("../../controller/etiqueta.php?op=listar_x_ticket", { tick_id: tick_id }, function (data) {
+        var assigned = JSON.parse(data);
+        var selectedIds = [];
+        assigned.forEach(function (tag) {
+            selectedIds.push(tag.eti_id);
+        });
+        $('#ticket_etiquetas').val(selectedIds).trigger('change');
+    });
+}
+
+function formatEtiquetaState(state) {
+    if (!state.id) { return state.text; }
+    var color = $(state.element).attr('data-color');
+    if (!color) color = 'secondary';
+
+    var labelClass = "label label-" + color;
+    if (color == "secondary") labelClass = "label label-default";
+    if (color == "dark") labelClass = "label label-primary";
+
+    var $state = $(
+        '<span class="' + labelClass + '">' + state.text + '</span>'
+    );
+    return $state;
+}
