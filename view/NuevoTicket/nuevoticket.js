@@ -81,6 +81,67 @@ $(document).ready(function () {
 
     categoriasAnidadas();
 
+    // Listener para campos dinámicos con trigger
+    $('#campos_plantilla_inputs').on('change', '[data-trigger="true"]', function () {
+        var trigger_valor = $(this).val();
+
+        if (trigger_valor) {
+            // 1. Buscar todos los campos que tienen una consulta configurada (incluido el mismo trigger si la tuviera)
+            var targets = $('#campos_plantilla_inputs [data-has-query="true"]');
+
+            // Si no hay campos con query explícito, quizás el usuario configuró el query en el trigger (Legacy/Push model)
+            // Verificamos si TUVIMOS que haber puesto data-has-query en el trigger
+            // Pero acabamos de actualizar el render, así que SI TIENE query, tendrá el atributo.
+
+            // Si nadie tiene query, no hacemos nada (o mostramos error?) 
+            // El usuario reportó "No se encontraron datos", así que ALGUIEN intentó ejecutar algo.
+            // Antes solo ejecutaba el trigger.
+
+            if (targets.length === 0) {
+                // Fallback: Si el usuario configuró query en el trigger pero NO se renderizó (cache?), intentamos la lógica antigua solo para el trigger
+                var campo_id = $(this).data('id');
+                executeFieldQuery(campo_id, trigger_valor);
+            } else {
+                targets.each(function () {
+                    var qId = $(this).data('query-id');
+                    executeFieldQuery(qId, trigger_valor);
+                });
+            }
+        }
+    });
+
+    function executeFieldQuery(campo_id, valor) {
+        $.post("../../controller/campoplantilla.php?op=ejecutar_query", { campo_id: campo_id, valor: valor }, function (data) {
+            if (typeof data === 'string') {
+                try {
+                    data = JSON.parse(data);
+                } catch (e) {
+                    console.error("Error parseando respuesta", e);
+                    return;
+                }
+            }
+
+            if (data.status === 'success' && data.data) {
+                Object.keys(data.data).forEach(function (key) {
+                    // Match insensitive: buscar inputs cuyo data-cod sea igual al key (ignoring case)
+                    var searchKey = key.toString().toLowerCase();
+                    var target = $('#campos_plantilla_inputs [data-cod]').filter(function () {
+                        return $(this).attr('data-cod').toLowerCase() === searchKey;
+                    });
+
+                    if (target.length > 0) {
+                        if (target.is('select')) {
+                            target.val(data.data[key]).trigger('change');
+                        } else {
+                            target.val(data.data[key]);
+                        }
+                    }
+                });
+            } else {
+                console.log("Query para campo " + campo_id + ": No se encontraron datos o error:", data.message);
+            }
+        });
+    }
 });
 
 categoriasAnidadas = function () {
@@ -167,12 +228,16 @@ categoriasAnidadas = function () {
                     $('#campos_plantilla_inputs').empty();
                     data.campos.forEach(function (campo) {
                         var inputHtml = '';
+                        var triggerAttr = (campo.campo_trigger == 1) ? `data-trigger="true" data-id="${campo.campo_id}"` : '';
+                        var codAttr = (campo.campo_codigo) ? `data-cod="${campo.campo_codigo}"` : '';
+                        var queryAttr = (campo.campo_query && campo.campo_query.trim() !== '') ? `data-has-query="true" data-query-id="${campo.campo_id}"` : '';
+
                         if (campo.campo_tipo === 'regional') {
                             inputHtml = `
                                 <div class="col-md-4">
                                     <fieldset class="form-group">
                                         <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
-                                        <select class="form-control select2" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" required>
+                                        <select class="form-control select2" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" ${triggerAttr} ${codAttr} ${queryAttr} required>
                                             <option value="">Seleccionar...</option>
                                         </select>
                                     </fieldset>
@@ -187,7 +252,7 @@ categoriasAnidadas = function () {
                                 <div class="col-md-4">
                                     <fieldset class="form-group">
                                         <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
-                                        <select class="form-control select2" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" required>
+                                        <select class="form-control select2" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" ${triggerAttr} ${codAttr} ${queryAttr} required>
                                             <option value="">Seleccionar...</option>
                                         </select>
                                     </fieldset>
@@ -202,17 +267,17 @@ categoriasAnidadas = function () {
                                 <div class="col-md-4">
                                     <fieldset class="form-group">
                                         <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
-                                        <input type="text" class="form-control" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" placeholder="${campo.campo_nombre}" required>
+                                        <input type="text" class="form-control" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" placeholder="${campo.campo_nombre}" ${triggerAttr} ${codAttr} ${queryAttr} required>
                                     </fieldset>
                                 </div>
                             `;
                         }
-                    $('#campos_plantilla_inputs').append(inputHtml);
+                        $('#campos_plantilla_inputs').append(inputHtml);
                     });
-                    
+
                     // Initialize Select2 for newly added dynamic fields
                     $('#campos_plantilla_inputs select').select2();
-                    
+
                     $('#campos_plantilla_container').show();
                 } else {
                     $('#campos_plantilla_container').hide();

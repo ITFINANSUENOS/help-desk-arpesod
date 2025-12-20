@@ -17,4 +17,17 @@ switch ($_GET["op"]) {
         }
         echo $html;
         break;
+
+    case "ejecutar_query":
+        $campo_id = $_POST['campo_id'];
+        $valor = $_POST['valor'];
+
+        $datos = $campo->ejecutar_query_campo($campo_id, $valor);
+
+        if ($datos) {
+            echo json_encode(["status" => "success", "data" => $datos]);
+        } else {
+            echo json_encode(["status" => "error", "message" => "No se encontraron datos."]);
+        }
+        break;
 }

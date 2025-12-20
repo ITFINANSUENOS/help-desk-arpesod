@@ -229,6 +229,11 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                             <span class="lbl">Gestion Organigrama</span>
                         </a>
                     </li>
+                    <li class="blue-dirty">
+                        <a href="..\MntConsultas\">
+                            <span class="lbl">Mantenimiento Consultas</span>
+                        </a>
+                    </li>
                     <li class="grey with-sub">
                         <span>
                             <span class="lbl">Gestion flujos</span>

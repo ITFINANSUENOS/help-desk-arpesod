@@ -117,24 +117,28 @@
                     <div id="campos_plantilla_container" style="display: none; margin-top: 1rem; border: 1px solid #ddd; padding: 10px;">
                         <h5>Configuración de Campos Dinámicos</h5>
                         <p class="text-muted small">Defina los campos que se deben llenar al iniciar el flujo.</p>
-                        <table class="table table-bordered table-sm" id="tabla_campos_plantilla">
-                            <thead>
-                                <tr>
-                                    <th style="width: 25%;">Etiqueta</th>
-                                    <th style="width: 15%;">Código (Variable)</th>
-                                    <th style="width: 15%;">Tipo</th>
-                                    <th style="width: 10%;">Tamaño</th>
-                                    <th style="width: 10%;">Página</th>
-                                    <th style="width: 10%;">X (mm)</th>
-                                    <th style="width: 15%;">Coord Y</th>
-                                    <th style="width: 5%;"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Rows added dynamically -->
-                            </tbody>
-                        </table>
-                        <button type="button" class="btn btn-sm btn-success" id="btn_add_campo_plantilla"><i class="fa fa-plus"></i> Agregar Campo</button>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm px-0" id="tabla_campos_plantilla" style="min-width: 800px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 15%;">Etiqueta</th>
+                                        <th style="width: 10%;">Código</th>
+                                        <th style="width: 10%;">Tipo</th>
+                                        <th style="width: 5%;">Tam</th>
+                                        <th style="width: 5%;">Pág</th>
+                                        <th style="width: 5%;">X</th>
+                                        <th style="width: 10%;">Y</th>
+                                        <th style="width: 5%;">Trig</th>
+                                        <th style="width: 20%;">Fuente</th>
+                                        <th style="width: 5%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Rows added dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-success mt-2" id="btn_add_campo_plantilla"><i class="fa fa-plus"></i> Agregar Campo</button>
                         <input type="hidden" name="campos_plantilla_config" id="campos_plantilla_config">
                     </div>
                     <div class="form-group" style="margin-top: 1rem;">

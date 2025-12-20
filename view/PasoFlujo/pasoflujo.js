@@ -70,6 +70,9 @@ function guardaryeditar(e) {
         var pagina = row.find('.campo_pagina').val();
         var coord_x = row.find('.campo_x').val();
         var coord_y = row.find('.campo_y').val();
+        var campo_trigger = row.find('.campo_trigger').val();
+        var campo_query = row.find('.campo_query').val();
+
         if (campo_nombre && campo_codigo) {
             camposPlantilla.push({
                 campo_nombre: campo_nombre,
@@ -78,7 +81,9 @@ function guardaryeditar(e) {
                 font_size: font_size,
                 pagina: pagina,
                 coord_x: coord_x,
-                coord_y: coord_y
+                coord_y: coord_y,
+                campo_trigger: campo_trigger,
+                campo_query: campo_query
             });
         }
     });
@@ -977,32 +982,107 @@ function addCampoPlantillaRow(campo = null) {
     var coord_x = campo ? campo.coord_x : '';
     var coord_y = campo ? campo.coord_y : '';
     var font_size = campo ? campo.font_size : 10;
+    var campo_trigger = campo ? campo.campo_trigger : 0;
+    // Ensure campo_query is a string to prevent startsWith errors
+    var campo_query = campo && campo.campo_query ? String(campo.campo_query) : '';
 
     var newRow = `
         <tr>
-            <td><input type="text" class="form-control form-control-sm campo_nombre" value="${campo_nombre || ''}" placeholder="Ej: Nombre Solicitante"></td>
-            <td><input type="text" class="form-control form-control-sm campo_codigo" value="${campo_codigo || ''}" placeholder="Ej: nombre_solicitante"></td>
+            <td><input type="text" class="form-control form-control-sm" value="${campo_nombre || ''}" placeholder="Nombre" required></td>
+            <td><input type="text" class="form-control form-control-sm" value="${campo_codigo || ''}" placeholder="COD" required></td>
             <td>
                 <select class="form-control form-control-sm campo_tipo">
-                    <option value="text" ${campo && campo.campo_tipo === 'text' ? 'selected' : ''}>Texto</option>
-                    <option value="regional" ${campo && campo.campo_tipo === 'regional' ? 'selected' : ''}>Regional</option>
-                    <option value="cargo" ${campo && campo.campo_tipo === 'cargo' ? 'selected' : ''}>Cargo</option>
+                    <option value="text" ${campo && campo.campo_tipo == 'text' ? 'selected' : ''}>Texto</option>
+                    <option value="textarea" ${campo && campo.campo_tipo == 'textarea' ? 'selected' : ''}>Area de Texto</option>
+                    <option value="date" ${campo && campo.campo_tipo == 'date' ? 'selected' : ''}>Fecha</option>
+                    <option value="number" ${campo && campo.campo_tipo == 'number' ? 'selected' : ''}>Número</option>
+                    <option value="email" ${campo && campo.campo_tipo == 'email' ? 'selected' : ''}>Email</option>
+                    <option value="select" ${campo && campo.campo_tipo == 'select' ? 'selected' : ''}>Lista</option>
+                    <option value="regional" ${campo && campo.campo_tipo == 'regional' ? 'selected' : ''}>Regional</option>
+                    <option value="cargo" ${campo && campo.campo_tipo == 'cargo' ? 'selected' : ''}>Cargo</option>
                 </select>
             </td>
-            <td><input type="number" class="form-control form-control-sm campo_font_size" value="${font_size || 10}" min="6" max="72"></td>
-            <td><input type="number" class="form-control form-control-sm campo_pagina input-pagina" value="${pagina || 1}" min="1"></td>
-            <td><input type="number" class="form-control form-control-sm campo_x input-x" value="${coord_x || 0}" step="0.01"></td>
+            <td><input type="number" class="form-control form-control-sm campo_font_size" value="${font_size || 10}" style="width: 100%;"></td>
+            <td><input type="number" class="form-control form-control-sm campo_pagina input-pagina" value="${pagina || 1}" style="width: 100%;"></td>
+            <td><input type="text" class="form-control form-control-sm campo_x input-x" value="${coord_x || ''}" placeholder="X"></td>
             <td>
-                <div style="display: flex; align-items: center;">
-                    <input type="number" class="form-control form-control-sm campo_y input-y" value="${coord_y || 0}" step="0.01">
-                    <button type="button" class="btn btn-sm btn-secondary btn-selector ml-1" title="Seleccionar en PDF"><i class="fa fa-crosshairs"></i></button>
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control campo_y input-y" value="${coord_y || ''}" placeholder="Y">
+                    <span class="input-group-btn">
+                        <button class="btn btn-default btn-selector" type="button"><i class="fa fa-crosshairs"></i></button>
+                    </span>
                 </div>
+            </td>
+            <td>
+                <select class="form-control form-control-sm campo_trigger">
+                    <option value="0" ${campo_trigger == 0 ? 'selected' : ''}>No</option>
+                    <option value="1" ${campo_trigger == 1 ? 'selected' : ''}>Si</option>
+                </select>
+            </td>
+            <td>
+                <select class="form-control form-control-sm campo_fuente" style="width: 100%;">
+                    <option value="">Cargando...</option>
+                </select>
+                <input type="text" class="form-control form-control-sm campo_query_manual" value="${(campo_query && !campo_query.startsWith('PRESET_') && isNaN(campo_query)) ? campo_query.replace(/"/g, '&quot;') : ''}" placeholder="SELECT..." style="display: none; margin-top: 5px;">
+                <input type="hidden" class="form-control form-control-sm campo_query" value="${campo_query ? campo_query.replace(/"/g, '&quot;') : ''}">
             </td>
             <td><button type="button" class="btn btn-sm btn-danger btn-remove-campo"><i class="fa fa-trash"></i></button></td>
         </tr>
     `;
     var $row = $(newRow);
+
+    // Load options dynamically
+    $.post("../../controller/consulta.php?op=combo", function(data) {
+        var $select = $row.find('.campo_fuente');
+        $select.html(data);
+
+        // Legacy Support: If value is PRESET_ and not in list, add it visually so it doesn't look broken
+        if (campo_query.startsWith('PRESET_')) {
+             if ($select.find("option[value='" + campo_query + "']").length == 0) {
+                 var label = (campo_query == 'PRESET_USUARIO_CEDULA') ? 'Usuario por Cédula (Legacy)' : 
+                             (campo_query == 'PRESET_USUARIO_CORREO') ? 'Usuario por Correo (Legacy)' : campo_query;
+                 $select.append('<option value="' + campo_query + '">' + label + '</option>');
+             }
+             $select.val(campo_query);
+        } else if (campo_query && !isNaN(campo_query)) {
+             // It's an ID from tm_consulta
+             $select.val(campo_query);
+        } else if (campo_query.length > 0) {
+             // Custom SQL
+             $select.val('CUSTOM');
+             $row.find('.campo_query_manual').show();
+        }
+    });
+
     $('#tabla_campos_plantilla tbody').append($row);
+
+    // Attach handler for source change
+    $row.find('.campo_fuente').change(function () {
+        var val = $(this).val();
+        var manualInput = $(this).siblings('.campo_query_manual');
+        var hiddenInput = $(this).siblings('.campo_query');
+
+        if (val === 'CUSTOM') {
+            manualInput.show();
+            // If switching to custom, keep previous manual value or empty
+            // Check if previous value was a preset or ID, if so clear it
+            var currentHidden = hiddenInput.val();
+            if (currentHidden.startsWith('PRESET_') || !isNaN(currentHidden)) {
+                hiddenInput.val('');
+                manualInput.val('');
+            } else {
+                 hiddenInput.val(manualInput.val());
+            }
+        } else {
+            manualInput.hide();
+            hiddenInput.val(val);
+        }
+    });
+
+    // Attach handler for manual input change
+    $row.find('.campo_query_manual').on('input', function () {
+        $(this).siblings('.campo_query').val($(this).val());
+    });
 
     // Attach click handler for selector
     $row.find('.btn-selector').click(function () {
