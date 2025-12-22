@@ -634,8 +634,16 @@ class TicketService
         $siguiente_cargo_id = $siguiente_paso['cargo_id_asignado'] ?? null;
         $nuevo_asignado_info = null;
 
+        // --- LÓGICA DE ASIGNACIÓN AL CREADOR ---
+        if (isset($siguiente_paso['asignar_a_creador']) && $siguiente_paso['asignar_a_creador'] == 1) {
+            $ticket_info_creator = $this->ticketModel->listar_ticket_x_id($ticket_id);
+            $usu_asig = $ticket_info_creator['usu_id'];
+            $nuevo_asignado_info = $this->usuarioModel->get_usuario_x_id($usu_asig);
+            error_log("TicketService::actualizar_estado_ticket - Paso configurado para asignar al creador (ID: $usu_asig)");
+        }
+
         // --- LÓGICA DE PASO PARALELO (FORK) ---
-        if (isset($siguiente_paso['es_paralelo']) && $siguiente_paso['es_paralelo'] == 1) {
+        if (isset($siguiente_paso['es_paralelo']) && $siguiente_paso['es_paralelo'] == 1 && (empty($siguiente_paso['asignar_a_creador']) || $siguiente_paso['asignar_a_creador'] == 0)) {
 
             // 1. Determinar usuarios destino
             $usuarios_destino = [];
@@ -845,7 +853,7 @@ class TicketService
             $this->ticketRepository->updateTicketFlowState($ticket_id, $nuevo_usuario_asignado, $nuevo_paso_id, $ruta_id, $ruta_paso_orden);
 
             // Añadir al historial y enviar notificaciones...
-            $th_id = $this->assignmentRepository->insertAssignment($ticket_id, $nuevo_usuario_asignado, $_SESSION['usu_id'], $nuevo_paso_id, 'Ticket trasladado');
+            $th_id = $this->assignmentRepository->insertAssignment($ticket_id, $nuevo_usuario_asignado, $_SESSION['usu_id'] ?? null, $nuevo_paso_id, 'Ticket trasladado');
 
             $mensaje_notificacion = "Se le ha trasladado el ticket #{$ticket_id} - {$cats_nom}.";
             $this->notificationRepository->insertNotification($nuevo_usuario_asignado, $mensaje_notificacion, $ticket_id);

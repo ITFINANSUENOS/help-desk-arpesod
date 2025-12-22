@@ -405,7 +405,20 @@ $(document).ready(function () {
             $('#cargo_id_asignado').prop('disabled', true);
             $('#cargo_id_asignado').val('').trigger('change'); // Limpiar selección
         } else {
-            $('#cargo_id_asignado').prop('disabled', false);
+            if (!$('#asignar_a_creador').is(':checked') && !$('#es_paralelo').is(':checked')) {
+                $('#cargo_id_asignado').prop('disabled', false);
+            }
+        }
+    });
+
+    $('#asignar_a_creador').change(function () {
+        if ($(this).is(":checked")) {
+            $('#cargo_id_asignado').prop('disabled', true);
+            $('#cargo_id_asignado').val('').trigger('change');
+        } else {
+            if (!$('#necesita_aprobacion_jefe').is(':checked') && !$('#es_paralelo').is(':checked')) {
+                $('#cargo_id_asignado').prop('disabled', false);
+            }
         }
     });
 
@@ -469,8 +482,8 @@ $(document).ready(function () {
             $('#cargo_id_asignado').prop('disabled', true);
             $('#cargo_id_asignado').val('').trigger('change'); // Limpiar selección
         } else {
-            // Solo habilitar si no está marcado "necesita aprobación jefe"
-            if (!$('#necesita_aprobacion_jefe').is(':checked')) {
+            // Solo habilitar si no está marcado "necesita aprobación jefe" NI "asignar a creador"
+            if (!$('#necesita_aprobacion_jefe').is(':checked') && !$('#asignar_a_creador').is(':checked')) {
                 $('#cargo_id_asignado').prop('disabled', false);
             }
         }
@@ -549,6 +562,13 @@ function editar(paso_id) {
         } else {
             $('#necesita_aprobacion_jefe').prop('checked', false);
             $('#cargo_id_asignado').prop('disabled', false);
+        }
+
+        if (data.asignar_a_creador == 1) {
+            $('#asignar_a_creador').prop('checked', true);
+            $('#cargo_id_asignado').prop('disabled', true);
+        } else {
+            $('#asignar_a_creador').prop('checked', false);
         }
 
         if (data.es_paralelo == 1) {
@@ -678,6 +698,7 @@ $(document).on("click", "#btnnuevopaso", function () {
     $('#es_aprobacion').prop('checked', false);
     $('#permite_cerrar').prop('checked', false);
     $('#necesita_aprobacion_jefe').prop('checked', false);
+    $('#asignar_a_creador').prop('checked', false);
     $('#es_paralelo').prop('checked', false);
     $('#usuarios_especificos_container').hide();
     $('#usuarios_especificos').val(null).trigger('change');
@@ -729,6 +750,7 @@ $('#modalnuevopaso').on('hidden.bs.modal', function () {
     $('#es_aprobacion').prop('checked', false);
     $('#permite_cerrar').prop('checked', false);
     $('#necesita_aprobacion_jefe').prop('checked', false);
+    $('#asignar_a_creador').prop('checked', false);
     $('#es_paralelo').prop('checked', false);
     $('#usuarios_especificos_container').hide();
     $('#usuarios_especificos').val(null).trigger('change');
@@ -1032,25 +1054,25 @@ function addCampoPlantillaRow(campo = null) {
     var $row = $(newRow);
 
     // Load options dynamically
-    $.post("../../controller/consulta.php?op=combo", function(data) {
+    $.post("../../controller/consulta.php?op=combo", function (data) {
         var $select = $row.find('.campo_fuente');
         $select.html(data);
 
         // Legacy Support: If value is PRESET_ and not in list, add it visually so it doesn't look broken
         if (campo_query.startsWith('PRESET_')) {
-             if ($select.find("option[value='" + campo_query + "']").length == 0) {
-                 var label = (campo_query == 'PRESET_USUARIO_CEDULA') ? 'Usuario por Cédula (Legacy)' : 
-                             (campo_query == 'PRESET_USUARIO_CORREO') ? 'Usuario por Correo (Legacy)' : campo_query;
-                 $select.append('<option value="' + campo_query + '">' + label + '</option>');
-             }
-             $select.val(campo_query);
+            if ($select.find("option[value='" + campo_query + "']").length == 0) {
+                var label = (campo_query == 'PRESET_USUARIO_CEDULA') ? 'Usuario por Cédula (Legacy)' :
+                    (campo_query == 'PRESET_USUARIO_CORREO') ? 'Usuario por Correo (Legacy)' : campo_query;
+                $select.append('<option value="' + campo_query + '">' + label + '</option>');
+            }
+            $select.val(campo_query);
         } else if (campo_query && !isNaN(campo_query)) {
-             // It's an ID from tm_consulta
-             $select.val(campo_query);
+            // It's an ID from tm_consulta
+            $select.val(campo_query);
         } else if (campo_query.length > 0) {
-             // Custom SQL
-             $select.val('CUSTOM');
-             $row.find('.campo_query_manual').show();
+            // Custom SQL
+            $select.val('CUSTOM');
+            $row.find('.campo_query_manual').show();
         }
     });
 
@@ -1071,7 +1093,7 @@ function addCampoPlantillaRow(campo = null) {
                 hiddenInput.val('');
                 manualInput.val('');
             } else {
-                 hiddenInput.val(manualInput.val());
+                hiddenInput.val(manualInput.val());
             }
         } else {
             manualInput.hide();

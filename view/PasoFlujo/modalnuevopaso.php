@@ -81,6 +81,10 @@
                         <label for="es_paralelo">¿Es un paso paralelo?</label>
                     </div>
                     <div class="checkbox" style="margin-top: 1rem;">
+                        <input type="checkbox" id="asignar_a_creador" name="asignar_a_creador" value="1">
+                        <label for="asignar_a_creador">¿Asignar al Creador del Ticket?</label>
+                    </div>
+                    <div class="checkbox" style="margin-top: 1rem;">
                         <input type="checkbox" id="requiere_firma" name="requiere_firma" value="1">
                         <label for="requiere_firma">¿Requiere Firma Digital?</label>
                     </div>

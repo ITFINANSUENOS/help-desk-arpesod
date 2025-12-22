@@ -31,11 +31,11 @@ class FlujoPaso extends Conectar
     }
 
 
-    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma, $requiere_campos_plantilla, $campo_id_referencia_jefe = null)
+    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma, $requiere_campos_plantilla, $campo_id_referencia_jefe = null, $asignar_a_creador = 0)
     {
         $conectar = parent::conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, paso_nom_adjunto, permite_cerrar, necesita_aprobacion_jefe, es_paralelo, requiere_firma, requiere_campos_plantilla, est, campo_id_referencia_jefe) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
+        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, paso_nom_adjunto, permite_cerrar, necesita_aprobacion_jefe, es_paralelo, requiere_firma, requiere_campos_plantilla, est, campo_id_referencia_jefe, asignar_a_creador) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $flujo_id);
         $sql->bindValue(2, $paso_orden);
@@ -58,6 +58,7 @@ class FlujoPaso extends Conectar
         } else {
             $sql->bindValue(16, $campo_id_referencia_jefe);
         }
+        $sql->bindValue(17, $asignar_a_creador);
         $sql->execute();
         return $conectar->lastInsertId();
     }
@@ -74,11 +75,11 @@ class FlujoPaso extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma, $requiere_campos_plantilla, $campo_id_referencia_jefe = null)
+    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma, $requiere_campos_plantilla, $campo_id_referencia_jefe = null, $asignar_a_creador = 0)
     {
         $conectar = parent::conexion();
         parent::set_names();
-        $sql = "UPDATE tm_flujo_paso SET paso_orden=?, paso_nombre=?, cargo_id_asignado=?, paso_tiempo_habil=?, paso_descripcion=?, requiere_seleccion_manual=?, es_tarea_nacional=?, es_aprobacion=?, paso_nom_adjunto=?, permite_cerrar=?, necesita_aprobacion_jefe=?, es_paralelo=?, requiere_firma=?, requiere_campos_plantilla=?, campo_id_referencia_jefe=? WHERE paso_id=?";
+        $sql = "UPDATE tm_flujo_paso SET paso_orden=?, paso_nombre=?, cargo_id_asignado=?, paso_tiempo_habil=?, paso_descripcion=?, requiere_seleccion_manual=?, es_tarea_nacional=?, es_aprobacion=?, paso_nom_adjunto=?, permite_cerrar=?, necesita_aprobacion_jefe=?, es_paralelo=?, requiere_firma=?, requiere_campos_plantilla=?, campo_id_referencia_jefe=?, asignar_a_creador=? WHERE paso_id=?";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_orden);
         $sql->bindValue(2, $paso_nombre);
@@ -100,7 +101,8 @@ class FlujoPaso extends Conectar
         } else {
             $sql->bindValue(15, $campo_id_referencia_jefe);
         }
-        $sql->bindValue(16, $paso_id);
+        $sql->bindValue(16, $asignar_a_creador);
+        $sql->bindValue(17, $paso_id);
         $sql->execute();
         return $resultado = $sql->fetchAll();
     }
@@ -175,7 +177,7 @@ class FlujoPaso extends Conectar
                 $font_size = isset($campo['font_size']) ? $campo['font_size'] : 10;
                 $campo_trigger = isset($campo['campo_trigger']) ? $campo['campo_trigger'] : 0;
                 $campo_query = isset($campo['campo_query']) ? $campo['campo_query'] : null;
-                
+
                 $campoModel->insert_campo($paso_id, $campo['campo_nombre'], $campo['campo_codigo'], $campo['coord_x'], $campo['coord_y'], $campo['pagina'], $campo['campo_tipo'], $font_size, $campo_trigger, $campo_query);
             }
         }
