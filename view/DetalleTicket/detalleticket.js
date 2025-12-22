@@ -1040,6 +1040,7 @@ function listarDetalle(tick_id) {
         // El último paso se redefine: no hay decisiones, no hay sig. paso lineal, Y no es un paso de selección de usuario
         var isLastStep = !hasDecisions && !hasNextLinear && !isSelectionStep;
         var canCloseStep = (pasoInfo && pasoInfo.permite_cerrar == 1);
+        var forceClose = (pasoInfo && pasoInfo.cerrar_ticket_obligatorio == 1);
 
         // Guardar flags en el contenedor para consultas posteriores (event handlers)
         $('#boxdetalleticket').data('isAssigned', isAssigned);
@@ -1076,8 +1077,16 @@ function listarDetalle(tick_id) {
         // Solo el usuario asignado puede ver/usar controles de avance o cierre
         if (isAssigned) {
 
+            // NUEVO: Si es obligatoria la clausura del ticket en este paso (Terminal forzado)
+            if (forceClose) {
+                $('#btncerrarticket').show().prop('disabled', false);
+                $('#panel_checkbox_flujo').hide();
+                $('#panel_seleccion_usuario').hide();
+                $('#panel_aprobacion').hide();
+                $('#checkbox_avanzar_flujo').prop('disabled', true).hide();
+            }
             // Si es un paso de aprobación, ya mostramos el panel. Ocultar el resto.
-            if (isApprovalStep) {
+            else if (isApprovalStep) {
                 $('#panel_checkbox_flujo').hide();
                 $('#panel_seleccion_usuario').hide();
                 $('#btncerrarticket').hide();
@@ -1424,7 +1433,7 @@ function loadStepFields(pasoId) {
 }
 // --- LOGICA DE ETIQUETAS ---
 
-$(document).ready(function() {
+$(document).ready(function () {
     initEtiquetas();
 });
 
@@ -1434,14 +1443,14 @@ function initEtiquetas() {
     // Inicializar Select2 con formato para los badges
     $('#ticket_etiquetas').select2({
         placeholder: "Agregar etiqueta...",
-        tags: false, 
+        tags: false,
         tokenSeparators: [','],
         templateSelection: formatEtiquetaState,
         templateResult: formatEtiquetaState
     });
 
     // Cargar todas las etiquetas disponibles
-    loadEtiquetasDisponibles(function() {
+    loadEtiquetasDisponibles(function () {
         // Cargar etiquetas asignadas al ticket actual una vez cargado el combo
         loadEtiquetasAsignadas(tick_id);
     });
@@ -1450,10 +1459,10 @@ function initEtiquetas() {
     $('#ticket_etiquetas').on('select2:select', function (e) {
         var eti_id = e.params.data.id;
         var usu_id = $('#user_idx').val();
-         // Evitar peticiones si no hay ID valido
+        // Evitar peticiones si no hay ID valido
         if (!eti_id) return;
 
-        $.post("../../controller/etiqueta.php?op=asignar", { tick_id: tick_id, eti_id: eti_id, usu_id: usu_id }, function(data) {
+        $.post("../../controller/etiqueta.php?op=asignar", { tick_id: tick_id, eti_id: eti_id, usu_id: usu_id }, function (data) {
             console.log("Etiqueta asignada: " + data);
         });
     });
@@ -1463,30 +1472,30 @@ function initEtiquetas() {
         var eti_id = e.params.data.id;
         if (!eti_id) return;
 
-        $.post("../../controller/etiqueta.php?op=desligar", { tick_id: tick_id, eti_id: eti_id }, function(data) {
+        $.post("../../controller/etiqueta.php?op=desligar", { tick_id: tick_id, eti_id: eti_id }, function (data) {
             console.log("Etiqueta desligada: " + data);
         });
     });
 
     // Abrir modal
-    $('#btn_gestionar_etiquetas').click(function() {
+    $('#btn_gestionar_etiquetas').click(function () {
         $('#modal_crear_etiqueta').modal('show');
         renderListaEtiquetasExistentes();
     });
 
     // Guardar nueva etiqueta desde modal
-    $('#etiqueta_form').on('submit', function(e) {
+    $('#etiqueta_form').on('submit', function (e) {
         e.preventDefault();
         var formData = new FormData(this);
         // op=guardar por GET en url
-        
+
         $.ajax({
             url: "../../controller/etiqueta.php?op=guardar",
             type: "POST",
             data: formData,
             contentType: false,
             processData: false,
-            success: function(response){
+            success: function (response) {
                 if (response == "1") {
                     swal("Éxito", "Etiqueta creada correctamente", "success");
                     $('#etiqueta_form')[0].reset();
@@ -1494,11 +1503,11 @@ function initEtiquetas() {
                     // Recargar combo manteniendo seleccion
                     // Primero guardamos lo seleccionado
                     var currentSelection = $('#ticket_etiquetas').val();
-                    
-                    loadEtiquetasDisponibles(function() {
-                         // Restaurar seleccion (aunque al recargar combo se pierde selection visual, val() lo restaura si los options existen)
-                         // Pero mejor volver a cargar asignadas para asegurar consistencia
-                         loadEtiquetasAsignadas(tick_id);
+
+                    loadEtiquetasDisponibles(function () {
+                        // Restaurar seleccion (aunque al recargar combo se pierde selection visual, val() lo restaura si los options existen)
+                        // Pero mejor volver a cargar asignadas para asegurar consistencia
+                        loadEtiquetasAsignadas(tick_id);
                     });
                 } else {
                     swal("Error", "No se pudo crear la etiqueta", "error");
@@ -1510,18 +1519,18 @@ function initEtiquetas() {
 
 function formatEtiquetaState(state) {
     if (!state.id) { return state.text; }
-    
+
     // Obtener color del atributo data-color del option
     var color = $(state.element).attr('data-color');
     // Si no tiene attr (e.g. initial load search), intentar buscar en objeto original si paso por AJAX (no es el caso aquí, es combo renderizado)
     // Select2 copia atributos del option al objeto data en versiones recientes, o accedemos via state.element
-    
+
     if (!color) color = 'secondary';
-    
+
     var labelClass = "label label-" + color;
-    if (color == "secondary") labelClass = "label label-default"; 
+    if (color == "secondary") labelClass = "label label-default";
     if (color == "dark") labelClass = "label label-primary";
-    
+
     var $state = $(
         '<span class="' + labelClass + '">' + state.text + '</span>'
     );
@@ -1534,19 +1543,19 @@ function loadEtiquetasDisponibles(callback) {
         // Trigger change para que select2 se entere de los nuevos options?
         // No necesario si solo reemplazamos html, pero si queremos refrescar UI...
         $('#ticket_etiquetas').trigger('change.select2'); // Esto podría borrar la selección visual si no controlamos
-        
+
         if (callback) callback();
     });
 }
 
 function loadEtiquetasAsignadas(tick_id) {
-     $.post("../../controller/etiqueta.php?op=listar_x_ticket", { tick_id: tick_id }, function (data) {
+    $.post("../../controller/etiqueta.php?op=listar_x_ticket", { tick_id: tick_id }, function (data) {
         var assigned = JSON.parse(data);
         var selectedIds = [];
-        assigned.forEach(function(tag) {
+        assigned.forEach(function (tag) {
             selectedIds.push(tag.eti_id);
         });
-        $('#ticket_etiquetas').val(selectedIds).trigger('change'); 
+        $('#ticket_etiquetas').val(selectedIds).trigger('change');
         // Nota: trigger('change') es suficiente para Select2 visual update. 
         // PERO disparará el evento 'select2:select'? 
         // En Select2 v4, val().trigger('change') NO dispara 'select2:select'. 
@@ -1559,15 +1568,15 @@ function renderListaEtiquetasExistentes() {
     // Reutilizar el combo para listar en el modal
     var options = $('#ticket_etiquetas option');
     var html = '';
-    options.each(function() {
+    options.each(function () {
         var color = $(this).attr('data-color');
         var text = $(this).text();
         // Skip placeholders if any
         if ($(this).val()) {
             var badgeClass = "label label-" + (color == 'secondary' ? 'default' : color);
-            html += '<li class="list-group-item d-flex justify-content-between align-items-center">' + 
-                    '<span class="' + badgeClass + '">' + text + '</span>' +
-                    '</li>';
+            html += '<li class="list-group-item d-flex justify-content-between align-items-center">' +
+                '<span class="' + badgeClass + '">' + text + '</span>' +
+                '</li>';
         }
     });
     $('#lista_etiquetas_existentes').html(html);

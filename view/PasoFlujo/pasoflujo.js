@@ -571,6 +571,12 @@ function editar(paso_id) {
             $('#asignar_a_creador').prop('checked', false);
         }
 
+        if (data.cerrar_ticket_obligatorio == 1) {
+            $('#cerrar_ticket_obligatorio').prop('checked', true);
+        } else {
+            $('#cerrar_ticket_obligatorio').prop('checked', false);
+        }
+
         if (data.es_paralelo == 1) {
             $('#es_paralelo').prop('checked', true);
             $('#usuarios_especificos_container').show();

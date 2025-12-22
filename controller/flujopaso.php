@@ -44,6 +44,7 @@ switch ($_GET["op"]) {
         $requiere_firma = isset($_POST['requiere_firma']) ? 1 : 0;
         $requiere_campos_plantilla = isset($_POST['requiere_campos_plantilla']) ? 1 : 0;
         $asignar_a_creador = isset($_POST['asignar_a_creador']) ? 1 : 0;
+        $cerrar_ticket_obligatorio = isset($_POST['cerrar_ticket_obligatorio']) ? 1 : 0;
 
         $paso_nom_adjunto = '';
         if (isset($_FILES['paso_nom_adjunto']) && $_FILES['paso_nom_adjunto']['name'] != '') {
@@ -81,7 +82,8 @@ switch ($_GET["op"]) {
                 $requiere_firma,
                 $requiere_campos_plantilla,
                 $campo_id_referencia_jefe,
-                $asignar_a_creador
+                $asignar_a_creador,
+                $cerrar_ticket_obligatorio
             );
         } else {
             $paso_id = $_POST['paso_id'];
@@ -102,7 +104,8 @@ switch ($_GET["op"]) {
                 $requiere_firma,
                 $requiere_campos_plantilla,
                 $campo_id_referencia_jefe,
-                $asignar_a_creador
+                $asignar_a_creador,
+                $cerrar_ticket_obligatorio
             );
         }
 
@@ -211,6 +214,7 @@ switch ($_GET["op"]) {
             $output['paso_nom_adjunto'] = isset($datos['paso_nom_adjunto']) ? $datos['paso_nom_adjunto'] : null;
             $output['requiere_campos_plantilla'] = isset($datos['requiere_campos_plantilla']) ? $datos['requiere_campos_plantilla'] : 0;
             $output['asignar_a_creador'] = isset($datos['asignar_a_creador']) ? $datos['asignar_a_creador'] : 0;
+            $output['cerrar_ticket_obligatorio'] = isset($datos['cerrar_ticket_obligatorio']) ? $datos['cerrar_ticket_obligatorio'] : 0;
             echo json_encode($output);
         }
         break;

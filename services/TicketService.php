@@ -621,7 +621,16 @@ class TicketService
     {
         error_log("TicketService::actualizar_estado_ticket - Called. Ticket: $ticket_id, Nuevo Paso: $nuevo_paso_id");
 
-        $cats_nom = $this->ticketModel->listar_ticket_x_id($ticket_id)['cats_nom'];
+        $ticket_info_current = $this->ticketModel->listar_ticket_x_id($ticket_id);
+        if ($ticket_info_current['paso_actual_id']) {
+            $current_step_info = $this->flujoPasoModel->get_paso_por_id($ticket_info_current['paso_actual_id']);
+            if ($current_step_info && isset($current_step_info['cerrar_ticket_obligatorio']) && $current_step_info['cerrar_ticket_obligatorio'] == 1) {
+                error_log("TicketService::actualizar_estado_ticket - TENTATIVA DE EVASIÓN: El paso actual (" . $current_step_info['paso_nombre'] . ") obliga el cierre. No se puede avanzar.");
+                throw new Exception("Acción no permitida: El paso actual requiere el cierre obligatorio del ticket.");
+            }
+        }
+
+        $cats_nom = $ticket_info_current['cats_nom'];
 
         $siguiente_paso = $this->flujoPasoModel->get_paso_por_id($nuevo_paso_id);
         if (!$siguiente_paso) {

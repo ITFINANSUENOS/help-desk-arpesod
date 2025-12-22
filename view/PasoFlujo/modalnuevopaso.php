@@ -73,6 +73,10 @@
                         <label for="permite_cerrar">¿Permite cerrar el ticket en este paso?</label>
                     </div>
                     <div class="checkbox" style="margin-top: 1rem;">
+                        <input type="checkbox" id="cerrar_ticket_obligatorio" name="cerrar_ticket_obligatorio" value="1">
+                        <label for="cerrar_ticket_obligatorio">¿Obligar cierre en este paso (Terminal)?</label>
+                    </div>
+                    <div class="checkbox" style="margin-top: 1rem;">
                         <input type="checkbox" id="necesita_aprobacion_jefe" name="necesita_aprobacion_jefe" value="1">
                         <label for="necesita_aprobacion_jefe">¿Necesita Aprobación Jefe Inmediato?</label>
                     </div>
