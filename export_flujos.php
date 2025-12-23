@@ -66,7 +66,8 @@ $headers = [
     'DESCRIPCIÓN',
     'TIPO',
     'CONDICIÓN',
-    'DESTINO/SIGUIENTE'
+    'ACCIÓN TRANSICIÓN',
+    'DETALLE DESTINO'
 ];
 
 $col = 'A';
@@ -83,7 +84,7 @@ $headerStyle = [
     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THICK, 'color' => ['rgb' => 'FFFFFF']]]
 ];
-$sheet->getStyle('A1:M1')->applyFromArray($headerStyle);
+$sheet->getStyle('A1:N1')->applyFromArray($headerStyle);
 $sheet->getRowDimension(1)->setRowHeight(30);
 
 $row = 2;
@@ -140,6 +141,7 @@ foreach ($flujos as $flujo) {
             'desc' => cleanHtml($flujo['cats_descrip']),
             'tipo' => 'Inicio',
             'cond' => 'N/A',
+            'accion' => 'Inicio',
             'dest' => 'Siguiente: Paso 1'
         ];
     }
@@ -164,6 +166,7 @@ foreach ($flujos as $flujo) {
             'desc' => '',
             'tipo' => '',
             'cond' => '',
+            'accion' => '',
             'dest' => ''
         ];
     } else {
@@ -225,7 +228,8 @@ foreach ($flujos as $flujo) {
                 foreach ($transiciones as $trans) {
                     $destino = "";
                     if (!empty($trans['paso_destino'])) {
-                        $destino = "Ir a Paso " . $trans['orden_destino'] . ": " . $trans['paso_destino'];
+                        $accion = "Ir a Paso";
+                        $destino = "Paso " . $trans['orden_destino'] . ": " . $trans['paso_destino'];
                         $flujo_rows[] = [
                             'orden' => $paso['paso_orden'],
                             'paso' => $paso['paso_nombre'],
@@ -233,12 +237,14 @@ foreach ($flujos as $flujo) {
                             'desc' => $desc_paso,
                             'tipo' => $tipo_paso,
                             'cond' => $trans['condicion_nombre'],
+                            'accion' => $accion,
                             'dest' => $destino,
                             'is_decision' => true
                         ];
                     } elseif (!empty($trans['ruta_nombre'])) {
                         // === EXPANSION DE RUTA ===
-                        $destino = "Ir a Ruta: " . $trans['ruta_nombre'];
+                        $accion = "Ir a Ruta";
+                        $destino = "Ruta: " . $trans['ruta_nombre'];
 
                         $flujo_rows[] = [
                             'orden' => $paso['paso_orden'],
@@ -247,6 +253,7 @@ foreach ($flujos as $flujo) {
                             'desc' => $desc_paso,
                             'tipo' => $tipo_paso,
                             'cond' => $trans['condicion_nombre'],
+                            'accion' => $accion,
                             'dest' => $destino,
                             'is_decision' => true
                         ];
@@ -269,7 +276,8 @@ foreach ($flujos as $flujo) {
                                 'desc' => cleanHtml($pr['paso_descripcion']),
                                 'tipo' => "Paso de Ruta",
                                 'cond' => "Parte de Ruta",
-                                'dest' => "Siguiente paso en ruta o fin",
+                                'accion' => "Pasos de Ruta",
+                                'dest' => "Ver detalle en gestión de rutas",
                                 'is_route_step' => true
                             ];
                         }
@@ -281,6 +289,7 @@ foreach ($flujos as $flujo) {
                             'desc' => $desc_paso,
                             'tipo' => $tipo_paso,
                             'cond' => $trans['condicion_nombre'],
+                            'accion' => "Error",
                             'dest' => "Destino no encontrado",
                             'is_decision' => true
                         ];
@@ -295,7 +304,8 @@ foreach ($flujos as $flujo) {
                 $stmt_next->execute([$flujo_id, $paso['paso_orden']]);
                 $next = $stmt_next->fetch(PDO::FETCH_ASSOC);
 
-                $destino = $next ? "Siguiente: Paso " . $next['paso_orden'] . " (" . $next['paso_nombre'] . ")" : "FIN DEL FLUJO";
+                $accion = $next ? "Continuar" : "Fin";
+                $destino = $next ? "Paso " . $next['paso_orden'] . ": " . $next['paso_nombre'] : "Fin del Flujo";
 
                 $flujo_rows[] = [
                     'orden' => $paso['paso_orden'],
@@ -304,6 +314,7 @@ foreach ($flujos as $flujo) {
                     'desc' => $desc_paso,
                     'tipo' => $tipo_paso,
                     'cond' => "N/A",
+                    'accion' => $accion,
                     'dest' => $destino,
                     'is_decision' => false
                 ];
@@ -334,17 +345,18 @@ foreach ($flujos as $flujo) {
         $sheet->setCellValue('J' . $row, $fdata['desc']);
         $sheet->setCellValue('K' . $row, $fdata['tipo']);
         $sheet->setCellValue('L' . $row, $fdata['cond']);
-        $sheet->setCellValue('M' . $row, $fdata['dest']);
+        $sheet->setCellValue('M' . $row, $fdata['accion']);
+        $sheet->setCellValue('N' . $row, $fdata['dest']);
 
         // Estilos condicionales
         if (isset($fdata['is_decision']) && $fdata['is_decision']) {
-            $sheet->getStyle('L' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEB9C');
-            $sheet->getStyle('L' . $row)->getFont()->getColor()->setARGB('9C5700');
+            $sheet->getStyle('L' . $row . ':N' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEB9C');
+            $sheet->getStyle('L' . $row . ':N' . $row)->getFont()->getColor()->setARGB('9C5700');
         }
 
         // Estilo diferente para pasos de ruta
         if (isset($fdata['is_route_step']) && $fdata['is_route_step']) {
-            $sheet->getStyle('G' . $row . ':M' . $row)->getFont()->setItalic(true);
+            $sheet->getStyle('G' . $row . ':N' . $row)->getFont()->setItalic(true);
             $sheet->getStyle('H' . $row)->getFont()->getColor()->setARGB('555555');
         }
 
@@ -356,7 +368,7 @@ foreach ($flujos as $flujo) {
             ],
             'alignment' => ['vertical' => Alignment::VERTICAL_TOP, 'wrapText' => true]
         ];
-        $sheet->getStyle('A' . $row . ':M' . $row)->applyFromArray($rowStyle);
+        $sheet->getStyle('A' . $row . ':N' . $row)->applyFromArray($rowStyle);
 
         $row++;
     }
@@ -372,12 +384,12 @@ foreach ($flujos as $flujo) {
         $sheet->mergeCells("F{$startRow}:F{$endRow}");
     }
 
-    $sheet->getStyle("A{$endRow}:M{$endRow}")->getBorders()->getBottom()->setBorderStyle(Border::BORDER_MEDIUM)->setColor(new Color('000000'));
+    $sheet->getStyle("A{$endRow}:N{$endRow}")->getBorders()->getBottom()->setBorderStyle(Border::BORDER_MEDIUM)->setColor(new Color('000000'));
 }
 
 // Auto-size final adjustment (limited width)
-foreach (range('A', 'M') as $colID) {
-    if (in_array($colID, ['D', 'E', 'F', 'I', 'J', 'M'])) {
+foreach (range('A', 'N') as $colID) {
+    if (in_array($colID, ['D', 'E', 'F', 'I', 'J', 'N'])) {
         $sheet->getColumnDimension($colID)->setWidth(35);
     } else {
         $sheet->getColumnDimension($colID)->setAutoSize(true);
