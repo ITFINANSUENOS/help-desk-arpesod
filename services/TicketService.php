@@ -579,14 +579,14 @@ class TicketService
             error_log("TicketService::handleDynamicFields - Failed to copy template.");
         }
     }
-    public function avanzar_ticket_en_ruta($ticket)
+    public function avanzar_ticket_en_ruta($ticket, $usu_asig = null)
     {
         $ruta_paso_orden_actual = $ticket["ruta_paso_orden"];
         $siguiente_orden = $ruta_paso_orden_actual + 1;
         $siguiente_paso_info = $this->rutaPasoModel->get_paso_por_orden($ticket["ruta_id"], $siguiente_orden);
 
         if ($siguiente_paso_info) {
-            return $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], $ticket["ruta_id"], $siguiente_orden, null);
+            return $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], $ticket["ruta_id"], $siguiente_orden, $usu_asig);
         } else {
             $this->cerrar_ticket($ticket['tick_id'], "Ruta completada.");
             return null;
@@ -629,11 +629,11 @@ class TicketService
         }
     }
 
-    public function avanzar_ticket_lineal($ticket)
+    public function avanzar_ticket_lineal($ticket, $usu_asig = null)
     {
         $siguiente_paso_info = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
         if ($siguiente_paso_info) {
-            return $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, null);
+            return $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, $usu_asig);
         } else {
             $this->cerrar_ticket($ticket['tick_id'], "Flujo principal completado.");
             return null;
@@ -1373,10 +1373,10 @@ class TicketService
                     $nuevo_paso_id_result = $this->iniciar_ruta_desde_decision($ticket, $decision_tomada, $usu_asig);
                 } elseif (!empty($ticket["ruta_id"])) {
                     // CASO 2: El ticket YA ESTÁ en una ruta y no se tomó decisión explícita. Avanzamos en la ruta.
-                    $nuevo_paso_id_result = $this->avanzar_ticket_en_ruta($ticket);
+                    $nuevo_paso_id_result = $this->avanzar_ticket_en_ruta($ticket, $usu_asig);
                 } elseif ($avanzar_lineal) {
                     // CASO 3: El usuario quiere avanzar en un flujo sin decisiones.
-                    $nuevo_paso_id_result = $this->avanzar_ticket_lineal($ticket);
+                    $nuevo_paso_id_result = $this->avanzar_ticket_lineal($ticket, $usu_asig);
                 }
                 $reassigned = true; // Si entramos en este bloque, significa que se avanzó/reasignó.
             } else {
