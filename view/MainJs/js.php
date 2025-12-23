@@ -3,6 +3,7 @@
 <script src="../../public/js/lib/bootstrap/bootstrap.min.js?v=<?php echo time(); ?>"></script>
 <script src="../../public/js/plugins.js?v=<?php echo time(); ?>"></script>
 <script src="../../public/js/app.js?v=<?php echo time(); ?>"></script>
+<script src="../../public/js/session_keepalive.js?v=<?php echo time(); ?>"></script>
 <script src="../../public/js/lib/datatables-net/datatables.min.js?v=<?php echo time(); ?>"></script>
 <script src="../../public/js/lib/summernote/summernote.min.js?v=<?php echo time(); ?>"></script>
 <script src="../../public/js/lib/bootstrap-sweetalert/sweetalert.min.js?v=<?php echo time(); ?>"></script>
@@ -23,9 +24,8 @@
 <script src="../../public/js/lib/match-height/jquery.matchHeight.min.js?v=<?php echo time(); ?>"></script>
 <script src="../../public/js/lib/hide-show-password/bootstrap-show-password.min.js?v=<?php echo time(); ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-        <script>mermaid.initialize({ startOnLoad: true });</script>
-
-
-
-
-    
+<script>
+        mermaid.initialize({
+                startOnLoad: true
+        });
+</script>
