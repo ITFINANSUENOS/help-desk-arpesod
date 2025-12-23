@@ -606,6 +606,22 @@ function enviarDetalle(signatureData = null) {
                 } else {
                     setTimeout(function () { location.reload(); }, 1600);
                 }
+            } else if (data.status === 'require_selection') {
+                swal("Atención", data.message, "warning");
+                
+                var $select = $('#usuario_seleccionado');
+                $select.empty();
+                $select.append('<option value=""></option>'); // Vacío para placeholder
+                
+                if (data.candidates && data.candidates.length > 0) {
+                     $.each(data.candidates, function(i, user) {
+                         $select.append('<option value="' + user.usu_id + '">' + user.usu_nom + ' ' + user.usu_ape + '</option>');
+                     });
+                }
+                
+                $('#panel_seleccion_usuario').show();
+                // Asegurarse de que el botón se actualice
+                updateEnviarButtonState();
             } else {
                 swal("Error", data.message || "No se pudo procesar la acción.", "error");
             }

@@ -78,6 +78,15 @@ class TicketService
         $this->novedadRepository = new NovedadRepository($pdo);
     }
 
+    private function resolveCandidates($cargo_id, $reg_id, $is_national)
+    {
+        if ($is_national) {
+            return $this->usuarioModel->get_usuarios_por_cargo($cargo_id);
+        } else {
+            return $this->usuarioModel->get_usuarios_por_cargo_y_regional_all($cargo_id, $reg_id);
+        }
+    }
+
     public function resolveAssigned($flujo, $usu_id_creador, $ticket_reg_id, $postData = [])
     {
         $datos_creador = $this->usuarioModel->get_usuario_x_id($usu_id_creador);
@@ -189,14 +198,19 @@ class TicketService
                             if (!$asignado_car_id) {
                                 $errors[] = "El paso inicial no tiene cargo asignado.";
                             } else {
-                                if (!empty($paso_inicial['es_tarea_nacional']) && $paso_inicial['es_tarea_nacional'] == 1) {
-                                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($asignado_car_id);
-                                } else {
-                                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($asignado_car_id, $ticket_reg_id);
-                                }
+                                $is_national = (!empty($paso_inicial['es_tarea_nacional']) && $paso_inicial['es_tarea_nacional'] == 1);
+                                $candidates = $this->resolveCandidates($asignado_car_id, $ticket_reg_id, $is_national);
 
-                                if ($nuevo_asignado_info && !empty($nuevo_asignado_info['usu_id'])) {
-                                    $usu_asig_final = $nuevo_asignado_info['usu_id'];
+                                if (count($candidates) > 1) {
+                                    return [
+                                        'usu_asig_final' => null,
+                                        'paso_actual_id_final' => $paso_actual_id_final,
+                                        'candidates' => $candidates, // Nueva clave
+                                        'require_selection' => true,
+                                        'errors' => []
+                                    ];
+                                } elseif (count($candidates) == 1) {
+                                    $usu_asig_final = $candidates[0]['usu_id'];
                                 } else {
                                     $errors[] = "No se encontró un usuario automático para cargo_id {$asignado_car_id} (paso inicial).";
                                 }
@@ -284,6 +298,15 @@ class TicketService
                     $usu_asig_final = $usu_asig;
                 }
             } else {
+                if (isset($resolveResult['require_selection']) && $resolveResult['require_selection']) {
+                    $this->pdo->rollBack();
+                    return [
+                        "success" => false,
+                        "require_selection" => true,
+                        "candidates" => $resolveResult['candidates'],
+                        "message" => "Varios usuarios encontrados para el paso inicial. Seleccione uno."
+                    ];
+                }
                 $usu_asig_final = $resolveResult['usu_asig_final'];
             }
 
@@ -839,10 +862,21 @@ class TicketService
                 $nuevo_asignado_info = $usu_asig;
             } else {
                 if ($siguiente_paso['es_tarea_nacional'] == 1) {
-                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($siguiente_cargo_id);
+                    $is_national = true;
+                    $regional_origen_id = null; // Ignored in national? or needed? resolveCandidates expects it but might not use it if national
                 } else {
+                    $is_national = false;
                     $regional_origen_id = $this->ticketModel->get_ticket_region($ticket_id);
-                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
+                }
+
+                $candidates = $this->resolveCandidates($siguiente_cargo_id, $regional_origen_id, $is_national);
+
+                if (count($candidates) > 1) {
+                    throw new Exception("REQ_SELECTION:" . json_encode($candidates));
+                } elseif (count($candidates) == 1) {
+                    $nuevo_asignado_info = $candidates[0];
+                } else {
+                    $nuevo_asignado_info = null;
                 }
             }
         }
@@ -1361,8 +1395,20 @@ class TicketService
             echo json_encode(["status" => "success", "reassigned" => $reassigned]);
         } catch (Exception $e) {
             $this->pdo->rollBack();
-            // Es importante devolver el mensaje de error para depurar
-            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+            $msg = $e->getMessage();
+            if (strpos($msg, 'REQ_SELECTION:') === 0) {
+                $json_candidates = substr($msg, 14);
+                echo json_encode([
+                    "status" => "require_selection",
+                    "message" => "Varios usuarios encontrados para el siguiente paso. Seleccione uno.",
+                    "candidates" => json_decode($json_candidates)
+                ]);
+            } else {
+                echo json_encode([
+                    "status" => "error",
+                    "message" => $e->getMessage()
+                ]);
+            }
         }
     }
 
