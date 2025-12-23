@@ -2245,4 +2245,37 @@ class TicketService
             }
         }
     }
+    public function getNextStepCandidates($ticket_id)
+    {
+        $ticket = $this->ticketModel->listar_ticket_x_id($ticket_id);
+        if (!$ticket) return [];
+
+        $siguiente_paso = null;
+        $is_national = false;
+        $siguiente_cargo_id = null;
+
+        // 1. Determine Next Step (Logic copied from avanzar methods)
+        if (!empty($ticket['ruta_id'])) {
+            $ruta_paso_orden_actual = $ticket["ruta_paso_orden"];
+            $siguiente_orden = $ruta_paso_orden_actual + 1;
+            $siguiente_paso = $this->rutaPasoModel->get_paso_por_orden($ticket["ruta_id"], $siguiente_orden);
+        } else {
+            // Linear flow
+            $siguiente_paso = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
+        }
+
+        if (!$siguiente_paso) {
+            return []; // End of flow
+        }
+
+        $siguiente_cargo_id = $siguiente_paso['cargo_id_asignado'];
+        $is_national = (!empty($siguiente_paso['es_tarea_nacional']) && $siguiente_paso['es_tarea_nacional'] == 1);
+
+        $regional_origen_id = null;
+        if (!$is_national) {
+            $regional_origen_id = $this->ticketModel->get_ticket_region($ticket_id);
+        }
+
+        return $this->resolveCandidates($siguiente_cargo_id, $regional_origen_id, $is_national);
+    }
 }

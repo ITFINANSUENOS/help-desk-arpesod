@@ -193,4 +193,9 @@ switch ($_GET["op"]) {
         $usuarios = $ticketService->getUsuariosPorPaso($_POST['paso_id']);
         echo json_encode($usuarios);
         break;
+
+    case "check_next_step_candidates":
+        $result = $ticketService->getNextStepCandidates($_POST['tick_id']);
+        echo json_encode($result);
+        break;
 }

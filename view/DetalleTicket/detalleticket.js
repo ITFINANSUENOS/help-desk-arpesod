@@ -15,6 +15,49 @@ $(document).ready(function () {
 
     $('#usuario_seleccionado').on('change', updateEnviarButtonState);
 
+    // Pre-emptive check for assignees when "Avanzar Flujo" is checked
+    $(document).on('change', '#checkbox_avanzar_flujo', function () {
+        var isChecked = $(this).is(':checked');
+        updateEnviarButtonState();
+
+        if (isChecked) {
+            var tick_id = getUrlParameter('ID');
+            $.post("../../controller/ticket.php?op=check_next_step_candidates", { tick_id: tick_id }, function (data) {
+                var candidates = [];
+                try {
+                    candidates = JSON.parse(data);
+                } catch (e) {
+                    console.error("Invalid JSON response", data);
+                }
+
+                if (candidates && candidates.length > 1) {
+                    // Multiple candidates found -> Require manual selection
+                    var $select = $('#usuario_seleccionado');
+                    $select.empty();
+                    $select.append('<option value="">Seleccionar...</option>');
+
+                    $.each(candidates, function (i, user) {
+                        $select.append('<option value="' + user.usu_id + '">' + user.usu_nom + ' ' + user.usu_ape + '</option>');
+                    });
+
+                    $('#panel_seleccion_usuario').show();
+                    
+                    // Show a small toast or notification? Maybe too intrusive.
+                    // Just showing the panel is enough as per requirements.
+                } else {
+                    // 0 or 1 candidate -> Automatic handling
+                    $('#panel_seleccion_usuario').hide();
+                    $('#usuario_seleccionado').empty();
+                }
+                updateEnviarButtonState();
+            });
+        } else {
+            $('#panel_seleccion_usuario').hide();
+            $('#usuario_seleccionado').empty();
+            updateEnviarButtonState();
+        }
+    });
+
     listarDetalle(tick_id);
 
     $('#tickd_descrip').summernote({
