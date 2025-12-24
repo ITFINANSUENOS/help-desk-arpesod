@@ -34,10 +34,12 @@ function cleanHtml($html)
 $sql = "SELECT 
             s.cats_id, s.cats_nom, s.cats_descrip,
             c.cat_nom,
+            p.pd_nom,
             f.flujo_id, f.flujo_nom,
             rm.regla_id
         FROM tm_subcategoria s
         INNER JOIN tm_categoria c ON s.cat_id = c.cat_id
+        LEFT JOIN td_prioridad p ON s.pd_id = p.pd_id
         INNER JOIN tm_flujo f ON s.cats_id = f.cats_id
         LEFT JOIN tm_regla_mapeo rm ON s.cats_id = rm.cats_id AND rm.est = 1
         WHERE s.est = 1 AND c.est = 1 AND f.est = 1
@@ -56,6 +58,7 @@ $sheet->setTitle('Reporte de Flujos Detallado');
 $headers = [
     'CATEGORÍA',
     'SUBCATEGORÍA',
+    'PRIORIDAD',
     'FLUJO',
     'QUIÉN CREA (CARGOS)',
     'QUIÉN CREA (PERFILES)',
@@ -333,34 +336,36 @@ foreach ($flujos as $flujo) {
         // Datos comunes (columnas A-F)
         $sheet->setCellValue('A' . $row, $flujo['cat_nom']);
         $sheet->setCellValue('B' . $row, $flujo['cats_nom']);
-        $sheet->setCellValue('C' . $row, $flujo['flujo_nom']);
-        $sheet->setCellValue('D' . $row, $creadores_cargos);
-        $sheet->setCellValue('E' . $row, $creadores_perfiles);
-        $sheet->setCellValue('F' . $row, $asignados);
+        $sheet->setCellValue('C' . $row, $flujo['pd_nom']); // Nueva Columna Prioridad
+        $sheet->setCellValue('D' . $row, $flujo['flujo_nom']);
+        $sheet->setCellValue('E' . $row, $creadores_cargos);
+        $sheet->setCellValue('F' . $row, $creadores_perfiles);
+        $sheet->setCellValue('G' . $row, $asignados);
 
-        // Datos del paso (G-M)
-        $sheet->setCellValue('G' . $row, $fdata['orden']);
-        $sheet->setCellValue('H' . $row, $fdata['paso']);
-        $sheet->setCellValue('I' . $row, $fdata['resp']);
-        $sheet->setCellValue('J' . $row, $fdata['desc']);
-        $sheet->setCellValue('K' . $row, $fdata['tipo']);
-        $sheet->setCellValue('L' . $row, $fdata['cond']);
-        $sheet->setCellValue('M' . $row, $fdata['accion']);
-        $sheet->setCellValue('N' . $row, $fdata['dest']);
+        // Datos del paso (H-N) -> Ahora desplazados por 1
+        $sheet->setCellValue('H' . $row, $fdata['orden']);
+        $sheet->setCellValue('I' . $row, $fdata['paso']);
+        $sheet->setCellValue('J' . $row, $fdata['resp']);
+        $sheet->setCellValue('K' . $row, $fdata['desc']);
+        $sheet->setCellValue('L' . $row, $fdata['tipo']);
+        $sheet->setCellValue('M' . $row, $fdata['cond']);
+        $sheet->setCellValue('N' . $row, $fdata['accion']);
+        $sheet->setCellValue('O' . $row, $fdata['dest']); // Ojo: Ahora llega hasta O
 
-        // Estilos condicionales
+        // Estilos condicionales (Columnas M, N, O ahora)
+        // Antes era L-N (Cond, Accion, Dest) -> Ahora M-O
         if (isset($fdata['is_decision']) && $fdata['is_decision']) {
-            $sheet->getStyle('L' . $row . ':N' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEB9C');
-            $sheet->getStyle('L' . $row . ':N' . $row)->getFont()->getColor()->setARGB('9C5700');
+            $sheet->getStyle('M' . $row . ':O' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFEB9C');
+            $sheet->getStyle('M' . $row . ':O' . $row)->getFont()->getColor()->setARGB('9C5700');
         }
 
-        // Estilo diferente para pasos de ruta
+        // Estilo diferente para pasos de ruta (Cols H-O)
         if (isset($fdata['is_route_step']) && $fdata['is_route_step']) {
-            $sheet->getStyle('G' . $row . ':N' . $row)->getFont()->setItalic(true);
-            $sheet->getStyle('H' . $row)->getFont()->getColor()->setARGB('555555');
+            $sheet->getStyle('H' . $row . ':O' . $row)->getFont()->setItalic(true);
+            $sheet->getStyle('I' . $row)->getFont()->getColor()->setARGB('555555');
         }
 
-        // Estilo general de la fila
+        // Estilo general de la fila (A-O)
         $rowStyle = [
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $bgColor]],
             'borders' => [
@@ -368,7 +373,7 @@ foreach ($flujos as $flujo) {
             ],
             'alignment' => ['vertical' => Alignment::VERTICAL_TOP, 'wrapText' => true]
         ];
-        $sheet->getStyle('A' . $row . ':N' . $row)->applyFromArray($rowStyle);
+        $sheet->getStyle('A' . $row . ':O' . $row)->applyFromArray($rowStyle);
 
         $row++;
     }

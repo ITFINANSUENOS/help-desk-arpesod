@@ -76,6 +76,26 @@ class FlujoPaso extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
+    public function delete_pasos_por_flujo($flujo_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "UPDATE tm_flujo_paso SET est = 0 WHERE flujo_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $flujo_id);
+        $sql->execute();
+
+        // También eliminar transiciones asociadas a los pasos de ese flujo (para limpieza profunda)
+        // Esto requiere un query más complejo o hacerlo paso por paso, pero est=0 en pasos debería ocultarlo.
+        // Por seguridad, desactivamos transiciones donde el origen sea de este flujo.
+        $sql_trans = "UPDATE tm_flujo_transiciones 
+                      SET est = 0 
+                      WHERE paso_origen_id IN (SELECT paso_id FROM tm_flujo_paso WHERE flujo_id = ?)";
+        $sql_trans = $conectar->prepare($sql_trans);
+        $sql_trans->bindValue(1, $flujo_id);
+        $sql_trans->execute();
+    }
+
     public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma, $requiere_campos_plantilla, $campo_id_referencia_jefe = null, $asignar_a_creador = 0, $cerrar_ticket_obligatorio = 0)
     {
         $conectar = parent::conexion();

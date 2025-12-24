@@ -41,6 +41,9 @@ if (isset($_SESSION["usu_id"])) {
                     <a href="../../export_flujos.php" target="_blank" class="btn btn-inline btn-secondary">
                         <i class="fa fa-download"></i> Descargar Reporte
                     </a>
+                    <button type="button" id="btn_importar_v2" class="btn btn-inline btn-warning-outline" data-toggle="modal" data-target="#modalImportarV2">
+                        <i class="fa fa-upload"></i> Importar (V2)
+                    </button>
                     <button type="button" id="btnnuevoflujo" class="btn btn-inline btn-primary">Nuevo flujo</button>
                     <table id="flujo_data" class="table table-bordered table-striped table-vcenter js-dataTable-full">
                         <thead>
@@ -56,6 +59,7 @@ if (isset($_SESSION["usu_id"])) {
             </div>
         </div>
         <?php require_once('../GestionFlujo/modalnuevoflujo.php') ?>
+        <?php require_once('../GestionFlujo/modalimportar_v2.php') ?>
         <?php require_once('../MainJs/js.php') ?>
 
         <script type="text/javascript" src="../GestionFlujo/gestionflujo.js"></script>

@@ -3,7 +3,42 @@ var tabla;
 function init() {
     $("#flujo_form").on("submit", function (e) {
         guardaryeditar(e);
-    })
+    });
+
+    $("#importar_v2_form").on("submit", function (e) {
+        e.preventDefault();
+        var formData = new FormData($("#importar_v2_form")[0]);
+        // Validar tamaño archivo si lo deseas, o dejarlo al backend
+
+        $.ajax({
+            url: "../../cargues/import_reporte_flujos_v2.php", // Apunta al nuevo script
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            beforeSend: function () {
+                // Opcional: Mostrar un loader o bloquear botón
+                swal({ title: "Importando...", text: "Esto puede tomar unos segundos", imageUrl: "../../public/img/loading.gif", showConfirmButton: false });
+            },
+            success: function (datos) {
+                // 'datos' vendrá con HTML (h1, h3, ul), lo mostramos en el swal o en un modal de resultado
+                $("#importar_v2_form")[0].reset();
+                $("#modalImportarV2").modal('hide');
+                $("#flujo_data").DataTable().ajax.reload();
+
+                swal({
+                    title: "Resultado de Importación",
+                    text: datos,
+                    html: true, // Importante para renderizar el HTML que retorna el script PHP
+                    type: "info",
+                    customClass: "swal-wide" // Si necesitas que sea más ancho
+                });
+            },
+            error: function (e) {
+                swal("Error", "Ocurrió un error en la comunicación con el servidor.", "error");
+            }
+        });
+    });
 }
 
 function guardaryeditar(e) {
