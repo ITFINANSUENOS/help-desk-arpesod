@@ -17,19 +17,20 @@ $spreadsheet = new Spreadsheet();
 $sheet = $spreadsheet->getActiveSheet();
 $sheet->setTitle('Desempeño Usuarios');
 
-// 2. Encabezados
+// 2. Encabezados Summary
 $headers = [
     'REGIONAL',
     'USUARIO',
     'ROL',
-    'CARGO',               // NEW
-    'PERFILES',            // NEW
-    'TICKETS GESTIONADOS', // Count of historical assignments
-    'A TIEMPO',            // Count where estado_tiempo_paso = 'A tiempo' (or similar)
-    'ATRASADOS',           // Count where estado_tiempo_paso = 'Atrasado'
-    'NOVEDADES',           // Count where error_descrip is not null
-    'TIEMPO TOTAL (Horas)', // Sum of durations
-    'TIEMPO PROM. (Horas)' // Avg duration
+    'CARGO',
+    'PERFILES',
+    'TICKETS GESTIONADOS',
+    'A TIEMPO',
+    'ATRASADOS',
+    'ERRORES PROCESO',    // NEW
+    'ERRORES INFORMATIVO', // NEW
+    'TIEMPO TOTAL (Horas)',
+    'TIEMPO PROM. (Horas)'
 ];
 
 $col = 'A';
@@ -46,10 +47,37 @@ $headerStyle = [
     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
 ];
-$sheet->getStyle('A1:K1')->applyFromArray($headerStyle); // Updated range A1:K1
+$sheet->getStyle('A1:L1')->applyFromArray($headerStyle); // Updated Range A1:L1
 
 // 3. Data Gathering
 $conectar = Conectar::getConexion();
+
+
+// --- FETCH ERRORS (Proceso vs Informativo) ---
+$sql_errors = "SELECT 
+                usu_id_responsable, 
+                es_error_proceso, 
+                COUNT(*) as total 
+               FROM tm_ticket_error 
+               WHERE est = 1 
+               GROUP BY usu_id_responsable, es_error_proceso";
+$stmt_err = $conectar->prepare($sql_errors);
+$stmt_err->execute();
+$error_counts = $stmt_err->fetchAll(PDO::FETCH_ASSOC);
+
+$user_errors = [];
+foreach ($error_counts as $row) {
+    $uid = $row['usu_id_responsable'];
+    if (!isset($user_errors[$uid])) {
+        $user_errors[$uid] = ['proceso' => 0, 'informativo' => 0];
+    }
+    if ($row['es_error_proceso'] == 1) {
+        $user_errors[$uid]['proceso'] += $row['total'];
+    } else {
+        $user_errors[$uid]['informativo'] += $row['total'];
+    }
+}
+
 
 // Query masivo: Traer todo el historial con Cargo y datos del Ticket/Paso
 $sql = "SELECT 
@@ -125,7 +153,7 @@ foreach ($assignments_by_ticket as $tick_id => $entries) {
                 'gestionados' => 0,
                 'a_tiempo' => 0,
                 'atrasados' => 0,
-                'novedades' => 0,
+                'novedades' => 0, // Keeps historical count if needed, but we use new breakdown
                 'total_sec' => 0
             ];
         }
@@ -160,6 +188,17 @@ foreach ($assignments_by_ticket as $tick_id => $entries) {
             // Last step recorded
             if ($current['tick_estado'] == 'Cerrado' && !empty($current['fech_cierre'])) {
                 $end_time = strtotime($current['fech_cierre']);
+                // If the ticket is closed, and this is the last assignment, and the assignment date is after the closure date,
+                // it means the closure happened *after* this assignment. So, the duration for this assignment
+                // should end at the closure time.
+                // However, if the assignment date is *after* the closure date, it's an anomaly or the closure date is for the ticket, not the assignment.
+                // For simplicity, we'll assume fech_cierre is the end of the *ticket's* last activity.
+                // If the assignment is the last one, its duration ends at ticket closure.
+                // If fech_asig is after fech_cierre, it's an issue with data or logic.
+                // Let's ensure end_time is not before start_time.
+                if ($end_time < $start_time) {
+                    $end_time = $start_time; // Avoid negative duration
+                }
             } else {
                 // Still open/active: use NOW
                 $end_time = time();
@@ -175,12 +214,23 @@ foreach ($assignments_by_ticket as $tick_id => $entries) {
 
 // 4. Fill Excel
 $row = 2;
-// Ordenar por Regional luego Usuario
-usort($stats, function ($a, $b) {
+// RE-FIXING SORT LOGIC TO PRESERVE ID OR MERGE ERRORS BEFORE SORT
+// Re-building stats with ID inside
+$final_stats = [];
+foreach ($stats as $uid => $dat) {
+    $dat['usu_id'] = $uid;
+    // Merge errors here
+    $dat['err_proceso'] = $user_errors[$uid]['proceso'] ?? 0;
+    $dat['err_info'] = $user_errors[$uid]['informativo'] ?? 0;
+    $final_stats[] = $dat;
+}
+
+usort($final_stats, function ($a, $b) {
     return strcmp($a['reg_nom'], $b['reg_nom']) ?: strcmp($a['usu_nom'], $b['usu_nom']);
 });
 
-foreach ($stats as $stat) {
+
+foreach ($final_stats as $stat) {
     $avg_sec = ($stat['gestionados'] > 0) ? ($stat['total_sec'] / $stat['gestionados']) : 0;
     $total_hours = round($stat['total_sec'] / 3600, 2);
     $avg_hours = round($avg_sec / 3600, 2);
@@ -199,13 +249,17 @@ foreach ($stats as $stat) {
     $sheet->setCellValue('F' . $row, $stat['gestionados']);
     $sheet->setCellValue('G' . $row, $stat['a_tiempo']);
     $sheet->setCellValue('H' . $row, $stat['atrasados']);
-    $sheet->setCellValue('I' . $row, $stat['novedades']);
-    $sheet->setCellValue('J' . $row, $total_hours);
-    $sheet->setCellValue('K' . $row, $avg_hours);
+    $sheet->setCellValue('I' . $row, $stat['err_proceso']);      // NEW
+    $sheet->setCellValue('J' . $row, $stat['err_info']);         // NEW
+    $sheet->setCellValue('K' . $row, $total_hours);
+    $sheet->setCellValue('L' . $row, $avg_hours);
 
     // Conditional format for Late
     if ($stat['atrasados'] > 0) {
         $sheet->getStyle('H' . $row)->getFont()->setColor(new Color(Color::COLOR_RED));
+    }
+    if ($stat['err_proceso'] > 0) {
+        $sheet->getStyle('I' . $row)->getFont()->setColor(new Color(Color::COLOR_RED));
     }
 
     $row++;
@@ -221,7 +275,7 @@ $styleArray = [
         ],
     ],
 ];
-$sheet->getStyle('A2:K' . $lastRow)->applyFromArray($styleArray); // Updated range
+$sheet->getStyle('A2:L' . $lastRow)->applyFromArray($styleArray); // Updated range
 
 
 // ==========================================
@@ -351,6 +405,73 @@ foreach ($assignments_by_ticket as $tick_id => $entries) {
 }
 $lastRow2 = $row2 - 1;
 $sheet2->getStyle('A2:O' . $lastRow2)->applyFromArray($styleArray);
+
+// ==========================================
+// TERCERA HOJA: DETALLE ERRORES COMPLETO
+// ==========================================
+$spreadsheet->createSheet();
+$spreadsheet->setActiveSheetIndex(2);
+$sheet3 = $spreadsheet->getActiveSheet();
+$sheet3->setTitle('Detalle Errores');
+
+$headers3 = [
+    'TICKET #',
+    'TIPO ERROR', // Proceso vs Informativo
+    'RESPUESTA RAPIDA',
+    'DESCRIPCION DETALLADA',
+    'RESPONSABLE',
+    'CARGO RESPONSABLE',
+    'REPORTADO POR',
+    'FECHA ERROR'
+];
+$col = 'A';
+foreach ($headers3 as $header) {
+    $sheet3->setCellValue($col . '1', $header);
+    $sheet3->getColumnDimension($col)->setAutoSize(true);
+    $col++;
+}
+$sheet3->getStyle('A1:H1')->applyFromArray($headerStyle);
+
+$sql_all_errors = "SELECT 
+                    te.*,
+                    fa.answer_nom,
+                    u_resp.usu_nom as resp_nom, u_resp.usu_ape as resp_ape,
+                    c_resp.car_nom as resp_car,
+                    u_rep.usu_nom as rep_nom, u_rep.usu_ape as rep_ape
+                   FROM tm_ticket_error te
+                   LEFT JOIN tm_fast_answer fa ON te.answer_id = fa.answer_id
+                   LEFT JOIN tm_usuario u_resp ON te.usu_id_responsable = u_resp.usu_id
+                   LEFT JOIN tm_cargo c_resp ON u_resp.car_id = c_resp.car_id
+                   LEFT JOIN tm_usuario u_rep ON te.usu_id_reporta = u_rep.usu_id
+                   WHERE te.est = 1
+                   ORDER BY te.fech_crea ASC";
+$stmt_all_err = $conectar->prepare($sql_all_errors);
+$stmt_all_err->execute();
+$all_errors = $stmt_all_err->fetchAll(PDO::FETCH_ASSOC);
+
+$row3 = 2;
+foreach ($all_errors as $err) {
+    $tipo = ($err['es_error_proceso'] == 1) ? 'PROCESO' : 'INFORMATIVO';
+
+    $sheet3->setCellValue('A' . $row3, $err['tick_id']);
+    $sheet3->setCellValue('B' . $row3, $tipo);
+    $sheet3->setCellValue('C' . $row3, $err['answer_nom']);
+    $sheet3->setCellValue('D' . $row3, strip_tags($err['error_descrip']));
+    $sheet3->setCellValue('E' . $row3, $err['resp_nom'] . ' ' . $err['resp_ape']);
+    $sheet3->setCellValue('F' . $row3, $err['resp_car']);
+    $sheet3->setCellValue('G' . $row3, $err['rep_nom'] . ' ' . $err['rep_ape']);
+    $sheet3->setCellValue('H' . $row3, $err['fech_crea']);
+
+    if ($tipo == 'PROCESO') {
+        $sheet3->getStyle('B' . $row3)->getFont()->setColor(new Color(Color::COLOR_RED));
+    } else {
+        $sheet3->getStyle('B' . $row3)->getFont()->setColor(new Color(Color::COLOR_BLUE));
+    }
+
+    $row3++;
+}
+$lastRow3 = $row3 - 1;
+$sheet3->getStyle('A2:H' . $lastRow3)->applyFromArray($styleArray);
 
 // Volver a la primera hoja antes de guardar
 $spreadsheet->setActiveSheetIndex(0);

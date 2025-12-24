@@ -862,6 +862,14 @@ class Ticket extends Conectar
         $sql->bindValue(2, $how_asig);
         $sql->bindValue(3, $tick_id);
 
+        // Obtener el paso actual del ticket para guardarlo en el historial
+        $sql_paso = "SELECT paso_actual_id FROM tm_ticket WHERE tick_id = ?";
+        $sql_paso = $conectar->prepare($sql_paso);
+        $sql_paso->bindValue(1, $tick_id);
+        $sql_paso->execute();
+        $ticket_data = $sql_paso->fetch(PDO::FETCH_ASSOC);
+        $paso_actual_id = $ticket_data ? $ticket_data['paso_actual_id'] : null;
+
         $sql->execute();
 
         // Crea el mensaje completo en una variable de PHP
@@ -875,12 +883,13 @@ class Ticket extends Conectar
 
         $sql1->execute();
 
-        $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, fech_asig, asig_comentario, est)
-                VALUES (?, ?, ?, NOW(), 'Ticket trasladado',1)";
+        $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, fech_asig, asig_comentario, est, paso_id)
+                VALUES (?, ?, ?, NOW(), 'Ticket trasladado',1, ?)";
         $sql2 = $conectar->prepare($sql2);
         $sql2->bindValue(1, $tick_id);
         $sql2->bindValue(2, $usu_asig);
         $sql2->bindValue(3, $how_asig);
+        $sql2->bindValue(4, $paso_actual_id);
 
         $sql2->execute();
 
