@@ -86,6 +86,7 @@ $sql = "SELECT
             h.fech_asig,
             h.estado_tiempo_paso,
             h.error_descrip,
+            h.asig_comentario,
             u.usu_nom,
             u.usu_ape,
             u.rol_id,
@@ -415,7 +416,19 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
             $tick_estado = $current['tick_estado'];
 
             $estado_tiempo = $current['estado_tiempo_paso'] ?? '';
-            $novedad = $current['error_descrip'] ?? ''; // Existing Novedad field in history
+            $novedad = $current['error_descrip'] ?? '';
+
+            // Check implicit novelty in comments (if error_descrip is empty)
+            if (empty($novedad) && !empty($current['asig_comentario'])) {
+                // Heuristic: If comment looks like a novelty or just usage of fallback
+                $comment = $current['asig_comentario'];
+                // Only treat as novelty if it's substantial or matches user concern
+                // "Ticket trasladado" is default; maybe check if DIFFERENT? 
+                // Or if Time Status is empty, use the comment as explanation.
+                if (stripos($comment, 'novedad') !== false || stripos($comment, 'error') !== false || stripos($comment, 'falta') !== false) {
+                    $novedad = $comment;
+                }
+            }
 
             // FIX: If Time Status is empty but there's a novelty/error, label it
             if (empty($estado_tiempo) && !empty($novedad)) {
