@@ -448,13 +448,6 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
             }
         } else {
             // ERROR ENTRY via tm_ticket_error
-            // We need to fetch Ticket info for Category/Subcategory since tm_ticket_error joined them in SQL?
-            // Yes, $all_errors query has those joins? No, my previous query for $all_errors didn't join tm_ticket/tm_cat.
-            // Wait, I need to check $sql_all_errors. 
-            // It has joins to tm_ticket (Wait, line 38 in TicketError.php has. My sql in step 765 joined tm_fast_answer, users).
-            // It missed cat/subcat/ticket status.
-            // However, we are inside a loop of a Ticket ID. We can get cat/subcat from the assignments array (first element).
-
             $ref_asig = $assignments[0] ?? null; // Get basic ticket info from first assignment
             if ($ref_asig) {
                 $cat_nom = $ref_asig['cat_nom'];
@@ -462,7 +455,9 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
                 $tick_estado = $ref_asig['tick_estado'];
             }
 
-            $paso_nom = ''; // Errors don't have a specific step name unless we infer it, but user wants error detail.
+            // FIX: Set a descriptive name instead of empty
+            $paso_nom = ($type == 'ERROR PROCESO') ? 'Devolución por Error' : 'Reporte Informativo';
+            $estado_tiempo = '-'; // FIX: Avoid empty cell for errors
 
             $usu_nom = $current['resp_nom'] . ' ' . $current['resp_ape']; // Responsable
             $car_nom = $current['resp_car'];
