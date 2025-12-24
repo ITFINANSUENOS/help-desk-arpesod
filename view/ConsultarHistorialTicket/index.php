@@ -21,11 +21,20 @@ if (isset($_SESSION["usu_id"])) {
                     <div class="tbl">
                         <div class="tbl-row">
                             <div class="tbl-cell">
-                                <h3>Tickets con Historial de Asignación</h3>
-                                <ol class="breadcrumb breadcrumb-simple">
-                                    <li><a href="..\Home\">Home</a></li>
-                                    <li class="active">Tickets con Historial</li>
-                                </ol>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <div>
+                                        <h3>Tickets con Historial de Asignación</h3>
+                                        <ol class="breadcrumb breadcrumb-simple">
+                                            <li><a href="..\Home\">Home</a></li>
+                                            <li class="active">Tickets con Historial</li>
+                                        </ol>
+                                    </div>
+                                    <div>
+                                        <a href="../../export_desempeno.php" class="btn btn-success rounded">
+                                            <i class="fa fa-file-excel-o"></i> Descargar Reporte Desempeño
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
