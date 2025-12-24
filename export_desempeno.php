@@ -417,6 +417,11 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
             $estado_tiempo = $current['estado_tiempo_paso'] ?? '';
             $novedad = $current['error_descrip'] ?? ''; // Existing Novedad field in history
 
+            // FIX: If Time Status is empty but there's a novelty/error, label it
+            if (empty($estado_tiempo) && !empty($novedad)) {
+                $estado_tiempo = 'Reasignado por Novedad';
+            }
+
             // Duration Logic (Find next ASIG start time)
             $start_time = strtotime($current['fech_asig']);
             $end_time = null;
