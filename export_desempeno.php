@@ -431,8 +431,26 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
             }
 
             // FIX: If Time Status is empty but there's a novelty/error, label it
-            if (empty($estado_tiempo) && !empty($novedad)) {
-                $estado_tiempo = 'Reasignado por Novedad';
+            if (empty($estado_tiempo)) {
+                if (!empty($novedad)) {
+                    $estado_tiempo = 'Reasignado por Novedad';
+                } else {
+                    // NEW: Look ahead! If the NEXT event is an error or a novelty assignment,
+                    // it means THIS assignment ended because of that.
+                    if (isset($timeline[$i + 1])) {
+                        $next = $timeline[$i + 1];
+                        if ($next['type'] != 'ASIGNACION') {
+                            // Next is an Error Event
+                            $estado_tiempo = 'Sin tiempo por asignación a novedad';
+                        } elseif (!empty($next['asig_comentario'])) {
+                            // Next is an Assignment with a potential novelty comment
+                            $next_comment = $next['asig_comentario'];
+                            if (stripos($next_comment, 'novedad') !== false || stripos($next_comment, 'error') !== false || stripos($next_comment, 'falta') !== false) {
+                                $estado_tiempo = 'Sin tiempo por asignación a novedad';
+                            }
+                        }
+                    }
+                }
             }
 
             // Duration Logic (Find next ASIG start time)
