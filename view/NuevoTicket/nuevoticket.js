@@ -147,7 +147,7 @@ $(document).ready(function () {
 categoriasAnidadas = function () {
     var user_cargo_id = 0;
     // Inicializamos los combos con Select2
-    $('#emp_id, #cats_id, #usu_asig, #pd_id, #reg_id').select2();
+    $('#emp_id, #cats_id, #usu_asig, #pd_id, #reg_id, #dp_id').select2();
 
     // Guardamos el cargo del usuario en una variable global al cargar la página
     user_cargo_id = $('#user_cargo_id').val();
@@ -156,84 +156,106 @@ categoriasAnidadas = function () {
         $('#emp_id').html('<option value="Select">Seleccione Empresa</option>' + data);
     });
 
-    $.post("../../controller/subcategoria.php?op=combo_filtrado", { creador_car_id: user_cargo_id }, function (data) {
+    // Load Departments
+    $.post("../../controller/departamento.php?op=combo", function (data) {
+        $('#dp_id').html('<option value="">Seleccione Departamento</option>' + data);
+    });
+
+    // Initial Load
+    loadSubcategories(null, user_cargo_id);
+
+    // Filter onChange
+    $('#dp_id').on('change', function () {
+        var dp_id = $(this).val();
+        loadSubcategories(dp_id, user_cargo_id);
+    });
+}
+
+function loadSubcategories(dp_id, user_cargo_id) {
+    var dataObj = { creador_car_id: user_cargo_id };
+    if (dp_id) {
+        dataObj.dp_id = dp_id;
+    }
+
+    $.post("../../controller/subcategoria.php?op=combo_filtrado", dataObj, function (data) {
         data = JSON.parse(data);
         $('#cats_id').html('<option value="Select">Seleccione Subcategoría</option>' + data.html);
     });
+}
 
-    // 4. Evento para Subcategoría
-    $('#cats_id').on('change', function () {
-        var cats_id = $(this).val();
+// 4. Evento para Subcategoría
+$('#cats_id').on('change', function () {
+    var cats_id = $(this).val();
 
-        // Limpiamos los campos dependientes
-        $('#tick_descrip').summernote('code', '');
-        $('#tick_descrip').data('template', '');
-        $('#panel_asignacion_manual').hide();
-        $('#usu_asig').html('');
+    // Limpiamos los campos dependientes
+    $('#tick_descrip').summernote('code', '');
+    $('#tick_descrip').data('template', '');
+    $('#panel_asignacion_manual').hide();
+    $('#usu_asig').html('');
 
-        if (cats_id) {
-            // a. Llenar la descripción por defecto y obtener datos de la subcategoría
-            $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
-                data = JSON.parse(data);
+    if (cats_id) {
+        // a. Llenar la descripción por defecto y obtener datos de la subcategoría
+        $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
+            data = JSON.parse(data);
 
-                if (data.subcategoria) {
-                    var template_content = data.subcategoria.cats_descrip;
-                    $('#tick_descrip').summernote('code', template_content);
-                    $('#tick_descrip').data('template', template_content); // Guardar plantilla
-                    $('#pd_id').val(data.subcategoria.pd_id).trigger('change');
+            if (data.subcategoria) {
+                var template_content = data.subcategoria.cats_descrip;
+                $('#tick_descrip').summernote('code', template_content);
+                $('#tick_descrip').data('template', template_content); // Guardar plantilla
+                $('#pd_id').val(data.subcategoria.pd_id).trigger('change');
 
-                    // Poblar campos ocultos de categoría y departamento
-                    $('#cat_id').val(data.subcategoria.cat_id);
-                    if (data.departamentos && data.departamentos.length > 0) {
-                        // Asumimos que el primer departamento es el correcto
-                        $('#dp_id').val(data.departamentos[0]);
-                    }
+                // Poblar campos ocultos de categoría y departamento
+                $('#cat_id').val(data.subcategoria.cat_id);
+                if (data.departamentos && data.departamentos.length > 0) {
+                    // Asumimos que el primer departamento es el correcto
+                    $('#dp_id').val(data.departamentos[0]);
                 }
-            });
+            }
+        });
 
-            // b. Verificar si se necesita asignación manual
-            $.post("../../controller/ticket.php?op=verificar_inicio_flujo", { cats_id: cats_id }, function (data) {
-                if (data.requiere_seleccion) {
-                    console.log('entre seleccion');
+        // b. Verificar si se necesita asignación manual
+        $.post("../../controller/ticket.php?op=verificar_inicio_flujo", { cats_id: cats_id }, function (data) {
+            if (data.requiere_seleccion) {
+                console.log('entre seleccion');
 
-                    var options = '<option value="Select">Seleccione un agente...</option>';
-                    data.usuarios.forEach(function (user) {
-                        options += `<option value="${user.usu_id}">${user.usu_nom} ${user.usu_ape} (${user.reg_nom})</option>`;
-                    });
-                    $('#usu_asig').html(options);
-                    $('#panel_asignacion_manual').show();
-                }
-            });
+                var options = '<option value="Select">Seleccione un agente...</option>';
+                data.usuarios.forEach(function (user) {
+                    options += `<option value="${user.usu_id}">${user.usu_nom} ${user.usu_ape} (${user.reg_nom})</option>`;
+                });
+                $('#usu_asig').html(options);
+                $('#panel_asignacion_manual').show();
+            }
+        });
 
-            // NEW: Verificar condiciones de inicio (Paso 0)
-            $.post("../../controller/flujopaso.php?op=get_transiciones_inicio", { cats_id: cats_id }, function (data) {
-                data = JSON.parse(data);
-                if (data.length > 0) {
-                    var options = '<option value="">Seleccione una opción...</option>';
-                    data.forEach(function (transicion) {
-                        options += `<option value="${transicion.paso_destino_id}">${transicion.condicion_nombre}</option>`;
-                    });
-                    $('#paso_inicio_id').html(options);
-                    $('#panel_condicion_inicio').show();
-                } else {
-                    $('#panel_condicion_inicio').hide();
-                    $('#paso_inicio_id').empty();
-                }
-            });
+        // NEW: Verificar condiciones de inicio (Paso 0)
+        $.post("../../controller/flujopaso.php?op=get_transiciones_inicio", { cats_id: cats_id }, function (data) {
+            data = JSON.parse(data);
+            if (data.length > 0) {
+                var options = '<option value="">Seleccione una opción...</option>';
+                data.forEach(function (transicion) {
+                    options += `<option value="${transicion.paso_destino_id}">${transicion.condicion_nombre}</option>`;
+                });
+                $('#paso_inicio_id').html(options);
+                $('#panel_condicion_inicio').show();
+            } else {
+                $('#panel_condicion_inicio').hide();
+                $('#paso_inicio_id').empty();
+            }
+        });
 
-            // c. Verificar campos dinámicos de plantilla
-            $.post("../../controller/flujopaso.php?op=get_campos_primer_paso", { cats_id: cats_id }, function (data) {
-                data = JSON.parse(data);
-                if (data.requiere) {
-                    $('#campos_plantilla_inputs').empty();
-                    data.campos.forEach(function (campo) {
-                        var inputHtml = '';
-                        var triggerAttr = (campo.campo_trigger == 1) ? `data-trigger="true" data-id="${campo.campo_id}"` : '';
-                        var codAttr = (campo.campo_codigo) ? `data-cod="${campo.campo_codigo}"` : '';
-                        var queryAttr = (campo.campo_query && campo.campo_query.trim() !== '') ? `data-has-query="true" data-query-id="${campo.campo_id}"` : '';
+        // c. Verificar campos dinámicos de plantilla
+        $.post("../../controller/flujopaso.php?op=get_campos_primer_paso", { cats_id: cats_id }, function (data) {
+            data = JSON.parse(data);
+            if (data.requiere) {
+                $('#campos_plantilla_inputs').empty();
+                data.campos.forEach(function (campo) {
+                    var inputHtml = '';
+                    var triggerAttr = (campo.campo_trigger == 1) ? `data-trigger="true" data-id="${campo.campo_id}"` : '';
+                    var codAttr = (campo.campo_codigo) ? `data-cod="${campo.campo_codigo}"` : '';
+                    var queryAttr = (campo.campo_query && campo.campo_query.trim() !== '') ? `data-has-query="true" data-query-id="${campo.campo_id}"` : '';
 
-                        if (campo.campo_tipo === 'regional') {
-                            inputHtml = `
+                    if (campo.campo_tipo === 'regional') {
+                        inputHtml = `
                                 <div class="col-md-4">
                                     <fieldset class="form-group">
                                         <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
@@ -243,12 +265,12 @@ categoriasAnidadas = function () {
                                     </fieldset>
                                 </div>
                             `;
-                            // Populate Regional Select
-                            $.post("../../controller/regional.php?op=combo", function (data) {
-                                $('#campo_' + campo.campo_id).append(data);
-                            });
-                        } else if (campo.campo_tipo === 'cargo') {
-                            inputHtml = `
+                        // Populate Regional Select
+                        $.post("../../controller/regional.php?op=combo", function (data) {
+                            $('#campo_' + campo.campo_id).append(data);
+                        });
+                    } else if (campo.campo_tipo === 'cargo') {
+                        inputHtml = `
                                 <div class="col-md-4">
                                     <fieldset class="form-group">
                                         <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
@@ -258,26 +280,26 @@ categoriasAnidadas = function () {
                                     </fieldset>
                                 </div>
                             `;
-                            // Populate Cargo Select
-                            $.post("../../controller/cargo.php?op=combo", function (data) {
-                                $('#campo_' + campo.campo_id).append(data);
-                            });
-                        } else {
-                            // Logic for Automatic Date (Server Side)
-                            var valueAttr = '';
-                            var disabledAttr = '';
+                        // Populate Cargo Select
+                        $.post("../../controller/cargo.php?op=combo", function (data) {
+                            $('#campo_' + campo.campo_id).append(data);
+                        });
+                    } else {
+                        // Logic for Automatic Date (Server Side)
+                        var valueAttr = '';
+                        var disabledAttr = '';
 
-                            if (campo.prefilled_value) {
-                                valueAttr = `value="${campo.prefilled_value}"`;
-                            }
+                        if (campo.prefilled_value) {
+                            valueAttr = `value="${campo.prefilled_value}"`;
+                        }
 
-                            if (campo.is_readonly) {
-                                disabledAttr = 'readonly style="background-color: #e9ecef;"';
-                            }
+                        if (campo.is_readonly) {
+                            disabledAttr = 'readonly style="background-color: #e9ecef;"';
+                        }
 
-                            var inputType = (campo.campo_tipo === 'text' || campo.campo_query === 'PRESET_FECHA_ACTUAL') ? 'text' : campo.campo_tipo;
+                        var inputType = (campo.campo_tipo === 'text' || campo.campo_query === 'PRESET_FECHA_ACTUAL') ? 'text' : campo.campo_tipo;
 
-                            inputHtml = `
+                        inputHtml = `
                                 <div class="col-md-4">
                                     <fieldset class="form-group">
                                         <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
@@ -285,25 +307,25 @@ categoriasAnidadas = function () {
                                     </fieldset>
                                 </div>
                             `;
-                        }
-                        $('#campos_plantilla_inputs').append(inputHtml);
-                    });
+                    }
+                    $('#campos_plantilla_inputs').append(inputHtml);
+                });
 
-                    // Initialize Select2 for newly added dynamic fields
-                    $('#campos_plantilla_inputs select').select2();
+                // Initialize Select2 for newly added dynamic fields
+                $('#campos_plantilla_inputs select').select2();
 
-                    $('#campos_plantilla_container').show();
-                } else {
-                    $('#campos_plantilla_container').hide();
-                    $('#campos_plantilla_inputs').empty();
-                }
-            });
-        } else {
-            $('#campos_plantilla_container').hide();
-            $('#campos_plantilla_inputs').empty();
-        }
-    });
-}
+                $('#campos_plantilla_container').show();
+            } else {
+                $('#campos_plantilla_container').hide();
+                $('#campos_plantilla_inputs').empty();
+            }
+        });
+    } else {
+        $('#campos_plantilla_container').hide();
+        $('#campos_plantilla_inputs').empty();
+    }
+});
+
 
 
 function guardaryeditar(e) {

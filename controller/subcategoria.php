@@ -72,6 +72,7 @@ switch ($_GET["op"]) {
     case "combo_filtrado":
         // Validar entrada
         $creador_car_id = isset($_POST['creador_car_id']) ? intval($_POST['creador_car_id']) : 0;
+        $dp_id = isset($_POST['dp_id']) && !empty($_POST['dp_id']) ? intval($_POST['dp_id']) : null;
 
         // 1. Obtener perfiles del usuario desde la sesión
         $creador_per_ids = [];
@@ -83,7 +84,7 @@ switch ($_GET["op"]) {
         }
 
         // Consultar datos en el modelo
-        $datos = $subcategoria->get_subcategorias_filtradas($creador_car_id, $creador_per_ids);
+        $datos = $subcategoria->get_subcategorias_filtradas($creador_car_id, $creador_per_ids, $dp_id);
 
         $html = "";
         if (is_array($datos) && count($datos) > 0) {

@@ -151,7 +151,7 @@ class Subcategoria extends Conectar
         $resultado = $sql->fetch(PDO::FETCH_ASSOC);
         return $resultado ? $resultado['cats_id'] : null;
     }
-    public function get_subcategorias_filtradas($creador_car_id, $creador_per_ids = [])
+    public function get_subcategorias_filtradas($creador_car_id, $creador_per_ids = [], $dp_id = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -166,10 +166,20 @@ class Subcategoria extends Conectar
             LEFT JOIN
                 regla_creadores rc ON rm.regla_id = rc.regla_id
             LEFT JOIN
-                regla_creadores_perfil rcp ON rm.regla_id = rcp.regla_id
-            WHERE 
-                s.est = 1 AND rm.est = 1 
-                AND (
+                regla_creadores_perfil rcp ON rm.regla_id = rcp.regla_id";
+
+        if ($dp_id) {
+            $sql .= " INNER JOIN categoria_departamento cd ON s.cat_id = cd.cat_id";
+        }
+
+        $sql .= " WHERE 
+                s.est = 1 AND rm.est = 1 ";
+
+        if ($dp_id) {
+            $sql .= " AND cd.dp_id = ? ";
+        }
+
+        $sql .= " AND (
                     rc.creador_car_id = ?";
 
         if (!empty($creador_per_ids)) {
@@ -180,13 +190,21 @@ class Subcategoria extends Conectar
         $sql .= ") ORDER BY s.cats_nom ASC";
 
         $sql = $conectar->prepare($sql);
-        $sql->bindValue(1, $creador_car_id);
+
+        $bindIndex = 1;
+
+        if ($dp_id) {
+            $sql->bindValue($bindIndex, $dp_id);
+            $bindIndex++;
+        }
+
+        $sql->bindValue($bindIndex, $creador_car_id);
+        $bindIndex++;
 
         if (!empty($creador_per_ids)) {
-            $i = 2;
             foreach ($creador_per_ids as $per_id) {
-                $sql->bindValue($i, $per_id);
-                $i++;
+                $sql->bindValue($bindIndex, $per_id);
+                $bindIndex++;
             }
         }
 
