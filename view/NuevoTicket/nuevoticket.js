@@ -144,6 +144,8 @@ $(document).ready(function () {
     }
 });
 
+var isAutoFilling = false;
+
 categoriasAnidadas = function () {
     var user_cargo_id = 0;
     // Inicializamos los combos con Select2
@@ -166,6 +168,7 @@ categoriasAnidadas = function () {
 
     // Filter onChange
     $('#dp_id').on('change', function () {
+        if (isAutoFilling) return;
         var dp_id = $(this).val();
         loadSubcategories(dp_id, user_cargo_id);
     });
@@ -208,7 +211,9 @@ $('#cats_id').on('change', function () {
                 $('#cat_id').val(data.subcategoria.cat_id);
                 if (data.departamentos && data.departamentos.length > 0) {
                     // Asumimos que el primer departamento es el correcto
-                    $('#dp_id').val(data.departamentos[0]);
+                    isAutoFilling = true;
+                    $('#dp_id').val(data.departamentos[0]).trigger('change');
+                    isAutoFilling = false;
                 }
             }
         });
