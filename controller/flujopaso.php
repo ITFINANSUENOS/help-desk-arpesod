@@ -234,6 +234,18 @@ switch ($_GET["op"]) {
                 $primer_paso = $pasos[0]; // Ordered by paso_orden ASC
                 if ($primer_paso['requiere_campos_plantilla'] == 1) {
                     $campos = $campoModel->get_campos_por_paso($primer_paso['paso_id']);
+
+                    // Inject Server Side Date
+                    foreach ($campos as &$campo) {
+                        // error_log("Campo: " . $campo['campo_nombre'] . " Query: [" . $campo['campo_query'] . "]");
+                        if (trim($campo['campo_query']) === 'PRESET_FECHA_ACTUAL') {
+                            $campo['prefilled_value'] = date("Y-m-d H:i:s"); // Format: YYYY-MM-DD HH:mm:ss
+                            $campo['is_readonly'] = true;
+                            // error_log("Injecting date for " . $campo['campo_nombre']);
+                        }
+                    }
+                    unset($campo); // Break reference
+
                     echo json_encode(['requiere' => true, 'campos' => $campos]);
                     return;
                 }

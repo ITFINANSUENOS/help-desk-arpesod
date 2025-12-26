@@ -75,4 +75,15 @@ class Regional extends Conectar
         $resultado = $sql->fetch(PDO::FETCH_ASSOC);
         return $resultado ? $resultado['zona_nom'] : null;
     }
+
+    public function get_id_por_nombre($reg_nom)
+    {
+        $conectar = parent::Conexion();
+        $sql = "SELECT reg_id FROM tm_regional WHERE UPPER(reg_nom) = UPPER(?) AND est = 1 LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, trim($reg_nom));
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado ? $resultado['reg_id'] : null;
+    }
 }

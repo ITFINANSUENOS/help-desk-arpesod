@@ -8,16 +8,19 @@ $flujo = new Flujo();
 
 switch ($_GET["op"]) {
     case "combo":
-
-        $datos = $flujo->get_flujo();
+        $datos = $flujo->get_flujotodo();
         if (is_array($datos) and count($datos) > 0) {
             $html = "";
             foreach ($datos as $row) {
-                $html .= "<option value='" . $row["flujo_id"] . "'>" . $row["flujo_nom"] . "</option>";
+                // Label: Subcategory Name (and Flow Name if distinct/present)
+                $label = $row["cats_nom"];
+                if (!empty($row["flujo_nom"]) && $row["flujo_nom"] != $row["cats_nom"]) {
+                    $label .= " - " . $row["flujo_nom"];
+                }
+                $html .= "<option value='" . $row["flujo_id"] . "'>" . $label . "</option>";
             }
             echo $html;
         }
-
         break;
 
     case "comboxusu":

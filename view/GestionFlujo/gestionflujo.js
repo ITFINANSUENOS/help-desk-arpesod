@@ -71,6 +71,50 @@ function guardaryeditar(e) {
     })
 }
 
+// Logic for Excel Modal
+$(document).on("click", "#btn_cargar_excel", function () {
+    // Populate Flow Select
+    $.post("../../controller/flujo.php?op=combo", function (data) {
+        // Initialize Select2 specifically for this modal
+        $('#flujo_id_excel').html('<option value="0">General (Sin Flujo Específico)</option>' + data);
+
+        $('#flujo_id_excel').select2({
+            dropdownParent: $('#modalCargarExcel'),
+            width: '100%'
+        });
+
+        $("#modalCargarExcel").modal("show");
+    });
+});
+
+$("#excel_form").on("submit", function (e) {
+    e.preventDefault();
+    var formData = new FormData($("#excel_form")[0]);
+    $.ajax({
+        url: "../../controller/exceldata.php?op=upload",
+        type: "POST",
+        data: formData,
+        contentType: false,
+        processData: false,
+        beforeSend: function () {
+            swal({ title: "Cargando...", text: "Procesando archivo Excel...", imageUrl: "../../public/img/loading.gif", showConfirmButton: false });
+        },
+        success: function (data) {
+            if (data == "1") {
+                swal("Correcto!", "Archivo cargado exitosamente.", "success");
+                $("#excel_form")[0].reset();
+                $("#modalCargarExcel").modal("hide");
+            } else {
+                swal("Error", data, "error");
+            }
+        },
+        error: function (e) {
+            swal("Error", "Ocurrió un error en la comunicación con el servidor.", "error");
+        }
+    });
+});
+
+
 function ver(flujo_id) {
     window.location.href = '/view/PasoFlujo/?ID=' + flujo_id
 }

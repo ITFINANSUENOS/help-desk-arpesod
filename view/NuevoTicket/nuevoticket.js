@@ -263,11 +263,25 @@ categoriasAnidadas = function () {
                                 $('#campo_' + campo.campo_id).append(data);
                             });
                         } else {
+                            // Logic for Automatic Date (Server Side)
+                            var valueAttr = '';
+                            var disabledAttr = '';
+
+                            if (campo.prefilled_value) {
+                                valueAttr = `value="${campo.prefilled_value}"`;
+                            }
+
+                            if (campo.is_readonly) {
+                                disabledAttr = 'readonly style="background-color: #e9ecef;"';
+                            }
+
+                            var inputType = (campo.campo_tipo === 'text' || campo.campo_query === 'PRESET_FECHA_ACTUAL') ? 'text' : campo.campo_tipo;
+
                             inputHtml = `
                                 <div class="col-md-4">
                                     <fieldset class="form-group">
                                         <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
-                                        <input type="text" class="form-control" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" placeholder="${campo.campo_nombre}" ${triggerAttr} ${codAttr} ${queryAttr} required>
+                                        <input type="${inputType}" class="form-control" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" placeholder="${campo.campo_nombre}" ${triggerAttr} ${codAttr} ${queryAttr} ${valueAttr} ${disabledAttr} required>
                                     </fieldset>
                                 </div>
                             `;

@@ -44,6 +44,9 @@ if (isset($_SESSION["usu_id"])) {
                     <button type="button" id="btn_importar_v2" class="btn btn-inline btn-warning-outline" data-toggle="modal" data-target="#modalImportarV2">
                         <i class="fa fa-upload"></i> Importar (V2)
                     </button>
+                    <button type="button" id="btn_cargar_excel" class="btn btn-inline btn-primary-outline">
+                        <i class="fa fa-file-excel-o"></i> Cargar Datos Excel
+                    </button>
                     <button type="button" id="btnnuevoflujo" class="btn btn-inline btn-primary">Nuevo flujo</button>
                     <table id="flujo_data" class="table table-bordered table-striped table-vcenter js-dataTable-full">
                         <thead>
@@ -60,6 +63,7 @@ if (isset($_SESSION["usu_id"])) {
         </div>
         <?php require_once('../GestionFlujo/modalnuevoflujo.php') ?>
         <?php require_once('../GestionFlujo/modalimportar_v2.php') ?>
+        <?php require_once('../GestionFlujo/modal_excel.php') ?>
         <?php require_once('../MainJs/js.php') ?>
 
         <script type="text/javascript" src="../GestionFlujo/gestionflujo.js"></script>

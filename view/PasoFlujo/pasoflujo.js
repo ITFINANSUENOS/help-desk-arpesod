@@ -1051,7 +1051,17 @@ function addCampoPlantillaRow(campo = null) {
                 <select class="form-control form-control-sm campo_fuente" style="width: 100%;">
                     <option value="">Cargando...</option>
                 </select>
-                <input type="text" class="form-control form-control-sm campo_query_manual" value="${(campo_query && !campo_query.startsWith('PRESET_') && isNaN(campo_query)) ? campo_query.replace(/"/g, '&quot;') : ''}" placeholder="SELECT..." style="display: none; margin-top: 5px;">
+                <input type="text" class="form-control form-control-sm campo_query_manual" value="${(campo_query && !campo_query.startsWith('PRESET_') && !campo_query.startsWith('EXCEL:') && isNaN(campo_query)) ? campo_query.replace(/"/g, '&quot;') : ''}" placeholder="SELECT..." style="display: none; margin-top: 5px;">
+                
+                <div class="excel-config-container" style="display: none; margin-top: 5px;">
+                    <select class="form-control form-control-sm excel-file-select" style="margin-bottom: 3px;">
+                        <option value="">Cargando Archivos...</option>
+                    </select>
+                    <select class="form-control form-control-sm excel-col-select">
+                        <option value="">Seleccione Archivo...</option>
+                    </select>
+                </div>
+
                 <input type="hidden" class="form-control form-control-sm campo_query" value="${campo_query ? campo_query.replace(/"/g, '&quot;') : ''}">
             </td>
             <td><button type="button" class="btn btn-sm btn-danger btn-remove-campo"><i class="fa fa-trash"></i></button></td>
@@ -1062,9 +1072,14 @@ function addCampoPlantillaRow(campo = null) {
     // Load options dynamically
     $.post("../../controller/consulta.php?op=combo", function (data) {
         var $select = $row.find('.campo_fuente');
-        $select.html(data);
 
-        // Legacy Support: If value is PRESET_ and not in list, add it visually so it doesn't look broken
+        // Inject Options: SQL Queries + "Excel Data" + "Manual SQL" + "Fecha Actual"
+        var baseOptions = data; // Assumes data contains <option>s
+        var finalOptions = baseOptions + '<option value="PRESET_FECHA_ACTUAL">Preset: Fecha Actual (Automática)</option><option value="EXCEL">Datos Excel</option><option value="CUSTOM">Consulta Manual (SQL)</option>';
+
+        $select.html(finalOptions);
+
+        // Legacy Support & Pre-selection
         if (campo_query.startsWith('PRESET_')) {
             if ($select.find("option[value='" + campo_query + "']").length == 0) {
                 var label = (campo_query == 'PRESET_USUARIO_CEDULA') ? 'Usuario por Cédula (Legacy)' :
@@ -1072,13 +1087,14 @@ function addCampoPlantillaRow(campo = null) {
                 $select.append('<option value="' + campo_query + '">' + label + '</option>');
             }
             $select.val(campo_query);
+        } else if (campo_query.startsWith('EXCEL:')) {
+            $select.val('EXCEL').trigger('change');
         } else if (campo_query && !isNaN(campo_query)) {
             // It's an ID from tm_consulta
             $select.val(campo_query);
         } else if (campo_query.length > 0) {
             // Custom SQL
-            $select.val('CUSTOM');
-            $row.find('.campo_query_manual').show();
+            $select.val('CUSTOM').trigger('change');
         }
     });
 
@@ -1089,21 +1105,71 @@ function addCampoPlantillaRow(campo = null) {
         var val = $(this).val();
         var manualInput = $(this).siblings('.campo_query_manual');
         var hiddenInput = $(this).siblings('.campo_query');
+        var excelContainer = $(this).siblings('.excel-config-container');
+
+        // Hide everything first
+        manualInput.hide();
+        excelContainer.hide();
 
         if (val === 'CUSTOM') {
             manualInput.show();
-            // If switching to custom, keep previous manual value or empty
-            // Check if previous value was a preset or ID, if so clear it
-            var currentHidden = hiddenInput.val();
-            if (currentHidden.startsWith('PRESET_') || !isNaN(currentHidden)) {
-                hiddenInput.val('');
-                manualInput.val('');
-            } else {
-                hiddenInput.val(manualInput.val());
-            }
+            hiddenInput.val(manualInput.val());
+        } else if (val === 'EXCEL') {
+            excelContainer.show();
+            // Load Excel Files for this Flow
+            var flujo_id = $('#flujo_id').val();
+            var $excelSelect = excelContainer.find('.excel-file-select');
+            $.post("../../controller/exceldata.php?op=combo", { flujo_id: flujo_id }, function (data) {
+                $excelSelect.html('<option value="">Seleccionar Archivo...</option>' + data);
+
+                // If we are editing and have a selected excel
+                var currentQuery = hiddenInput.val(); // EXCEL:{id}:{col}
+                if (currentQuery.startsWith('EXCEL:')) {
+                    var parts = currentQuery.split(':');
+                    if (parts.length >= 3) {
+                        $excelSelect.val(parts[1]).trigger('change');
+                        // We need to wait for columns to load... logic in change handler
+                    }
+                }
+            });
         } else {
-            manualInput.hide();
             hiddenInput.val(val);
+        }
+    });
+
+    // Handler for Excel File Change
+    $row.on('change', '.excel-file-select', function () {
+        var data_id = $(this).val();
+        var $colSelect = $(this).siblings('.excel-col-select');
+        var hiddenInput = $(this).closest('td').find('.campo_query');
+
+        if (data_id) {
+            $.post("../../controller/exceldata.php?op=get_columns", { data_id: data_id }, function (data) {
+                $colSelect.html(data);
+
+                // If editing, select column
+                var currentQuery = hiddenInput.val();
+                if (currentQuery.startsWith('EXCEL:') && currentQuery.includes(':' + data_id + ':')) {
+                    var parts = currentQuery.split(':');
+                    if (parts[2]) {
+                        setTimeout(function () { $colSelect.val(parts[2]); }, 100);
+                    }
+                }
+            });
+        } else {
+            $colSelect.html('<option value="">Seleccione Archivo...</option>');
+            hiddenInput.val('');
+        }
+    });
+
+    // Handler for Excel Column Change
+    $row.on('change', '.excel-col-select', function () {
+        var data_id = $(this).siblings('.excel-file-select').val();
+        var col = $(this).val();
+        var hiddenInput = $(this).closest('td').find('.campo_query');
+
+        if (data_id && col) {
+            hiddenInput.val('EXCEL:' + data_id + ':' + col);
         }
     });
 

@@ -60,8 +60,71 @@ class CampoPlantilla extends Conectar
         if ($row && !empty($row['campo_query'])) {
             $query = $row['campo_query'];
 
-            // 2. Ejecutar el query (Preset, ID Dinámico o Manual)
+            // 2. Ejecutar el query (Preset, ID Dinámico, Excel o Manual)
             $sqlPreset = null;
+
+            // --- Lógica Excel ---
+            if (strpos($query, 'EXCEL:') === 0) {
+                // Formato esperado: EXCEL:{data_id}:{columna_busqueda}
+                $parts = explode(':', $query);
+                if (count($parts) >= 3) {
+                    $data_id = $parts[1];
+                    $search_col = $parts[2];
+
+                    // Fetch JSON data
+                    require_once("ExcelData.php");
+                    $excelData = new ExcelData();
+                    $dataset = $excelData->get_data_by_id($data_id);
+
+                    if ($dataset && !empty($dataset['datos_json'])) {
+                        $json = json_decode($dataset['datos_json'], true);
+                        if (is_array($json)) {
+                            // Buscar coincidencia (Case Insensitive)
+                            foreach ($json as $row) {
+                                if (isset($row[$search_col]) && strcasecmp(trim($row[$search_col]), trim($valor)) === 0) {
+
+                                    // --- RESOLUTION LOGIC ---
+                                    // Resolves Names to IDs for Cargo and Regional
+
+                                    // 1. CARGO
+                                    // Check if 'Cargo' or 'Nombre Cargo' exists in the row
+                                    // Or better yet, iterate through all keys and see if any value matches a known Cargo/Regional
+                                    // BUT, that is expensive. Use heuristics on keys.
+
+                                    foreach ($row as $key => $val) {
+                                        $upperKey = strtoupper($key);
+
+                                        // Detect Cargo
+                                        if (strpos($upperKey, 'CARGO') !== false) {
+                                            require_once(dirname(__FILE__) . "/Cargo.php");
+                                            $cargo = new Cargo();
+                                            $car_id = $cargo->get_id_por_nombre(trim($val));
+                                            // error_log("RESOLVE CARGO: Value=['" . trim($val) . "'] Found ID: " . ($car_id ? $car_id : "FALSE"));
+                                            if ($car_id) {
+                                                $row[$key] = $car_id;
+                                            }
+                                        }
+
+                                        // Detect Regional
+                                        if (strpos($upperKey, 'REGIONAL') !== false || strpos($upperKey, 'REGION') !== false) {
+                                            require_once(dirname(__FILE__) . "/Regional.php");
+                                            $regional = new Regional();
+                                            $reg_id = $regional->get_id_por_nombre(trim($val));
+                                            if ($reg_id) {
+                                                $row[$key] = $reg_id;
+                                            }
+                                        }
+                                    }
+
+                                    return $row; // Retorna todo el array asociativo (fila)
+                                }
+                            }
+                        }
+                    }
+                }
+                return null; // No encontrado en Excel
+            }
+            // --- Fin Lógica Excel ---
 
             if (strpos($query, 'PRESET_') === 0) {
                 if ($query === 'PRESET_USUARIO_CEDULA') {
