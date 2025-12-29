@@ -22,8 +22,6 @@ use models\repository\TicketRepository;
 use models\repository\NotificationRepository;
 use models\repository\AssignmentRepository;
 use models\repository\NovedadRepository;
-use PDO;
-use Exception;
 
 
 class TicketService
