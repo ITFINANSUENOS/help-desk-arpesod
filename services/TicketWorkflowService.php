@@ -181,8 +181,15 @@ class TicketWorkflowService
                 $cargo_id_necesario = $primer_paso['cargo_id_asignado'];
 
                 // Buscamos a TODOS los usuarios con ese cargo
-                $usuarios = $this->usuarioModel->get_usuarios_por_cargo($cargo_id_necesario);
-                $output['usuarios'] = $usuarios;
+                // 1. Verificar si hay usuarios específicos para este paso
+                $usuarios_especificos_ids = $this->flujoPasoModel->get_usuarios_especificos($primer_paso['paso_id']);
+
+                if (!empty($usuarios_especificos_ids)) {
+                    $output['usuarios'] = $this->usuarioModel->get_usuarios_por_ids($usuarios_especificos_ids);
+                } else {
+                    $usuarios = $this->usuarioModel->get_usuarios_por_cargo($cargo_id_necesario);
+                    $output['usuarios'] = $usuarios;
+                }
             }
         }
 
