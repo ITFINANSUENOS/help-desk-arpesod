@@ -395,7 +395,10 @@ class Usuario extends Conectar
         $conectar = parent::Conexion();
         parent::set_names();
         $inQuery = implode(',', array_fill(0, count($user_ids), '?'));
-        $sql = "SELECT usu_id, usu_nom, usu_ape, usu_correo FROM tm_usuario WHERE usu_id IN ($inQuery) AND est = 1";
+        $sql = "SELECT u.usu_id, u.usu_nom, u.usu_ape, u.usu_correo, r.reg_nom 
+                FROM tm_usuario u
+                LEFT JOIN tm_regional r ON u.reg_id = r.reg_id
+                WHERE u.usu_id IN ($inQuery) AND u.est = 1";
         $stmt = $conectar->prepare($sql);
         foreach ($user_ids as $k => $id) {
             $stmt->bindValue(($k + 1), $id, PDO::PARAM_INT);
