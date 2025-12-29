@@ -261,7 +261,7 @@ $(document).ready(function () {
 
     // Cargar usuarios para el modal de novedad
     $.post("../../controller/usuario.php?op=combo", function (data) {
-        $('#usu_asig_novedad').html(data);
+        $('#usu_asig_novedad').html('<option value="">Seleccione un usuario...</option>' + data);
     });
 
     // Evento para abrir el modal de crear novedad
@@ -279,38 +279,61 @@ $(document).ready(function () {
     // Evento para guardar la novedad
     $('#novedad_form').on('submit', function (e) {
         e.preventDefault();
-        var formData = new FormData(this);
-        formData.append('tick_id', getUrlParameter('ID'));
-        formData.append('usu_id', $('#user_idx').val());
 
-        $.ajax({
-            url: '../../controller/ticket.php?op=crear_novedad',
-            type: 'POST',
-            data: formData,
-            contentType: false,
-            processData: false,
-            success: function (response) {
-                var data = JSON.parse(response);
-                if (data.status === 'success') {
-                    swal("¡Éxito!", data.message, "success");
-                    $('#modal_crear_novedad').modal('hide');
+        var selectedUser = $('#usu_asig_novedad').val();
+        if (!selectedUser) {
+            swal("Error", "Por favor, seleccione un usuario para la novedad.", "warning");
+            return;
+        }
 
-                    // MODIFICADO: Redirigir si la creación de novedad implica reasignación
-                    swal({
-                        title: "¡Éxito!",
-                        text: "Novedad creada y ticket pausado. Redirigiendo a la lista...",
-                        type: "success",
-                        timer: 1600,
-                        showConfirmButton: false
-                    });
-                    setTimeout(function () { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+        var selectedUserName = $('#usu_asig_novedad option:selected').text();
+        // Remove extra info in parens if any
+        selectedUserName = selectedUserName.split('(')[0].trim();
 
-                } else {
-                    swal("Error", data.message, "error");
-                }
-            },
-            error: function () {
-                swal("Error", "No se pudo crear la novedad.", "error");
+        swal({
+            title: "¿Estás seguro?",
+            text: "¿Deseas enviar la novedad a " + selectedUserName + "?",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonClass: "btn-primary",
+            confirmButtonText: "Sí, enviar",
+            cancelButtonText: "Cancelar",
+            closeOnConfirm: false
+        }, function (isConfirm) {
+            if (isConfirm) {
+                var formData = new FormData($('#novedad_form')[0]); // Use modal form directly
+                formData.append('tick_id', getUrlParameter('ID'));
+                formData.append('usu_id', $('#user_idx').val());
+
+                $.ajax({
+                    url: '../../controller/ticket.php?op=crear_novedad',
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function (response) {
+                        var data = JSON.parse(response);
+                        if (data.status === 'success') {
+                            // swal("¡Éxito!", data.message, "success"); // Removed immediate success to allow redirect logic
+                            $('#modal_crear_novedad').modal('hide');
+
+                            swal({
+                                title: "¡Éxito!",
+                                text: "Novedad creada y ticket pausado. Redirigiendo a la lista...",
+                                type: "success",
+                                timer: 1600,
+                                showConfirmButton: false
+                            });
+                            setTimeout(function () { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+
+                        } else {
+                            swal("Error", data.message, "error");
+                        }
+                    },
+                    error: function () {
+                        swal("Error", "No se pudo crear la novedad.", "error");
+                    }
+                });
             }
         });
     });
