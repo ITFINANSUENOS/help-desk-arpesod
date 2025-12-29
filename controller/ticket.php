@@ -172,7 +172,7 @@ switch ($_GET["op"]) {
             $sub_array[] = $row["descripcion_novedad"];
             $sub_array[] = $row["fecha_inicio"];
             $sub_array[] = $row["usu_crea_novedad"];
-            $sub_array[] = '<button type="button" onClick="ver(' . $row["tick_id"] . ');"  id="' . $row["tick_id"] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $sub_array[] = '<a href="/view/DetalleTicket/?ID=' . $row["tick_id"] . '" target="_blank"  id="' . $row["tick_id"] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></a>';
             $data[] = $sub_array;
         }
 

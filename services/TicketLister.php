@@ -77,7 +77,7 @@ class TicketLister
 
             $action_buttons = '<div style="white-space: nowrap;">';
             $action_buttons .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" class="btn btn-inline btn-default btn-sm ladda-button"><i class="fa fa-tag"></i></a>';
-            $action_buttons .= ' <button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $action_buttons .= ' <a href="/view/DetalleTicket/?ID=' . $row['tick_id'] . '" target="_blank" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></a>';
             $action_buttons .= '</div>';
             $sub_array[] = $action_buttons;
             $data[] = $sub_array;
@@ -151,7 +151,7 @@ class TicketLister
 
             $action_buttons = '<div style="white-space: nowrap;">';
             $action_buttons .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" class="btn btn-inline btn-default btn-sm ladda-button"><i class="fa fa-tag"></i></a>';
-            $action_buttons .= ' <button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $action_buttons .= ' <a href="/view/DetalleTicket/?ID=' . $row['tick_id'] . '" target="_blank" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></a>';
             $action_buttons .= '</div>';
             $sub_array[] = $action_buttons;
 
@@ -234,7 +234,7 @@ class TicketLister
 
             $action_buttons = '<div style="white-space: nowrap;">';
             $action_buttons .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" class="btn btn-inline btn-default btn-sm ladda-button"><i class="fa fa-tag"></i></a>';
-            $action_buttons .= ' <button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $action_buttons .= ' <a href="/view/DetalleTicket/?ID=' . $row['tick_id'] . '" target="_blank" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></a>';
             $action_buttons .= '</div>';
             $sub_array[] = $action_buttons;
             $data[] = $sub_array;
@@ -291,7 +291,7 @@ class TicketLister
 
             $action_buttons = '<div style="white-space: nowrap;">';
             $action_buttons .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" class="btn btn-inline btn-default btn-sm ladda-button"><i class="fa fa-tag"></i></a>';
-            $action_buttons .= ' <button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Historial Detallado"><i class="fa fa-eye"></i></button>';
+            $action_buttons .= ' <a href="/view/DetalleHistorialTicket/?ID=' . $row['tick_id'] . '" target="_blank" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Historial Detallado"><i class="fa fa-eye"></i></a>';
             $action_buttons .= '</div>';
             $sub_array[] = $action_buttons;
 
@@ -349,7 +349,7 @@ class TicketLister
 
             $action_buttons = '<div style="white-space: nowrap;">';
             $action_buttons .= '<a href="javascript:void(0);" onClick="gestionarEtiquetas(' . $row['tick_id'] . ')" title="Gestionar etiquetas" class="btn btn-inline btn-default btn-sm ladda-button"><i class="fa fa-tag"></i></a>';
-            $action_buttons .= ' <button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Historial Detallado"><i class="fa fa-eye"></i></button>';
+            $action_buttons .= ' <a href="/view/DetalleHistorialTicket/?ID=' . $row['tick_id'] . '" target="_blank" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Historial Detallado"><i class="fa fa-eye"></i></a>';
             $action_buttons .= '</div>';
             $sub_array[] = $action_buttons;
 
@@ -415,7 +415,7 @@ class TicketLister
                 $sub_array[] = $this->getFormattedUserNames($row['usu_asig'], 'label-warning');
             }
 
-            $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Ticket"><i class="fa fa-eye"></i></button>';
+            $sub_array[] = '<a href="/view/DetalleTicket/?ID=' . $row['tick_id'] . '" target="_blank" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Ticket"><i class="fa fa-eye"></i></a>';
 
             $data[] = $sub_array;
         }
@@ -467,7 +467,7 @@ class TicketLister
 
             $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
 
-            $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Ticket"><i class="fa fa-eye"></i></button>';
+            $sub_array[] = '<a href="/view/DetalleTicket/?ID=' . $row['tick_id'] . '" target="_blank" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Ticket"><i class="fa fa-eye"></i></a>';
 
             $data[] = $sub_array;
         }
@@ -505,7 +505,7 @@ class TicketLister
                 $sub_array[] = $this->getFormattedUserNames($row['usu_asig'], 'label-success');
             }
 
-            $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $sub_array[] = '<a href="/view/DetalleTicket/?ID=' . $row['tick_id'] . '" target="_blank" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></a>';
             $data[] = $sub_array;
         }
 
