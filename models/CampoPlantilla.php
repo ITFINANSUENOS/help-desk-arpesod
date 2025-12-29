@@ -176,7 +176,7 @@ class CampoPlantilla extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT * FROM tm_campo_plantilla WHERE paso_id=? AND est=1";
+        $sql = "SELECT * FROM tm_campo_plantilla WHERE paso_id=? AND est=1 ORDER BY campo_trigger DESC";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_id);
         $sql->execute();
