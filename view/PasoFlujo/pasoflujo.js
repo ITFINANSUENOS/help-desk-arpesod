@@ -577,6 +577,12 @@ function editar(paso_id) {
             $('#cerrar_ticket_obligatorio').prop('checked', false);
         }
 
+        if (data.permite_despacho_masivo == 1) {
+            $('#permite_despacho_masivo').prop('checked', true);
+        } else {
+            $('#permite_despacho_masivo').prop('checked', false);
+        }
+
         if (data.es_paralelo == 1) {
             $('#es_paralelo').prop('checked', true);
             $('#usuarios_especificos_container').show();
@@ -655,6 +661,8 @@ function nuevo() {
     $('#requiere_campos_plantilla').prop('checked', false);
     $('#campos_plantilla_container').hide();
     $('#tabla_campos_plantilla tbody').empty();
+    $('#cerrar_ticket_obligatorio').prop('checked', false);
+    $('#permite_despacho_masivo').prop('checked', false);
     $('#campo_id_referencia_jefe').val('');
 
     $('#modalnuevopaso').modal('show');
@@ -705,6 +713,8 @@ $(document).on("click", "#btnnuevopaso", function () {
     $('#permite_cerrar').prop('checked', false);
     $('#necesita_aprobacion_jefe').prop('checked', false);
     $('#asignar_a_creador').prop('checked', false);
+    $('#cerrar_ticket_obligatorio').prop('checked', false);
+    $('#permite_despacho_masivo').prop('checked', false);
     $('#es_paralelo').prop('checked', false);
     $('#usuarios_especificos_container').hide();
     $('#usuarios_especificos').val(null).trigger('change');
@@ -757,6 +767,8 @@ $('#modalnuevopaso').on('hidden.bs.modal', function () {
     $('#permite_cerrar').prop('checked', false);
     $('#necesita_aprobacion_jefe').prop('checked', false);
     $('#asignar_a_creador').prop('checked', false);
+    $('#cerrar_ticket_obligatorio').prop('checked', false);
+    $('#permite_despacho_masivo').prop('checked', false);
     $('#es_paralelo').prop('checked', false);
     $('#usuarios_especificos_container').hide();
     $('#usuarios_especificos').val(null).trigger('change');

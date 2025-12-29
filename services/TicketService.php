@@ -939,6 +939,8 @@ class TicketService
             $output['cats_nom'] = $row['cats_nom'];
             $output['emp_nom'] = $row['emp_nom'];
             $output['dp_nom'] = $row['dp_nom'];
+            $output['ruta_id'] = $row['ruta_id'];
+            $output['ruta_paso_orden'] = $row['ruta_paso_orden'];
             $output['paso_actual_id'] = $row['paso_actual_id'];
             $output['paso_nombre'] = $row['paso_nombre'];
             $output['novedad_abierta'] = $this->novedadRepository->getNovedadAbiertaPorTicket($tickId);
@@ -2277,5 +2279,166 @@ class TicketService
         }
 
         return $this->resolveCandidates($siguiente_cargo_id, $regional_origen_id, $is_national);
+    }
+
+    public function processBulkDispatch($tick_id, $file_path)
+    {
+        require_once dirname(__DIR__) . '/vendor/autoload.php';
+        require_once dirname(__DIR__) . '/models/Regional.php';
+
+        $regionalModel = new Regional();
+
+        if (!file_exists($file_path)) {
+            return ['success' => false, 'message' => 'Archivo físico no encontrado.'];
+        }
+
+        try {
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file_path);
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => 'Error al leer Excel: ' . $e->getMessage()];
+        }
+
+        if (empty($rows)) {
+            return ['success' => false, 'message' => 'El archivo Excel está vacío.'];
+        }
+
+        $headers = array_map(function ($h) {
+            return strtolower(trim($h));
+        }, $rows[0]);
+        $regional_idx = array_search('regional', $headers);
+        $detalle_idx = array_search('detalle', $headers);
+
+        if ($regional_idx === false || $detalle_idx === false) {
+            return ['success' => false, 'message' => 'Faltan columnas requeridas: Regional, Detalle. Encabezados encontrados: ' . implode(', ', $headers)];
+        }
+
+        $parent_ticket = $this->ticketModel->listar_ticket_x_id($tick_id);
+        if (!$parent_ticket) {
+            return ['success' => false, 'message' => 'Ticket padre no encontrado.'];
+        }
+
+        $current_step_id = $parent_ticket['paso_actual_id'];
+
+        $next_step = $this->flujoModel->get_siguiente_paso($current_step_id);
+        if (!$next_step) {
+            return ['success' => false, 'message' => 'No hay un paso siguiente definido para este flujo desde el paso actual (ID: ' . $current_step_id . ').'];
+        }
+        $target_step_id = $next_step['paso_id'];
+        $target_cargo_id = $next_step['cargo_id_asignado'];
+
+        $success_count = 0;
+        $fail_count = 0;
+        $errors = [];
+
+        $cedula_idx = array_search('cedula', $headers);
+        if ($cedula_idx === false) $cedula_idx = array_search('cédula', $headers);
+
+        // Group rows by Regional + Cedula
+        $groups = [];
+
+        for ($i = 1; $i < count($rows); $i++) {
+            $row = $rows[$i];
+
+            // Safety check for empty rows
+            if (!isset($row[$regional_idx]) || empty($row[$regional_idx])) continue;
+
+            $reg_name = trim($row[$regional_idx]);
+            $cedula = ($cedula_idx !== false && isset($row[$cedula_idx])) ? trim($row[$cedula_idx]) : 'N/A';
+
+            // Unique key for grouping
+            $key = strtolower($reg_name) . '|' . strtolower($cedula);
+
+            if (!isset($groups[$key])) {
+                $groups[$key] = [
+                    'reg_name' => $reg_name,
+                    'cedula' => $cedula,
+                    'rows' => []
+                ];
+            }
+            $groups[$key]['rows'][] = $row;
+        }
+
+        foreach ($groups as $group) {
+            $reg_name = $group['reg_name'];
+            $group_rows = $group['rows'];
+
+            // Build HTML Table for Description with MULTIPLE ROWS
+            $table_html = '<table class="table table-bordered table-striped" style="width: 100%; border-collapse: collapse; border: 1px solid #ddd;">';
+            $table_html .= '<thead><tr style="background-color: #f2f2f2;">';
+            foreach ($rows[0] as $header_cell) {
+                // Ensure header value is not null even if extremely rare
+                $h_val = isset($header_cell) ? htmlspecialchars($header_cell) : '';
+                $table_html .= '<th style="padding: 8px; border: 1px solid #ddd; text-align: left;">' . $h_val . '</th>';
+            }
+            $table_html .= '</tr></thead>';
+            $table_html .= '<tbody>';
+
+            foreach ($group_rows as $g_row) {
+                $table_html .= '<tr>';
+                foreach ($rows[0] as $k => $h) { // Use header keys to iterate to ensure alignment
+                    $cell_value = isset($g_row[$k]) ? $g_row[$k] : '';
+                    $val = htmlspecialchars($cell_value);
+                    $table_html .= '<td style="padding: 8px; border: 1px solid #ddd;">' . $val . '</td>';
+                }
+                $table_html .= '</tr>';
+            }
+
+            $table_html .= '</tbody></table>';
+            $detalle = $table_html;
+
+            $reg_id = $regionalModel->get_id_por_nombre($reg_name);
+            if (!$reg_id) {
+                $fail_count += count($group_rows);
+                $errors[] = "Grupo Regional '$reg_name': Regional no encontrada. (" . count($group_rows) . " filas omitidas)";
+                continue;
+            }
+
+            $candidates = $this->usuarioModel->get_usuarios_por_cargo_y_regional_all($target_cargo_id, $reg_id);
+
+            if (empty($candidates)) {
+                $fail_count += count($group_rows);
+                $errors[] = "Grupo Regional '$reg_name': No hay usuarios con cargo '$target_cargo_id'. (" . count($group_rows) . " filas omitidas)";
+                continue;
+            }
+
+            $assigned_user_id = $candidates[0]['usu_id'];
+
+            try {
+                $new_tick_id = $this->ticketRepository->insertTicket(
+                    $parent_ticket['usu_id'],
+                    $parent_ticket['cat_id'],
+                    $parent_ticket['cats_id'],
+                    $parent_ticket['pd_id'],
+                    $parent_ticket['tick_titulo'] . " - " . $reg_name,
+                    $detalle,
+                    0,
+                    $assigned_user_id,
+                    $_SESSION['usu_id'],
+                    $parent_ticket['emp_id'],
+                    $parent_ticket['dp_id'],
+                    $target_step_id,
+                    $reg_id
+                );
+
+                $this->assignmentRepository->insertAssignment($new_tick_id, $assigned_user_id, $_SESSION['usu_id'], $target_step_id, 'Despacho Masivo desde Ticket #' . $tick_id);
+
+                $mensaje_notificacion = "Se le ha asignado un nuevo ticket (Despacho Masivo) # {$new_tick_id}.";
+                $this->notificationRepository->insertNotification($assigned_user_id, $mensaje_notificacion, $new_tick_id);
+
+                $success_count += count($group_rows); // Count rows as successful
+            } catch (\Exception $e) {
+                $fail_count += count($group_rows);
+                $errors[] = "Error creando ticket para grupo '$reg_name': " . $e->getMessage();
+            }
+        }
+
+        return [
+            'success' => true,
+            'processed' => $success_count,
+            'failed' => $fail_count,
+            'errors' => $errors
+        ];
     }
 }

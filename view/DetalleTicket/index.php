@@ -366,6 +366,9 @@ if (isset($_SESSION["usu_id"])) {
                             <div class="col-lg-12">
                                 <button type="button" id="btnresolvernovedad" class="btn btn-inline btn-success" style="display: none;">Resolver Novedad</button>
                             </div>
+                            <div class="col-lg-12">
+                                <button type="button" id="btn_despacho_masivo" class="btn btn-inline btn-primary" style="display: none;">Despacho Masivo</button>
+                            </div>
                         </div>
                         <div class="box-typical box-typical-padding" id="panel_paralelo" style="display: none;">
                             <h5 class="m-t-lg with-border">Estado de Tareas Paralelas</h5>
@@ -526,6 +529,30 @@ if (isset($_SESSION["usu_id"])) {
                             <button type="submit" class="btn btn-primary">Guardar Nueva Etiqueta</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+        <!-- Modal Selección Excel -->
+        <div class="modal fade" id="modal_seleccionar_excel" tabindex="-1" role="dialog" aria-labelledby="modal_seleccionar_excel_label" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal_seleccionar_excel_label">Seleccionar Archivo de Despacho</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Cargue el archivo Excel para realizar el despacho masivo:</p>
+                        <div class="form-group">
+                            <label for="file_despacho_masivo">Archivo Excel (.xlsx, .xls):</label>
+                            <input type="file" class="form-control-file" id="file_despacho_masivo" name="file_despacho_masivo" accept=".xlsx, .xls">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="btn_confirmar_despacho">Procesar Despacho</button>
+                    </div>
                 </div>
             </div>
         </div>

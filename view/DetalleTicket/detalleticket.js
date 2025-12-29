@@ -41,7 +41,7 @@ $(document).ready(function () {
                     });
 
                     $('#panel_seleccion_usuario').show();
-                    
+
                     // Show a small toast or notification? Maybe too intrusive.
                     // Just showing the panel is enough as per requirements.
                 } else {
@@ -651,17 +651,17 @@ function enviarDetalle(signatureData = null) {
                 }
             } else if (data.status === 'require_selection') {
                 swal("Atención", data.message, "warning");
-                
+
                 var $select = $('#usuario_seleccionado');
                 $select.empty();
                 $select.append('<option value=""></option>'); // Vacío para placeholder
-                
+
                 if (data.candidates && data.candidates.length > 0) {
-                     $.each(data.candidates, function(i, user) {
-                         $select.append('<option value="' + user.usu_id + '">' + user.usu_nom + ' ' + user.usu_ape + '</option>');
-                     });
+                    $.each(data.candidates, function (i, user) {
+                        $select.append('<option value="' + user.usu_id + '">' + user.usu_nom + ' ' + user.usu_ape + '</option>');
+                    });
                 }
-                
+
                 $('#panel_seleccion_usuario').show();
                 // Asegurarse de que el botón se actualice
                 updateEnviarButtonState();
@@ -987,6 +987,7 @@ function listarDetalle(tick_id) {
         $('#btncerrarticket').show();
         $('#panel_respuestas_rapidas').show();
         $('#btnresolvernovedad').hide();
+        $('#btn_despacho_masivo').hide();
 
 
         if (ticketData.siguientes_pasos_lineales && ticketData.siguientes_pasos_lineales.length > 0 && ticketData.siguientes_pasos_lineales[0].requiere_seleccion_manual) {
@@ -1098,6 +1099,12 @@ function listarDetalle(tick_id) {
 
         // El último paso se redefine: no hay decisiones, no hay sig. paso lineal, Y no es un paso de selección de usuario
         var isLastStep = !hasDecisions && !hasNextLinear && !isSelectionStep;
+
+        var allowsBulkDispatch = (pasoInfo && pasoInfo.permite_despacho_masivo == 1);
+        // Permitir si está asignado y el paso lo permite
+        if (isAssigned && allowsBulkDispatch) {
+            $('#btn_despacho_masivo').show();
+        }
         var canCloseStep = (pasoInfo && pasoInfo.permite_cerrar == 1);
         var forceClose = (pasoInfo && pasoInfo.cerrar_ticket_obligatorio == 1);
 
@@ -1640,3 +1647,63 @@ function renderListaEtiquetasExistentes() {
     });
     $('#lista_etiquetas_existentes').html(html);
 }
+
+$(document).on('click', '#btn_despacho_masivo', function () {
+    $('#modal_seleccionar_excel').modal('show');
+});
+
+$(document).on('click', '#btn_confirmar_despacho', function () {
+    var tick_id = getUrlParameter('ID');
+    var fileInput = document.getElementById('file_despacho_masivo');
+
+    if (fileInput.files.length === 0) {
+        swal("Error", "Por favor seleccione un archivo.", "error");
+        return;
+    }
+
+    var formData = new FormData();
+    formData.append('tick_id', tick_id);
+    formData.append('excel_file', fileInput.files[0]);
+
+    // Show loading state
+    var $btn = $(this);
+    $btn.prop('disabled', true).text('Procesando...');
+
+    $.ajax({
+        url: "../../controller/ticket.php?op=dispatch_uploaded_excel",
+        type: "POST",
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function (response) {
+            $btn.prop('disabled', false).text('Procesar Despacho');
+            try {
+                var data = JSON.parse(response);
+                if (data.success) {
+                    var msg = "Procesados: " + data.processed + ". Fallidos: " + data.failed + ".";
+                    if (data.failed > 0) {
+                        var errorMsg = data.errors.slice(0, 10).join("\n");
+                        if (data.errors.length > 10) errorMsg += "\n... (" + (data.errors.length - 10) + " más)";
+                        swal("Proceso completado con errores", msg + "\n\nDetalle:\n" + errorMsg, "warning");
+                    } else {
+                        swal("Éxito", msg, "success");
+                    }
+                    $('#modal_seleccionar_excel').modal('hide');
+                    if (data.processed > 0) {
+                        setTimeout(function () { location.reload(); }, 2000);
+                    }
+                } else {
+                    swal("Error", data.message, "error");
+                }
+            } catch (e) {
+                console.error(e);
+                swal("Error", "Error al procesar la respuesta del servidor.", "error");
+            }
+        },
+        error: function (e) {
+            console.error(e);
+            $btn.prop('disabled', false).text('Procesar Despacho');
+            swal("Error", "Error en la petición AJAX.", "error");
+        }
+    });
+});

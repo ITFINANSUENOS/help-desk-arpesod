@@ -194,6 +194,16 @@ switch ($_GET["op"]) {
         echo json_encode($usuarios);
         break;
 
+    case "dispatch_uploaded_excel":
+        if (!isset($_FILES['excel_file']) || $_FILES['excel_file']['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['success' => false, 'message' => 'Error al subir el archivo.']);
+            exit;
+        }
+        $file_path = $_FILES['excel_file']['tmp_name'];
+        $result = $ticketService->processBulkDispatch($_POST['tick_id'], $file_path);
+        echo json_encode($result);
+        break;
+
     case "check_next_step_candidates":
         $result = $ticketService->getNextStepCandidates($_POST['tick_id']);
         echo json_encode($result);

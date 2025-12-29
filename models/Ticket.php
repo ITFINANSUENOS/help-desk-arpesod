@@ -397,6 +397,7 @@ class Ticket extends Conectar
         t.tick_id,
         t.usu_id,
         t.emp_id,
+        t.dp_id,
         t.cat_id,
         t.cats_id,
         t.tick_titulo,

@@ -77,6 +77,10 @@
                         <label for="cerrar_ticket_obligatorio">¿Obligar cierre en este paso (Terminal)?</label>
                     </div>
                     <div class="checkbox" style="margin-top: 1rem;">
+                        <input type="checkbox" id="permite_despacho_masivo" name="permite_despacho_masivo" value="1">
+                        <label for="permite_despacho_masivo">¿Permite Despacho Masivo (Carga Excel)?</label>
+                    </div>
+                    <div class="checkbox" style="margin-top: 1rem;">
                         <input type="checkbox" id="necesita_aprobacion_jefe" name="necesita_aprobacion_jefe" value="1">
                         <label for="necesita_aprobacion_jefe">¿Necesita Aprobación Jefe Inmediato?</label>
                     </div>

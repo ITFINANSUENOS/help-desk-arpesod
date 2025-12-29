@@ -56,4 +56,14 @@ class Documento extends Conectar
         $sql->execute();
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
+
+    public function get_documento_x_id($doc_id)
+    {
+        $conectar = parent::conexion();
+        $sql = "SELECT * FROM td_documento WHERE doc_id = ? AND est = '1'";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $doc_id);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
