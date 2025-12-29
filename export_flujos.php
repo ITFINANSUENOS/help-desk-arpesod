@@ -25,7 +25,7 @@ function cleanHtml($html)
     $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
     // Convertir &nbsp; a espacio normal
-    $text = str_replace("\xc2\xa0", ' ', $text);
+    $text = str_replace("\xc2\xa0", ' ', $text); 
 
     return trim($text);
 }
