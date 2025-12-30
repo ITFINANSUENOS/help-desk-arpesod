@@ -39,35 +39,37 @@ if (isset($_SESSION["usu_id"])) {
                         </div>
                     </div>
                 </header>
-                <div class="row" style="margin-bottom: 15px;">
-                    <div class="col-lg-3">
-                        <fieldset class="form-group">
-                            <label class="form-label" for="fech_crea_start">Fecha Inicio</label>
-                            <input type="date" class="form-control" id="fech_crea_start">
-                        </fieldset>
-                    </div>
-                    <div class="col-lg-3">
-                        <fieldset class="form-group">
-                            <label class="form-label" for="fech_crea_end">Fecha Fin</label>
-                            <input type="date" class="form-control" id="fech_crea_end">
-                        </fieldset>
-                    </div>
-                    <div class="col-lg-4">
-                        <fieldset class="form-group">
-                            <label class="form-label" for="custom_search">Busqueda</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="custom_search" placeholder="Buscar por algo en especifico">
-                                <span class="input-group-btn">
-                                    <button class="btn btn-primary ladda-button" data-style="expand-left" type="button" id="btn_search">
-                                        <i class="fa fa-search"></i> Buscar
-                                    </button>
-                                    <button class="btn btn-secondary ladda-button" data-style="expand-left" type="button" id="btn_clear">
-                                        <i class="fa fa-eraser"></i> Limpiar
-                                    </button>
-                                </span>
-                            </div>
-                        </fieldset>
-                    </div>
+                <div class="box-typical box-typical-padding" style="margin-bottom: 15px;">
+                    <form class="row" id="ticket_search_form">
+                        <div class="col-lg-3">
+                            <fieldset class="form-group">
+                                <label class="form-label" for="fech_crea_start">Fecha Inicio</label>
+                                <input type="date" class="form-control" id="fech_crea_start">
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-3">
+                            <fieldset class="form-group">
+                                <label class="form-label" for="fech_crea_end">Fecha Fin</label>
+                                <input type="date" class="form-control" id="fech_crea_end">
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-6">
+                            <fieldset class="form-group">
+                                <label class="form-label" for="custom_search">Busqueda</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="custom_search" placeholder="Buscar por algo en especifico">
+                                    <span class="input-group-btn">
+                                        <button class="btn btn-primary ladda-button" data-style="expand-left" type="button" id="btn_search">
+                                            <i class="fa fa-search"></i> Buscar
+                                        </button>
+                                        <button class="btn btn-secondary ladda-button" data-style="expand-left" type="button" id="btn_clear">
+                                            <i class="fa fa-eraser"></i> Limpiar
+                                        </button>
+                                    </span>
+                                </div>
+                            </fieldset>
+                        </div>
+                    </form>
                 </div>
                 <div class="box-typical box-typical-padding">
                     <table id="historial_data" class="table table-bordered table-striped table-vcenter js-dataTable-full">

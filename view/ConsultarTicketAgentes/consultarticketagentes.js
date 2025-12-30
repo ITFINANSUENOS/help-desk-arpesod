@@ -30,6 +30,8 @@ $(document).ready(function () {
                 data: function (d) {
                     d.usu_id = usu_id;
                     d.search_custom = $('#custom_search').val();
+                    d.fech_crea_start = $('#fech_crea_start').val();
+                    d.fech_crea_end = $('#fech_crea_end').val();
                 },
                 error: function (e) {
                     console.log(e.responseText);
@@ -70,13 +72,33 @@ $(document).ready(function () {
     }
 
     // Event listener for custom search
-    $('#btn_search').on('click', function () {
+    // Custom Search Handlers
+    $(document).on('click', '#btn_search', function () {
+        var l = Ladda.create(document.querySelector('#btn_search'));
+        l.start();
         $('#ticket_data').DataTable().ajax.reload();
     });
 
-    $('#custom_search').on('keyup', function (e) {
-        if (e.key === 'Enter' || e.keyCode === 13) {
-            $('#ticket_data').DataTable().ajax.reload();
+    $(document).on('click', '#btn_clear', function () {
+        var l = Ladda.create(document.querySelector('#btn_clear'));
+        l.start();
+        $('#fech_crea_start').val('');
+        $('#fech_crea_end').val('');
+        $('#custom_search').val('');
+        $('#ticket_data').DataTable().ajax.reload();
+    });
+
+    // Stop Ladda on table draw
+    $('#ticket_data').on('draw.dt', function () {
+        var l_search = Ladda.create(document.querySelector('#btn_search'));
+        var l_clear = Ladda.create(document.querySelector('#btn_clear'));
+        l_search.stop();
+        l_clear.stop();
+    });
+
+    $(document).on('keypress', '#custom_search', function (e) {
+        if (e.which == 13) {
+            $('#btn_search').click();
         }
     });
 
