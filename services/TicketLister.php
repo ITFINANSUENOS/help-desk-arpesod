@@ -24,7 +24,16 @@ class TicketLister
         $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
         $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
 
-        $datos = $this->ticketModel->listar_ticket_x_usuario($userId, $search, $status, $fech_crea_start, $fech_crea_end);
+        $start = isset($_POST['start']) ? $_POST['start'] : 0;
+        $length = isset($_POST['length']) ? $_POST['length'] : 10;
+        $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
+        $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
+
+        $result = $this->ticketModel->listar_ticket_x_usuario($userId, $search, $status, $fech_crea_start, $fech_crea_end, $start, $length, $order_column, $order_dir);
+        $datos = $result['data'];
+        $recordsTotal = $result['recordsTotal'];
+        $recordsFiltered = $result['recordsFiltered'];
+
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -88,8 +97,8 @@ class TicketLister
 
         return [
             "sEcho" => $draw,
-            "iTotalRecords" => count($data),
-            "iTotalDisplayRecords" => count($data),
+            "iTotalRecords" => $recordsTotal,
+            "iTotalDisplayRecords" => $recordsFiltered,
             "aaData" => $data
         ];
     }
@@ -101,7 +110,16 @@ class TicketLister
         $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
         $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
 
-        $datos = $this->ticketModel->listar_ticket_x_agente($agentId, $search, $status, $fech_crea_start, $fech_crea_end);
+        $start = isset($_POST['start']) ? $_POST['start'] : 0;
+        $length = isset($_POST['length']) ? $_POST['length'] : 10;
+        $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
+        $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
+
+        $result = $this->ticketModel->listar_ticket_x_agente($agentId, $search, $status, $fech_crea_start, $fech_crea_end, $start, $length, $order_column, $order_dir);
+        $datos = $result['data'];
+        $recordsTotal = $result['recordsTotal'];
+        $recordsFiltered = $result['recordsFiltered'];
+
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -166,8 +184,8 @@ class TicketLister
 
         return [
             "sEcho" => $draw,
-            "iTotalRecords" => count($data),
-            "iTotalDisplayRecords" => count($data),
+            "iTotalRecords" => $recordsTotal,
+            "iTotalDisplayRecords" => $recordsFiltered,
             "aaData" => $data
         ];
     }
@@ -179,7 +197,16 @@ class TicketLister
         $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
         $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
 
-        $datos = $this->ticketModel->listar_ticket($search, $status, $fech_crea_start, $fech_crea_end);
+        $start = isset($_POST['start']) ? $_POST['start'] : 0;
+        $length = isset($_POST['length']) ? $_POST['length'] : 10;
+        $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
+        $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
+
+        $result = $this->ticketModel->listar_ticket($search, $status, $fech_crea_start, $fech_crea_end, $start, $length, $order_column, $order_dir);
+        $datos = $result['data'];
+        $recordsTotal = $result['recordsTotal'];
+        $recordsFiltered = $result['recordsFiltered'];
+
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -251,8 +278,8 @@ class TicketLister
 
         return [
             "sEcho" => $draw,
-            "iTotalRecords" => count($data),
-            "iTotalDisplayRecords" => count($data),
+            "iTotalRecords" => $recordsTotal,
+            "iTotalDisplayRecords" => $recordsFiltered,
             "aaData" => $data
         ];
     }
@@ -264,7 +291,16 @@ class TicketLister
         $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
         $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
 
-        $datos = $this->ticketModel->listar_tickets_involucrados_por_usuario($usuId, $search, $fech_crea_start, $fech_crea_end);
+        $start = isset($_POST['start']) ? $_POST['start'] : 0;
+        $length = isset($_POST['length']) ? $_POST['length'] : 10;
+        $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
+        $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
+
+        $result = $this->ticketModel->listar_tickets_involucrados_por_usuario($usuId, $search, $fech_crea_start, $fech_crea_end, $start, $length, $order_column, $order_dir);
+        $datos = $result['data'];
+        $recordsTotal = $result['recordsTotal'];
+        $recordsFiltered = $result['recordsFiltered'];
+
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -308,10 +344,12 @@ class TicketLister
             $data[] = $sub_array;
         }
 
+        $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 1;
+
         return [
-            "sEcho" => isset($_POST['draw']) ? intval($_POST['draw']) : 1,
-            "iTotalRecords" => count($data),
-            "iTotalDisplayRecords" => count($data),
+            "sEcho" => $draw,
+            "iTotalRecords" => $recordsTotal,
+            "iTotalDisplayRecords" => $recordsFiltered,
             "aaData" => $data
         ];
     }
@@ -323,7 +361,16 @@ class TicketLister
         $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
         $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
 
-        $datos = $this->ticketModel->listar_tickets_con_historial($search, $fech_crea_start, $fech_crea_end);
+        $start = isset($_POST['start']) ? $_POST['start'] : 0;
+        $length = isset($_POST['length']) ? $_POST['length'] : 10;
+        $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
+        $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
+
+        $result = $this->ticketModel->listar_tickets_con_historial($search, $fech_crea_start, $fech_crea_end, $start, $length, $order_column, $order_dir);
+        $datos = $result['data'];
+        $recordsTotal = $result['recordsTotal'];
+        $recordsFiltered = $result['recordsFiltered'];
+
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -369,10 +416,12 @@ class TicketLister
             $data[] = $sub_array;
         }
 
+        $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 1;
+
         return [
-            "sEcho" => isset($_POST['draw']) ? intval($_POST['draw']) : 1,
-            "iTotalRecords" => count($data),
-            "iTotalDisplayRecords" => count($data),
+            "sEcho" => $draw,
+            "iTotalRecords" => $recordsTotal,
+            "iTotalDisplayRecords" => $recordsFiltered,
             "aaData" => $data
         ];
     }
@@ -402,7 +451,17 @@ class TicketLister
 
     public function listTicketsWithError()
     {
-        $datos = $this->ticketModel->listar_tickets_con_error();
+        $search = isset($_POST['search']['value']) ? $_POST['search']['value'] : null;
+        $start = isset($_POST['start']) ? $_POST['start'] : 0;
+        $length = isset($_POST['length']) ? $_POST['length'] : 10;
+        $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
+        $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
+
+        $result = $this->ticketModel->listar_tickets_con_error($search, $start, $length, $order_column, $order_dir);
+        $datos = $result['data'];
+        $recordsTotal = $result['recordsTotal'];
+        $recordsFiltered = $result['recordsFiltered'];
+
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -435,8 +494,8 @@ class TicketLister
 
         return [
             "sEcho" => isset($_POST['draw']) ? intval($_POST['draw']) : 1,
-            "iTotalRecords" => count($data),
-            "iTotalDisplayRecords" => count($data),
+            "iTotalRecords" => $recordsTotal,
+            "iTotalDisplayRecords" => $recordsFiltered,
             "aaData" => $data
         ];
     }
@@ -444,19 +503,49 @@ class TicketLister
     {
         require_once('../models/TicketError.php');
         $ticketErrorModel = new TicketError();
-        $datos = $ticketErrorModel->listar_errores_recibidos($usuId);
-        return $this->formatErrorList($datos);
+
+        $search = isset($_POST['search']['value']) ? $_POST['search']['value'] : null;
+        $start = isset($_POST['start']) ? $_POST['start'] : 0;
+        $length = isset($_POST['length']) ? $_POST['length'] : 10;
+        $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
+        $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
+
+        $result = $ticketErrorModel->listar_errores_recibidos($usuId, $search, $start, $length, $order_column, $order_dir);
+        return $this->formatErrorListResponse($result);
     }
 
     public function listReportedErrors($usuId)
     {
         require_once('../models/TicketError.php');
         $ticketErrorModel = new TicketError();
-        $datos = $ticketErrorModel->listar_errores_enviados($usuId);
-        return $this->formatErrorList($datos, true);
+
+        $search = isset($_POST['search']['value']) ? $_POST['search']['value'] : null;
+        $start = isset($_POST['start']) ? $_POST['start'] : 0;
+        $length = isset($_POST['length']) ? $_POST['length'] : 10;
+        $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
+        $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
+
+        $result = $ticketErrorModel->listar_errores_enviados($usuId, $search, $start, $length, $order_column, $order_dir);
+        return $this->formatErrorListResponse($result, true);
     }
 
-    private function formatErrorList($datos, $isReported = false)
+    private function formatErrorListResponse($result, $isReported = false)
+    {
+        $datos = $result['data'];
+        $recordsTotal = $result['recordsTotal'];
+        $recordsFiltered = $result['recordsFiltered'];
+
+        $data = $this->processErrorData($datos, $isReported);
+
+        return [
+            "sEcho" => isset($_POST['draw']) ? intval($_POST['draw']) : 1,
+            "iTotalRecords" => $recordsTotal,
+            "iTotalDisplayRecords" => $recordsFiltered,
+            "aaData" => $data
+        ];
+    }
+
+    private function processErrorData($datos, $isReported = false)
     {
         $data = array();
         foreach ($datos as $row) {
@@ -485,12 +574,7 @@ class TicketLister
             $data[] = $sub_array;
         }
 
-        return [
-            "sEcho" => isset($_POST['draw']) ? intval($_POST['draw']) : 1,
-            "iTotalRecords" => count($data),
-            "iTotalDisplayRecords" => count($data),
-            "aaData" => $data
-        ];
+        return $data;
     }
 
     public function listTicketsByObserver($userId)

@@ -20,8 +20,8 @@ $(document).ready(function () {
         $('#lblusucrea').remove();
 
         tabla = $('#ticket_data').dataTable({
-            "aProcessing": true,
-            "aServerSide": true,
+            "processing": true,
+            "serverSide": true,
             order: [[0, 'desc']],
             dom: 'Bfrtip',
             "searching": true,
@@ -83,8 +83,8 @@ $(document).ready(function () {
         $('#lblusucrea').remove();
 
         tabla = $('#ticket_data').dataTable({
-            "aProcessing": true,
-            "aServerSide": true,
+            "processing": true,
+            "serverSide": true,
             order: [[0, 'desc']],
             dom: 'Bfrtip',
             "searching": true,
@@ -143,8 +143,9 @@ $(document).ready(function () {
         }).DataTable();
     } else if (rol_id != rol_real_id) {
         tabla = $('#ticket_data').dataTable({
-            "aProcessing": true,
-            "aServerSide": true,
+            "processing": true,
+            "serverSide": true,
+            order: [[0, 'desc']],
             dom: 'Bfrtip',
             "searching": true,
             lengthChange: false,

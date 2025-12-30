@@ -10,8 +10,8 @@ $(document).ready(function () {
 
     // TABLA 1: MIS ERRORES (RECIBIDOS)
     tabla_recibidos = $('#ticket_data_recibidos').dataTable({
-        "aProcessing": true,
-        "aServerSide": true,
+        "processing": true,
+        "serverSide": true,
         order: [[0, 'desc']],
         dom: 'Bfrtip',
         "searching": true,
@@ -57,8 +57,8 @@ $(document).ready(function () {
 
     // TABLA 2: ERRORES REPORTADOS (ENVIADOS)
     tabla_enviados = $('#ticket_data_enviados').dataTable({
-        "aProcessing": true,
-        "aServerSide": true,
+        "processing": true,
+        "serverSide": true,
         order: [[0, 'desc']],
         dom: 'Bfrtip',
         "searching": true,

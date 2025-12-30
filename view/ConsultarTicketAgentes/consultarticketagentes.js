@@ -11,8 +11,8 @@ $(document).ready(function () {
     if (rol_id == 2) {
 
         tabla = $('#ticket_data').dataTable({
-            "aProcessing": true,
-            "aServerSide": true,
+            "processing": true,
+            "serverSide": true,
             order: [[0, 'desc']],
             dom: 'Bfrtip',
             "searching": true,

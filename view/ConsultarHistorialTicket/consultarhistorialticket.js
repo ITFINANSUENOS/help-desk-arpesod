@@ -14,8 +14,8 @@ $(document).ready(function () {
     // Inicialización de la tabla de historial
     if (rol_id == 3) {
         tabla = $('#historial_data').dataTable({
-            "aProcessing": true,
-            "aServerSide": true,
+            "processing": true,
+            "serverSide": true,
             order: [[0, 'desc']],
             dom: 'Bfrtip',
             "searching": true,
@@ -73,8 +73,8 @@ $(document).ready(function () {
         }).DataTable();
     } else {
         tabla = $('#historial_data').dataTable({
-            "aProcessing": true,
-            "aServerSide": true,
+            "processing": true,
+            "serverSide": true,
             order: [[0, 'desc']],
             dom: 'Bfrtip',
             "searching": true,

@@ -139,11 +139,66 @@ class Ticket extends Conectar
         }
     }
 
-    public function listar_ticket_x_usuario($usu_id, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null)
+    public function listar_ticket_x_usuario($usu_id, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT 
+
+        // Base query conditions
+        $conditions = "tm_ticket.est = 1 AND tm_usuario.usu_id = :usu_id";
+        $params = [':usu_id' => $usu_id];
+
+        if (!empty($status)) {
+            $conditions .= " AND tm_ticket.tick_estado = :status";
+            $params[':status'] = $status;
+        }
+
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $conditions .= " AND tm_ticket.fech_crea BETWEEN :start_date AND :end_date";
+            $params[':start_date'] = $fech_crea_start . " 00:00:00";
+            $params[':end_date'] = $fech_crea_end . " 23:59:59";
+        }
+
+        if (!empty($search_term)) {
+            $conditions .= " AND (
+                tm_ticket.tick_titulo LIKE :search_term 
+                OR tm_ticket.tick_descrip LIKE :search_term
+                OR EXISTS (
+                    SELECT 1 FROM td_ticketdetalle 
+                    WHERE td_ticketdetalle.tick_id = tm_ticket.tick_id 
+                    AND td_ticketdetalle.tickd_descrip LIKE :search_term
+                )
+            )";
+            $params[':search_term'] = "%" . $search_term . "%";
+        }
+
+        // 1. Get Total Records (without filters) - Approximate or exact depending on needs. 
+        // For performance in strict mode usually distinct count, but here simplistic approach:
+        $sql_total = "SELECT COUNT(*) FROM tm_ticket INNER JOIN tm_usuario ON tm_ticket.usu_id = tm_usuario.usu_id WHERE tm_ticket.est = 1 AND tm_usuario.usu_id = :usu_id";
+        $stmt_total = $conectar->prepare($sql_total);
+        $stmt_total->bindValue(':usu_id', $usu_id);
+        $stmt_total->execute();
+        $recordsTotal = $stmt_total->fetchColumn();
+
+        // 2. Get Filtered Records Count
+        $sql_filtered = "SELECT COUNT(*) 
+                        FROM tm_ticket
+                        INNER join tm_categoria on tm_ticket.cat_id = tm_categoria.cat_id
+                        INNER join tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id 
+                        INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
+                        INNER join td_prioridad as pd on tm_ticket.pd_id = pd.pd_id
+                        INNER join td_prioridad as pdd on tm_subcategoria.pd_id = pdd.pd_id
+                        WHERE $conditions";
+
+        $stmt_filtered = $conectar->prepare($sql_filtered);
+        foreach ($params as $key => $value) {
+            $stmt_filtered->bindValue($key, $value);
+        }
+        $stmt_filtered->execute();
+        $recordsFiltered = $stmt_filtered->fetchColumn();
+
+        // 3. Get Data
+        $sql_data = "SELECT 
                 tm_ticket.tick_id,
                 tm_ticket.usu_id,
                 tm_ticket.cat_id,
@@ -165,66 +220,141 @@ class Ticket extends Conectar
                 INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
                 INNER join td_prioridad as pd on tm_ticket.pd_id = pd.pd_id
                 INNER join td_prioridad as pdd on tm_subcategoria.pd_id = pdd.pd_id
-                WHERE 
-                tm_ticket.est = 1
-                AND tm_usuario.usu_id=?";
+                WHERE $conditions";
 
-        if (!empty($status)) {
-            $sql .= " AND tm_ticket.tick_estado = ?";
+        // Ordering
+        if ($order_column !== null && $order_dir !== null) {
+            // Map column index to database column name if necessary, or pass column name directly
+            // For safety, let's whitelist or use specific mapping if we knew the indices.
+            // Assuming column names are passed or we use the index. 
+            // In typical DataTables, columns are indexed.
+            $columns = [
+                0 => 'tm_ticket.tick_id',
+                1 => 'tm_categoria.cat_nom',
+                2 => 'tm_subcategoria.cats_nom',
+                3 => 'tm_ticket.tick_titulo',
+                4 => 'tm_ticket.tick_estado',
+                5 => 'prioridad_usuario',
+                // ... add others
+                7 => 'tm_ticket.fech_crea'
+            ];
+
+            $colName = isset($columns[$order_column]) ? $columns[$order_column] : 'tm_ticket.tick_id';
+            $dir = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
+            $sql_data .= " ORDER BY $colName $dir";
+        } else {
+            $sql_data .= " ORDER BY tm_ticket.tick_id DESC";
         }
 
-        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
-            $sql .= " AND tm_ticket.fech_crea BETWEEN ? AND ?";
+        // Pagination
+        if ($length != -1) {
+            $sql_data .= " LIMIT :start, :length";
         }
 
-        if (!empty($search_term)) {
-            $sql .= " AND (
-                tm_ticket.tick_titulo LIKE ? 
-                OR tm_ticket.tick_descrip LIKE ?
-                OR EXISTS (
-                    SELECT 1 FROM td_ticketdetalle 
-                    WHERE td_ticketdetalle.tick_id = tm_ticket.tick_id 
-                    AND td_ticketdetalle.tickd_descrip LIKE ?
-                )
-            )";
+        $stmt_data = $conectar->prepare($sql_data);
+        foreach ($params as $key => $value) {
+            $stmt_data->bindValue($key, $value);
         }
-
-        $sql = $conectar->prepare($sql);
-        $sql->bindValue(1, $usu_id);
-
-        $paramIndex = 2;
-        if (!empty($status)) {
-            $sql->bindValue($paramIndex, $status);
-            $paramIndex++;
+        if ($length != -1) {
+            $stmt_data->bindValue(':start', (int)$start, PDO::PARAM_INT);
+            $stmt_data->bindValue(':length', (int)$length, PDO::PARAM_INT);
         }
+        $stmt_data->execute();
+        $data = $stmt_data->fetchAll(PDO::FETCH_ASSOC);
 
-        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
-            $sql->bindValue($paramIndex, $fech_crea_start . " 00:00:00");
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $fech_crea_end . " 23:59:59");
-            $paramIndex++;
-        }
-
-        if (!empty($search_term)) {
-            $term = "%" . $search_term . "%";
-            $sql->bindValue($paramIndex, $term);
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $term);
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $term);
-            $paramIndex++;
-        }
-
-        $sql->execute();
-
-        return $resultado = $sql->fetchAll();
+        return [
+            'data' => $data,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered
+        ];
     }
 
-    public function listar_ticket_x_agente($usu_asig, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null)
+    public function listar_ticket_x_agente($usu_asig, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT 
+
+        // Base conditions
+        $conditions = "tm_ticket.est = 1";
+        $params = [];
+
+        // MÓDULO EXPANDIDO: Si es 'Cerrado', buscar también en historial.
+        if ($status == 'Cerrado') {
+            $conditions .= " AND ( FIND_IN_SET(:usu_asig, tm_ticket.usu_asig) OR EXISTS (SELECT 1 FROM th_ticket_asignacion WHERE th_ticket_asignacion.tick_id = tm_ticket.tick_id AND th_ticket_asignacion.usu_asig = :usu_asig_2) )";
+            $params[':usu_asig'] = $usu_asig;
+            $params[':usu_asig_2'] = $usu_asig;
+        } else {
+            $conditions .= " AND FIND_IN_SET(:usu_asig, tm_ticket.usu_asig)";
+            $params[':usu_asig'] = $usu_asig;
+        }
+
+        if (!empty($status)) {
+            $conditions .= " AND tm_ticket.tick_estado = :status";
+            $params[':status'] = $status;
+        }
+
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $conditions .= " AND tm_ticket.fech_crea BETWEEN :start_date AND :end_date";
+            $params[':start_date'] = $fech_crea_start . " 00:00:00";
+            $params[':end_date'] = $fech_crea_end . " 23:59:59";
+        }
+
+        if (!empty($search_term)) {
+            $conditions .= " AND (
+                tm_ticket.tick_titulo LIKE :search_term 
+                OR tm_ticket.tick_descrip LIKE :search_term
+                OR EXISTS (
+                    SELECT 1 FROM td_ticketdetalle 
+                    WHERE td_ticketdetalle.tick_id = tm_ticket.tick_id 
+                    AND td_ticketdetalle.tickd_descrip LIKE :search_term
+                )
+            )";
+            $params[':search_term'] = "%" . $search_term . "%";
+        }
+
+        // 1. Total Records (Approximate scope - relevant to agent)
+        // Note: For 'Cerrado' ensuring scope is same as filtered without the extra filters is tricky if we want exact "Total" vs "Filtered".
+        // Often "Total" means total in the table (all tickets visible to agent).
+        // Let's reuse the agent visibility logic but without status/date/search filters for "Total" if possible, 
+        // OR just simple count if strict correctness of "Total" isn't critical (often users just care about filtered).
+        // For simplicity and performance, we'll calculate Total as "Total satisfying the base agent condition"
+        $sql_total = "SELECT COUNT(*) FROM tm_ticket WHERE est = 1";
+        if ($status == 'Cerrado') {
+            $sql_total .= " AND ( FIND_IN_SET(:usu_asig, tm_ticket.usu_asig) OR EXISTS (SELECT 1 FROM th_ticket_asignacion WHERE th_ticket_asignacion.tick_id = tm_ticket.tick_id AND th_ticket_asignacion.usu_asig = :usu_asig_2) )";
+        } else {
+            $sql_total .= " AND FIND_IN_SET(:usu_asig, tm_ticket.usu_asig)";
+        }
+        $stmt_total = $conectar->prepare($sql_total);
+        if ($status == 'Cerrado') {
+            $stmt_total->bindValue(':usu_asig', $usu_asig);
+            $stmt_total->bindValue(':usu_asig_2', $usu_asig);
+        } else {
+            $stmt_total->bindValue(':usu_asig', $usu_asig);
+        }
+        $stmt_total->execute();
+        $recordsTotal = $stmt_total->fetchColumn();
+
+
+        // 2. Filtered Count
+        $sql_filtered = "SELECT COUNT(*) 
+                FROM tm_ticket
+                INNER join tm_categoria on tm_ticket.cat_id = tm_categoria.cat_id
+                INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
+                INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
+                INNER join td_prioridad as pd on tm_ticket.pd_id = pd.pd_id
+                INNER join td_prioridad as pdd on tm_subcategoria.pd_id = pdd.pd_id
+                WHERE $conditions";
+
+        $stmt_filtered = $conectar->prepare($sql_filtered);
+        foreach ($params as $key => $value) {
+            $stmt_filtered->bindValue($key, $value);
+        }
+        $stmt_filtered->execute();
+        $recordsFiltered = $stmt_filtered->fetchColumn();
+
+
+        // 3. Data
+        $sql_data = "SELECT 
                 tm_ticket.tick_id,
                 tm_ticket.usu_id,
                 tm_ticket.cat_id,
@@ -248,83 +378,108 @@ class Ticket extends Conectar
                 INNER join td_prioridad as pd on tm_ticket.pd_id = pd.pd_id
                 INNER join td_prioridad as pdd on tm_subcategoria.pd_id = pdd.pd_id
 
-                WHERE 
-                tm_ticket.est = 1";
+                WHERE $conditions";
 
-        // MÓDULO EXPANDIDO: Si es 'Cerrado', buscar también en historial.
-        if ($status == 'Cerrado') {
-            $sql .= " AND ( FIND_IN_SET(?, tm_ticket.usu_asig) OR EXISTS (SELECT 1 FROM th_ticket_asignacion WHERE th_ticket_asignacion.tick_id = tm_ticket.tick_id AND th_ticket_asignacion.usu_asig = ?) )";
+        // Ordering
+        if ($order_column !== null && $order_dir !== null) {
+            $columns = [
+                0 => 'tm_ticket.tick_id',
+                1 => 'tm_categoria.cat_nom',
+                2 => 'tm_subcategoria.cats_nom',
+                3 => 'tm_ticket.tick_titulo',
+                4 => 'tm_ticket.tick_estado',
+                5 => 'prioridad_usuario',
+                // ...
+                8 => 'tm_ticket.fech_crea'
+            ];
+            $colName = isset($columns[$order_column]) ? $columns[$order_column] : 'tm_ticket.tick_id';
+            $dir = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
+            $sql_data .= " ORDER BY $colName $dir";
         } else {
-            $sql .= " AND FIND_IN_SET(?, tm_ticket.usu_asig)";
+            $sql_data .= " ORDER BY tm_ticket.tick_id DESC";
         }
 
-        if (!empty($status)) {
-            $sql .= " AND tm_ticket.tick_estado = ?";
+        // Pagination
+        if ($length != -1) {
+            $sql_data .= " LIMIT :start, :length";
         }
 
-        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
-            $sql .= " AND tm_ticket.fech_crea BETWEEN ? AND ?";
+        $stmt_data = $conectar->prepare($sql_data);
+        foreach ($params as $key => $value) {
+            $stmt_data->bindValue($key, $value);
         }
-
-        if (!empty($search_term)) {
-            $sql .= " AND (
-                tm_ticket.tick_titulo LIKE ? 
-                OR tm_ticket.tick_descrip LIKE ?
-                OR EXISTS (
-                    SELECT 1 FROM td_ticketdetalle 
-                    WHERE td_ticketdetalle.tick_id = tm_ticket.tick_id 
-                    AND td_ticketdetalle.tickd_descrip LIKE ?
-                )
-            )";
+        if ($length != -1) {
+            $stmt_data->bindValue(':start', (int)$start, PDO::PARAM_INT);
+            $stmt_data->bindValue(':length', (int)$length, PDO::PARAM_INT);
         }
+        $stmt_data->execute();
+        $data = $stmt_data->fetchAll(PDO::FETCH_ASSOC);
 
-
-        $sql = $conectar->prepare($sql);
-
-        $paramIndex = 1;
-
-        if ($status == 'Cerrado') {
-            $sql->bindValue($paramIndex, $usu_asig); // FIND_IN_SET
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $usu_asig); // EXISTS
-            $paramIndex++;
-        } else {
-            $sql->bindValue($paramIndex, $usu_asig);
-            $paramIndex++;
-        }
-
-        if (!empty($status)) {
-            $sql->bindValue($paramIndex, $status);
-            $paramIndex++;
-        }
-
-        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
-            $sql->bindValue($paramIndex, $fech_crea_start . " 00:00:00");
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $fech_crea_end . " 23:59:59");
-            $paramIndex++;
-        }
-
-        if (!empty($search_term)) {
-            $term = "%" . $search_term . "%";
-            $sql->bindValue($paramIndex, $term);
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $term);
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $term);
-            $paramIndex++;
-        }
-
-        $sql->execute();
-
-        return $resultado = $sql->fetchAll();
+        return [
+            'data' => $data,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered
+        ];
     }
 
-    public function listar_ticket($search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null)
+    public function listar_ticket($search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT 
+
+        // Base conditions
+        $conditions = "tm_ticket.est = 1";
+        $params = [];
+
+        if (!empty($status)) {
+            $conditions .= " AND tm_ticket.tick_estado = :status";
+            $params[':status'] = $status;
+        }
+
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $conditions .= " AND tm_ticket.fech_crea BETWEEN :start_date AND :end_date";
+            $params[':start_date'] = $fech_crea_start . " 00:00:00";
+            $params[':end_date'] = $fech_crea_end . " 23:59:59";
+        }
+
+        if (!empty($search_term)) {
+            $conditions .= " AND (
+                tm_ticket.tick_titulo LIKE :search_term 
+                OR tm_ticket.tick_descrip LIKE :search_term
+                OR EXISTS (
+                    SELECT 1 FROM td_ticketdetalle 
+                    WHERE td_ticketdetalle.tick_id = tm_ticket.tick_id 
+                    AND td_ticketdetalle.tickd_descrip LIKE :search_term
+                )
+            )";
+            $params[':search_term'] = "%" . $search_term . "%";
+        }
+
+        // 1. Total Records
+        $sql_total = "SELECT COUNT(*) FROM tm_ticket WHERE est = 1";
+        $stmt_total = $conectar->prepare($sql_total);
+        $stmt_total->execute();
+        $recordsTotal = $stmt_total->fetchColumn();
+
+        // 2. Filtered Records
+        $sql_filtered = "SELECT COUNT(*) 
+                FROM tm_ticket
+                INNER join tm_categoria on tm_ticket.cat_id = tm_categoria.cat_id
+                INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
+                INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
+                INNER join td_prioridad as pd on tm_ticket.pd_id = pd.pd_id
+                INNER join td_prioridad as pdd on tm_subcategoria.pd_id = pdd.pd_id
+                WHERE $conditions";
+
+        $stmt_filtered = $conectar->prepare($sql_filtered);
+        foreach ($params as $key => $value) {
+            $stmt_filtered->bindValue($key, $value);
+        }
+        $stmt_filtered->execute();
+        $recordsFiltered = $stmt_filtered->fetchColumn();
+
+        // 3. Data Query
+        $sql_data = "SELECT 
                 tm_ticket.tick_id,
                 tm_ticket.usu_id,
                 tm_ticket.cat_id,
@@ -346,55 +501,48 @@ class Ticket extends Conectar
                 INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
                 INNER join td_prioridad as pd on tm_ticket.pd_id = pd.pd_id
                 INNER join td_prioridad as pdd on tm_subcategoria.pd_id = pdd.pd_id
-                WHERE 
-                tm_ticket.est = 1";
+                WHERE $conditions";
 
-        if (!empty($status)) {
-            $sql .= " AND tm_ticket.tick_estado = ?";
+        // Ordering
+        if ($order_column !== null && $order_dir !== null) {
+            $columns = [
+                0 => 'tm_ticket.tick_id',
+                1 => 'tm_categoria.cat_nom',
+                2 => 'tm_subcategoria.cats_nom',
+                3 => 'tm_ticket.tick_titulo',
+                4 => 'tm_ticket.tick_estado',
+                5 => 'prioridad_usuario',
+                // ...
+                8 => 'tm_ticket.fech_crea'
+            ];
+            $colName = isset($columns[$order_column]) ? $columns[$order_column] : 'tm_ticket.tick_id';
+            $dir = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
+            $sql_data .= " ORDER BY $colName $dir";
+        } else {
+            $sql_data .= " ORDER BY tm_ticket.tick_id DESC";
         }
 
-        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
-            $sql .= " AND tm_ticket.fech_crea BETWEEN ? AND ?";
+        // Pagination
+        if ($length != -1) {
+            $sql_data .= " LIMIT :start, :length";
         }
 
-        if (!empty($search_term)) {
-            $sql .= " AND (
-                tm_ticket.tick_titulo LIKE ? 
-                OR tm_ticket.tick_descrip LIKE ?
-                OR EXISTS (
-                    SELECT 1 FROM td_ticketdetalle 
-                    WHERE td_ticketdetalle.tick_id = tm_ticket.tick_id 
-                    AND td_ticketdetalle.tickd_descrip LIKE ?
-                )
-            )";
+        $stmt_data = $conectar->prepare($sql_data);
+        foreach ($params as $key => $value) {
+            $stmt_data->bindValue($key, $value);
         }
-
-        $sql = $conectar->prepare($sql);
-
-        if (!empty($status)) {
-            $sql->bindValue(1, $status);
+        if ($length != -1) {
+            $stmt_data->bindValue(':start', (int)$start, PDO::PARAM_INT);
+            $stmt_data->bindValue(':length', (int)$length, PDO::PARAM_INT);
         }
+        $stmt_data->execute();
+        $data = $stmt_data->fetchAll(PDO::FETCH_ASSOC);
 
-        $nextParam = !empty($status) ? 2 : 1;
-
-        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
-            $sql->bindValue($nextParam, $fech_crea_start . " 00:00:00");
-            $nextParam++;
-            $sql->bindValue($nextParam, $fech_crea_end . " 23:59:59");
-            $nextParam++;
-        }
-
-        if (!empty($search_term)) {
-            $term = "%" . $search_term . "%";
-            $paramStart = $nextParam;
-            $sql->bindValue($paramStart, $term);
-            $sql->bindValue($paramStart + 1, $term);
-            $sql->bindValue($paramStart + 2, $term);
-        }
-
-        $sql->execute();
-
-        return $resultado = $sql->fetchAll(pdo::FETCH_ASSOC);
+        return [
+            'data' => $data,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered
+        ];
     }
 
 
@@ -606,11 +754,56 @@ class Ticket extends Conectar
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
-    public function listar_tickets_con_historial($search_term = null, $fech_crea_start = null, $fech_crea_end = null)
+    public function listar_tickets_con_historial($search_term = null, $fech_crea_start = null, $fech_crea_end = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
-        $conectar = parent::conexion();
+        $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT
+
+        $conditions = "
+            t.est = 1 AND
+            t.tick_id IN (SELECT tick_id FROM th_ticket_asignacion)
+        ";
+        $params = [];
+
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $conditions .= " AND t.fech_crea BETWEEN :start_date AND :end_date";
+            $params[':start_date'] = $fech_crea_start . " 00:00:00";
+            $params[':end_date'] = $fech_crea_end . " 23:59:59";
+        }
+
+        if (!empty($search_term)) {
+            $conditions .= " AND (
+                t.tick_titulo LIKE :search_term 
+                OR t.tick_descrip LIKE :search_term
+                OR EXISTS (SELECT 1 FROM td_ticketdetalle d WHERE d.tick_id = t.tick_id AND d.tickd_descrip LIKE :search_term)
+            )";
+            $params[':search_term'] = "%" . $search_term . "%";
+        }
+
+        // 1. Total Records
+        $sql_total = "SELECT COUNT(*) FROM tm_ticket t WHERE t.est = 1 AND t.tick_id IN (SELECT tick_id FROM th_ticket_asignacion)";
+        $stmt_total = $conectar->prepare($sql_total);
+        $stmt_total->execute();
+        $recordsTotal = $stmt_total->fetchColumn();
+
+
+        // 2. Filtered Records
+        $sql_filtered = "SELECT COUNT(*) 
+                FROM tm_ticket t
+                INNER JOIN tm_subcategoria cats ON t.cats_id = cats.cats_id
+                LEFT JOIN tm_usuario u ON t.usu_asig = u.usu_id
+                WHERE $conditions";
+
+        $stmt_filtered = $conectar->prepare($sql_filtered);
+        foreach ($params as $key => $value) {
+            $stmt_filtered->bindValue($key, $value);
+        }
+        $stmt_filtered->execute();
+        $recordsFiltered = $stmt_filtered->fetchColumn();
+
+
+        // 3. Data Query
+        $sql_data = "SELECT
                     t.tick_id,
                     t.tick_titulo,
                     t.tick_estado,
@@ -622,44 +815,47 @@ class Ticket extends Conectar
                     tm_ticket t
                 INNER JOIN tm_subcategoria cats ON t.cats_id = cats.cats_id
                 LEFT JOIN tm_usuario u ON t.usu_asig = u.usu_id
-                WHERE
-                    t.tick_id IN (SELECT tick_id FROM th_ticket_asignacion)";
+                WHERE $conditions";
 
-        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
-            $sql .= " AND t.fech_crea BETWEEN ? AND ?";
+
+        // Ordering
+        if ($order_column !== null && $order_dir !== null) {
+            $columns = [
+                0 => 't.tick_id',
+                1 => 'cats.cats_nom',
+                2 => 't.tick_titulo',
+                3 => 't.tick_estado',
+                4 => 't.fech_crea',
+                5 => 'u.usu_nom'
+            ];
+            $colName = isset($columns[$order_column]) ? $columns[$order_column] : 't.tick_id';
+            $dir = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
+            $sql_data .= " ORDER BY $colName $dir";
+        } else {
+            $sql_data .= " ORDER BY t.tick_id DESC";
         }
 
-        if (!empty($search_term)) {
-            $sql .= " AND (
-                t.tick_titulo LIKE ? 
-                OR t.tick_descrip LIKE ?
-                OR EXISTS (SELECT 1 FROM td_ticketdetalle d WHERE d.tick_id = t.tick_id AND d.tickd_descrip LIKE ?)
-            )";
+        // Pagination
+        if ($length != -1) {
+            $sql_data .= " LIMIT :start, :length";
         }
 
-        $sql .= " ORDER BY t.tick_id DESC";
-
-        $sql = $conectar->prepare($sql);
-
-        $paramIndex = 1;
-        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
-            $sql->bindValue($paramIndex, $fech_crea_start . " 00:00:00");
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $fech_crea_end . " 23:59:59");
-            $paramIndex++;
+        $stmt_data = $conectar->prepare($sql_data);
+        foreach ($params as $key => $value) {
+            $stmt_data->bindValue($key, $value);
         }
-
-        if (!empty($search_term)) {
-            $term = "%" . $search_term . "%";
-            $sql->bindValue($paramIndex, $term);
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $term);
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $term);
+        if ($length != -1) {
+            $stmt_data->bindValue(':start', (int)$start, PDO::PARAM_INT);
+            $stmt_data->bindValue(':length', (int)$length, PDO::PARAM_INT);
         }
+        $stmt_data->execute();
+        $data = $stmt_data->fetchAll(PDO::FETCH_ASSOC);
 
-        $sql->execute();
-        return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
+        return [
+            'data' => $data,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered
+        ];
     }
 
     public function listar_tickets_observados($usu_id)
@@ -692,12 +888,74 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function listar_tickets_involucrados_por_usuario($usu_id, $search_term = null, $fech_crea_start = null, $fech_crea_end = null)
+    public function listar_tickets_involucrados_por_usuario($usu_id, $search_term = null, $fech_crea_start = null, $fech_crea_end = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::conexion();
         parent::set_names();
-        $sql = "SELECT
-                    t.tick_id,
+
+        $conditions = "
+                (
+                    t.tick_id IN (SELECT DISTINCT tick_id FROM th_ticket_asignacion WHERE usu_asig = :usu_id)
+                    OR t.how_asig = :usu_id_2
+                    OR t.tick_id IN (SELECT DISTINCT tick_id FROM tm_ticket_paralelo WHERE usu_id = :usu_id_3)
+                )
+        ";
+        $params = [
+            ':usu_id' => $usu_id,
+            ':usu_id_2' => $usu_id,
+            ':usu_id_3' => $usu_id
+        ];
+
+
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $conditions .= " AND t.fech_crea BETWEEN :start_date AND :end_date";
+            $params[':start_date'] = $fech_crea_start . " 00:00:00";
+            $params[':end_date'] = $fech_crea_end . " 23:59:59";
+        }
+
+        if (!empty($search_term)) {
+            $conditions .= " AND (
+                t.tick_titulo LIKE :search_term 
+                OR t.tick_descrip LIKE :search_term
+                OR EXISTS (SELECT 1 FROM td_ticketdetalle d WHERE d.tick_id = t.tick_id AND d.tickd_descrip LIKE :search_term)
+            )";
+            $params[':search_term'] = "%" . $search_term . "%";
+        }
+
+        // 1. Total Records (Approximate logic: distinct count based on base condition)
+        $sql_total = "SELECT COUNT(DISTINCT t.tick_id) 
+                      FROM tm_ticket t
+                      WHERE 
+                        (
+                            t.tick_id IN (SELECT DISTINCT tick_id FROM th_ticket_asignacion WHERE usu_asig = :usu_id)
+                            OR t.how_asig = :usu_id_2
+                            OR t.tick_id IN (SELECT DISTINCT tick_id FROM tm_ticket_paralelo WHERE usu_id = :usu_id_3)
+                        )";
+        $stmt_total = $conectar->prepare($sql_total);
+        $stmt_total->bindValue(':usu_id', $usu_id);
+        $stmt_total->bindValue(':usu_id_2', $usu_id);
+        $stmt_total->bindValue(':usu_id_3', $usu_id);
+        $stmt_total->execute();
+        $recordsTotal = $stmt_total->fetchColumn();
+
+
+        // 2. Filtered Records
+        $sql_filtered = "SELECT COUNT(DISTINCT t.tick_id) 
+                FROM tm_ticket t
+                INNER JOIN tm_subcategoria cats ON t.cats_id = cats.cats_id
+                LEFT JOIN tm_usuario u ON t.usu_asig = u.usu_id
+                WHERE $conditions";
+
+        $stmt_filtered = $conectar->prepare($sql_filtered);
+        foreach ($params as $key => $value) {
+            $stmt_filtered->bindValue($key, $value);
+        }
+        $stmt_filtered->execute();
+        $recordsFiltered = $stmt_filtered->fetchColumn();
+
+        // 3. Data Query
+        $sql_data = "SELECT
+                     t.tick_id,
                     t.tick_titulo,
                     t.tick_estado,
                     t.fech_crea,
@@ -708,50 +966,48 @@ class Ticket extends Conectar
                     tm_ticket t
                 INNER JOIN tm_subcategoria cats ON t.cats_id = cats.cats_id
                 LEFT JOIN tm_usuario u ON t.usu_asig = u.usu_id
-                WHERE (
-                    t.tick_id IN (SELECT DISTINCT tick_id FROM th_ticket_asignacion WHERE usu_asig = ?)
-                    OR t.how_asig = ?
-                    OR t.tick_id IN (SELECT DISTINCT tick_id FROM tm_ticket_paralelo WHERE usu_id = ?)
-                )";
+                WHERE $conditions";
 
-        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
-            $sql .= " AND t.fech_crea BETWEEN ? AND ?";
+        // Ordering
+        if ($order_column !== null && $order_dir !== null) {
+            $columns = [
+                0 => 't.tick_id',
+                1 => 'cats.cats_nom',
+                2 => 't.tick_titulo',
+                3 => 't.tick_estado',
+                4 => 't.fech_crea',
+                5 => 'u.usu_nom'
+            ];
+            $colName = isset($columns[$order_column]) ? $columns[$order_column] : 't.tick_id';
+            $dir = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
+            $sql_data .= " ORDER BY $colName $dir";
+        } else {
+            $sql_data .= " ORDER BY t.tick_id DESC";
         }
 
-        if (!empty($search_term)) {
-            $sql .= " AND (
-                t.tick_titulo LIKE ? 
-                OR t.tick_descrip LIKE ?
-                OR EXISTS (SELECT 1 FROM td_ticketdetalle d WHERE d.tick_id = t.tick_id AND d.tickd_descrip LIKE ?)
-            )";
+        // Pagination
+        if ($length != -1) {
+            $sql_data .= " LIMIT :start, :length";
         }
 
-        $sql .= " ORDER BY t.tick_id DESC";
-
-        $sql = $conectar->prepare($sql);
-        $sql->bindValue(1, $usu_id);
-        $sql->bindValue(2, $usu_id);
-        $sql->bindValue(3, $usu_id);
-
-        $paramIndex = 4;
-        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
-            $sql->bindValue($paramIndex, $fech_crea_start . " 00:00:00");
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $fech_crea_end . " 23:59:59");
-            $paramIndex++;
+        $stmt_data = $conectar->prepare($sql_data);
+        foreach ($params as $key => $value) {
+            $stmt_data->bindValue($key, $value);
         }
 
-        if (!empty($search_term)) {
-            $term = "%" . $search_term . "%";
-            $sql->bindValue($paramIndex, $term);
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $term);
-            $paramIndex++;
-            $sql->bindValue($paramIndex, $term);
+        if ($length != -1) {
+            $stmt_data->bindValue(':start', (int)$start, PDO::PARAM_INT);
+            $stmt_data->bindValue(':length', (int)$length, PDO::PARAM_INT);
         }
 
-        $sql->execute();
-        return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
+        $stmt_data->execute();
+        $data = $stmt_data->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'data' => $data,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered
+        ];
     }
 
     public function listar_ticket_x_id_x_usuaarioasignado($tick_id)
@@ -1291,11 +1547,48 @@ class Ticket extends Conectar
         $sql->execute();
     }
 
-    public function listar_tickets_con_error()
+    public function listar_tickets_con_error($search_term = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT 
+
+        $conditions = "
+            tm_ticket.est = 1
+            AND tm_ticket.error_proceso > 0
+        ";
+        $params = [];
+
+        if (!empty($search_term)) {
+            $conditions .= " AND (
+                tm_ticket.tick_titulo LIKE :search_term 
+                OR tm_ticket.tick_descrip LIKE :search_term
+            )";
+            $params[':search_term'] = "%" . $search_term . "%";
+        }
+
+        // 1. Total Records
+        $sql_total = "SELECT COUNT(*) FROM tm_ticket WHERE est = 1 AND error_proceso > 0";
+        $stmt_total = $conectar->prepare($sql_total);
+        $stmt_total->execute();
+        $recordsTotal = $stmt_total->fetchColumn();
+
+        // 2. Filtered Records
+        $sql_filtered = "SELECT COUNT(*) 
+                FROM tm_ticket
+                INNER join tm_categoria on tm_ticket.cat_id = tm_categoria.cat_id
+                INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
+                INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
+                WHERE $conditions";
+
+        $stmt_filtered = $conectar->prepare($sql_filtered);
+        foreach ($params as $key => $value) {
+            $stmt_filtered->bindValue($key, $value);
+        }
+        $stmt_filtered->execute();
+        $recordsFiltered = $stmt_filtered->fetchColumn();
+
+        // 3. Data Query
+        $sql_data = "SELECT 
                 tm_ticket.tick_id,
                 tm_ticket.usu_id,
                 tm_ticket.cat_id,
@@ -1321,12 +1614,49 @@ class Ticket extends Conectar
                 INNER join tm_categoria on tm_ticket.cat_id = tm_categoria.cat_id
                 INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
                 INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
-                WHERE 
-                tm_ticket.est = 1
-                AND tm_ticket.error_proceso > 0";
+                WHERE $conditions";
 
-        $sql = $conectar->prepare($sql);
-        $sql->execute();
-        return $resultado = $sql->fetchAll();
+        // Ordering
+        if ($order_column !== null && $order_dir !== null) {
+            $columns = [
+                0 => 'tm_ticket.tick_id',
+                1 => 'tm_categoria.cat_nom',
+                2 => 'tm_subcategoria.cats_nom',
+                3 => 'tm_ticket.tick_titulo',
+                4 => 'ultimo_error', // Note: sorting by subquery or alias might be tricky in some SQL modes but usually works or needs specific handling. Let's try direct alias.
+                5 => 'tm_ticket.tick_estado',
+                6 => 'tm_ticket.fech_crea',
+                7 => 'tm_ticket.usu_asig'
+            ];
+            // Fallback for sorting by computed column if needed, but for now lets try alias
+            $colName = isset($columns[$order_column]) ? $columns[$order_column] : 'tm_ticket.tick_id';
+            $dir = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
+            $sql_data .= " ORDER BY $colName $dir";
+        } else {
+            $sql_data .= " ORDER BY tm_ticket.tick_id DESC";
+        }
+
+        // Pagination
+        if ($length != -1) {
+            $sql_data .= " LIMIT :start, :length";
+        }
+
+        $stmt_data = $conectar->prepare($sql_data);
+        foreach ($params as $key => $value) {
+            $stmt_data->bindValue($key, $value);
+        }
+        if ($length != -1) {
+            $stmt_data->bindValue(':start', (int)$start, PDO::PARAM_INT);
+            $stmt_data->bindValue(':length', (int)$length, PDO::PARAM_INT);
+        }
+
+        $stmt_data->execute();
+        $data = $stmt_data->fetchAll(PDO::FETCH_ASSOC); // Fetch assoc for easier handling
+
+        return [
+            'data' => $data,
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered
+        ];
     }
 }
