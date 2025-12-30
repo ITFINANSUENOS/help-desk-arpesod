@@ -34,15 +34,33 @@ if (isset($_SESSION["usu_id"])) {
                 </header>
 
                 <div class="row" style="margin-bottom: 15px;">
+                    <div class="col-lg-3">
+                        <fieldset class="form-group">
+                            <label class="form-label" for="fech_crea_start">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="fech_crea_start">
+                        </fieldset>
+                    </div>
+                    <div class="col-lg-3">
+                        <fieldset class="form-group">
+                            <label class="form-label" for="fech_crea_end">Fecha Fin</label>
+                            <input type="date" class="form-control" id="fech_crea_end">
+                        </fieldset>
+                    </div>
                     <div class="col-lg-4">
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="custom_search" placeholder="Buscar por algo en especifico">
-                            <span class="input-group-btn">
-                                <button class="btn btn-primary" type="button" id="btn_search">
-                                    <i class="fa fa-search"></i> Buscar
-                                </button>
-                            </span>
-                        </div>
+                        <fieldset class="form-group">
+                            <label class="form-label" for="custom_search">Busqueda</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="custom_search" placeholder="Buscar por algo en especifico">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-primary" type="button" id="btn_search">
+                                        <i class="fa fa-search"></i> Buscar
+                                    </button>
+                                    <button class="btn btn-secondary" type="button" id="btn_clear">
+                                        <i class="fa fa-eraser"></i> Limpiar
+                                    </button>
+                                </span>
+                            </div>
+                        </fieldset>
                     </div>
                 </div>
 
@@ -59,7 +77,7 @@ if (isset($_SESSION["usu_id"])) {
                                 <th style="width: 5%;">Prioridad Defecto</th>
                                 <th style="width: 10%;">Fecha creacion</th>
                                 <th id="lblusertable" style="width: 5%;">Soporte</th>
-                                <th id="lblusucrea" style="width: 5%;">Usuario</th> 
+                                <th id="lblusucrea" style="width: 5%;">Usuario</th>
                                 <th style="width: 10%;">Etiquetas</th>
                                 <th style="width: 10%;">Accion</th>
                             </tr>

@@ -139,7 +139,7 @@ class Ticket extends Conectar
         }
     }
 
-    public function listar_ticket_x_usuario($usu_id, $search_term = null, $status = null)
+    public function listar_ticket_x_usuario($usu_id, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -173,6 +173,10 @@ class Ticket extends Conectar
             $sql .= " AND tm_ticket.tick_estado = ?";
         }
 
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $sql .= " AND tm_ticket.fech_crea BETWEEN ? AND ?";
+        }
+
         if (!empty($search_term)) {
             $sql .= " AND (
                 tm_ticket.tick_titulo LIKE ? 
@@ -194,6 +198,13 @@ class Ticket extends Conectar
             $paramIndex++;
         }
 
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $sql->bindValue($paramIndex, $fech_crea_start . " 00:00:00");
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $fech_crea_end . " 23:59:59");
+            $paramIndex++;
+        }
+
         if (!empty($search_term)) {
             $term = "%" . $search_term . "%";
             $sql->bindValue($paramIndex, $term);
@@ -209,7 +220,7 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function listar_ticket_x_agente($usu_asig, $search_term = null, $status = null)
+    public function listar_ticket_x_agente($usu_asig, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -251,6 +262,10 @@ class Ticket extends Conectar
             $sql .= " AND tm_ticket.tick_estado = ?";
         }
 
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $sql .= " AND tm_ticket.fech_crea BETWEEN ? AND ?";
+        }
+
         if (!empty($search_term)) {
             $sql .= " AND (
                 tm_ticket.tick_titulo LIKE ? 
@@ -283,6 +298,13 @@ class Ticket extends Conectar
             $paramIndex++;
         }
 
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $sql->bindValue($paramIndex, $fech_crea_start . " 00:00:00");
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $fech_crea_end . " 23:59:59");
+            $paramIndex++;
+        }
+
         if (!empty($search_term)) {
             $term = "%" . $search_term . "%";
             $sql->bindValue($paramIndex, $term);
@@ -298,7 +320,7 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function listar_ticket($search_term = null, $status = null)
+    public function listar_ticket($search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -331,6 +353,10 @@ class Ticket extends Conectar
             $sql .= " AND tm_ticket.tick_estado = ?";
         }
 
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $sql .= " AND tm_ticket.fech_crea BETWEEN ? AND ?";
+        }
+
         if (!empty($search_term)) {
             $sql .= " AND (
                 tm_ticket.tick_titulo LIKE ? 
@@ -349,9 +375,18 @@ class Ticket extends Conectar
             $sql->bindValue(1, $status);
         }
 
+        $nextParam = !empty($status) ? 2 : 1;
+
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $sql->bindValue($nextParam, $fech_crea_start . " 00:00:00");
+            $nextParam++;
+            $sql->bindValue($nextParam, $fech_crea_end . " 23:59:59");
+            $nextParam++;
+        }
+
         if (!empty($search_term)) {
             $term = "%" . $search_term . "%";
-            $paramStart = !empty($status) ? 2 : 1;
+            $paramStart = $nextParam;
             $sql->bindValue($paramStart, $term);
             $sql->bindValue($paramStart + 1, $term);
             $sql->bindValue($paramStart + 2, $term);
@@ -571,7 +606,7 @@ class Ticket extends Conectar
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
-    public function listar_tickets_con_historial($search_term = null)
+    public function listar_tickets_con_historial($search_term = null, $fech_crea_start = null, $fech_crea_end = null)
     {
         $conectar = parent::conexion();
         parent::set_names();
@@ -590,6 +625,10 @@ class Ticket extends Conectar
                 WHERE
                     t.tick_id IN (SELECT tick_id FROM th_ticket_asignacion)";
 
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $sql .= " AND t.fech_crea BETWEEN ? AND ?";
+        }
+
         if (!empty($search_term)) {
             $sql .= " AND (
                 t.tick_titulo LIKE ? 
@@ -602,11 +641,21 @@ class Ticket extends Conectar
 
         $sql = $conectar->prepare($sql);
 
+        $paramIndex = 1;
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $sql->bindValue($paramIndex, $fech_crea_start . " 00:00:00");
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $fech_crea_end . " 23:59:59");
+            $paramIndex++;
+        }
+
         if (!empty($search_term)) {
             $term = "%" . $search_term . "%";
-            $sql->bindValue(1, $term);
-            $sql->bindValue(2, $term);
-            $sql->bindValue(3, $term);
+            $sql->bindValue($paramIndex, $term);
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $term);
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $term);
         }
 
         $sql->execute();
@@ -643,7 +692,7 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function listar_tickets_involucrados_por_usuario($usu_id, $search_term = null)
+    public function listar_tickets_involucrados_por_usuario($usu_id, $search_term = null, $fech_crea_start = null, $fech_crea_end = null)
     {
         $conectar = parent::conexion();
         parent::set_names();
@@ -665,6 +714,10 @@ class Ticket extends Conectar
                     OR t.tick_id IN (SELECT DISTINCT tick_id FROM tm_ticket_paralelo WHERE usu_id = ?)
                 )";
 
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $sql .= " AND t.fech_crea BETWEEN ? AND ?";
+        }
+
         if (!empty($search_term)) {
             $sql .= " AND (
                 t.tick_titulo LIKE ? 
@@ -680,11 +733,21 @@ class Ticket extends Conectar
         $sql->bindValue(2, $usu_id);
         $sql->bindValue(3, $usu_id);
 
+        $paramIndex = 4;
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $sql->bindValue($paramIndex, $fech_crea_start . " 00:00:00");
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $fech_crea_end . " 23:59:59");
+            $paramIndex++;
+        }
+
         if (!empty($search_term)) {
             $term = "%" . $search_term . "%";
-            $sql->bindValue(4, $term);
-            $sql->bindValue(5, $term);
-            $sql->bindValue(6, $term);
+            $sql->bindValue($paramIndex, $term);
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $term);
+            $paramIndex++;
+            $sql->bindValue($paramIndex, $term);
         }
 
         $sql->execute();

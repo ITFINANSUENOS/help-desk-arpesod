@@ -21,8 +21,10 @@ class TicketLister
     {
         // Prioritize custom search if not empty, otherwise fallback to DataTables search
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
+        $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
+        $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
 
-        $datos = $this->ticketModel->listar_ticket_x_usuario($userId, $search, $status);
+        $datos = $this->ticketModel->listar_ticket_x_usuario($userId, $search, $status, $fech_crea_start, $fech_crea_end);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -96,8 +98,10 @@ class TicketLister
     {
         // Prioritize custom search if not empty, otherwise fallback to DataTables search
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
+        $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
+        $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
 
-        $datos = $this->ticketModel->listar_ticket_x_agente($agentId, $search, $status);
+        $datos = $this->ticketModel->listar_ticket_x_agente($agentId, $search, $status, $fech_crea_start, $fech_crea_end);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -172,7 +176,10 @@ class TicketLister
     {
         // Prioritize custom search if not empty, otherwise fallback to DataTables search
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
-        $datos = $this->ticketModel->listar_ticket($search, $status);
+        $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
+        $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
+
+        $datos = $this->ticketModel->listar_ticket($search, $status, $fech_crea_start, $fech_crea_end);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -254,7 +261,10 @@ class TicketLister
     {
         // Prioritize custom search if not empty, otherwise fallback to DataTables search
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
-        $datos = $this->ticketModel->listar_tickets_involucrados_por_usuario($usuId, $search);
+        $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
+        $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
+
+        $datos = $this->ticketModel->listar_tickets_involucrados_por_usuario($usuId, $search, $fech_crea_start, $fech_crea_end);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -310,7 +320,10 @@ class TicketLister
     {
         // Prioritize custom search if not empty, otherwise fallback to DataTables search
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
-        $datos = $this->ticketModel->listar_tickets_con_historial($search);
+        $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
+        $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
+
+        $datos = $this->ticketModel->listar_tickets_con_historial($search, $fech_crea_start, $fech_crea_end);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();

@@ -36,7 +36,12 @@ $(document).ready(function () {
                 url: '../../controller/ticket.php?op=listar_x_usu',
                 type: 'post',
                 dataType: 'json',
-                data: { usu_id: usu_id, tick_estado: 'Cerrado' },
+                data: function (d) {
+                    d.usu_id = usu_id;
+                    d.tick_estado = 'Cerrado';
+                    d.fech_crea_start = $('#fech_crea_start').val();
+                    d.fech_crea_end = $('#fech_crea_end').val();
+                },
                 error: function (e) {
                     console.log(e.responseText);
                 }
@@ -96,6 +101,8 @@ $(document).ready(function () {
                     d.usu_asig = usu_asig;
                     d.search_custom = $('#custom_search').val();
                     d.tick_estado = 'Cerrado';
+                    d.fech_crea_start = $('#fech_crea_start').val();
+                    d.fech_crea_end = $('#fech_crea_end').val();
                 },
                 dataType: 'json',
                 error: function (e) {
@@ -153,6 +160,8 @@ $(document).ready(function () {
                 data: function (d) {
                     d.search_custom = $('#custom_search').val();
                     d.tick_estado = 'Cerrado';
+                    d.fech_crea_start = $('#fech_crea_start').val();
+                    d.fech_crea_end = $('#fech_crea_end').val();
                 },
                 error: function (e) {
                     console.log(e.responseText);
@@ -192,6 +201,13 @@ $(document).ready(function () {
 
     // Custom Search Handlers
     $(document).on('click', '#btn_search', function () {
+        $('#ticket_data').DataTable().ajax.reload();
+    });
+
+    $(document).on('click', '#btn_clear', function () {
+        $('#fech_crea_start').val('');
+        $('#fech_crea_end').val('');
+        $('#custom_search').val('');
         $('#ticket_data').DataTable().ajax.reload();
     });
 
