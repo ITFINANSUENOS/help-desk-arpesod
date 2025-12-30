@@ -201,14 +201,26 @@ $(document).ready(function () {
 
     // Custom Search Handlers
     $(document).on('click', '#btn_search', function () {
+        var l = Ladda.create(document.querySelector('#btn_search'));
+        l.start();
         $('#ticket_data').DataTable().ajax.reload();
     });
 
     $(document).on('click', '#btn_clear', function () {
+        var l = Ladda.create(document.querySelector('#btn_clear'));
+        l.start();
         $('#fech_crea_start').val('');
         $('#fech_crea_end').val('');
         $('#custom_search').val('');
         $('#ticket_data').DataTable().ajax.reload();
+    });
+
+    // Stop Ladda on table draw
+    $('#ticket_data').on('draw.dt', function () {
+        var l_search = Ladda.create(document.querySelector('#btn_search'));
+        var l_clear = Ladda.create(document.querySelector('#btn_clear'));
+        l_search.stop();
+        l_clear.stop();
     });
 
     $(document).on('keypress', '#custom_search', function (e) {

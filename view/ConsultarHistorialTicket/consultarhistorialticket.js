@@ -133,14 +133,26 @@ $(document).ready(function () {
 
     // Event listener for custom search
     $('#btn_search').on('click', function () {
+        var l = Ladda.create(document.querySelector('#btn_search'));
+        l.start();
         $('#historial_data').DataTable().ajax.reload();
     });
 
     $('#btn_clear').on('click', function () {
+        var l = Ladda.create(document.querySelector('#btn_clear'));
+        l.start();
         $('#fech_crea_start').val('');
         $('#fech_crea_end').val('');
         $('#custom_search').val('');
         $('#historial_data').DataTable().ajax.reload();
+    });
+
+    // Stop Ladda on table draw
+    $('#historial_data').on('draw.dt', function () {
+        var l_search = Ladda.create(document.querySelector('#btn_search'));
+        var l_clear = Ladda.create(document.querySelector('#btn_clear'));
+        l_search.stop();
+        l_clear.stop();
     });
 
     $('#custom_search').on('keyup', function (e) {

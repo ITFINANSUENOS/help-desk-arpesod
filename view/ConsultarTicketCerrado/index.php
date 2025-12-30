@@ -52,10 +52,10 @@ if (isset($_SESSION["usu_id"])) {
                             <div class="input-group">
                                 <input type="text" class="form-control" id="custom_search" placeholder="Buscar por algo en especifico">
                                 <span class="input-group-btn">
-                                    <button class="btn btn-primary" type="button" id="btn_search">
+                                    <button class="btn btn-primary ladda-button" data-style="expand-left" type="button" id="btn_search">
                                         <i class="fa fa-search"></i> Buscar
                                     </button>
-                                    <button class="btn btn-secondary" type="button" id="btn_clear">
+                                    <button class="btn btn-secondary ladda-button" data-style="expand-left" type="button" id="btn_clear">
                                         <i class="fa fa-eraser"></i> Limpiar
                                     </button>
                                 </span>
