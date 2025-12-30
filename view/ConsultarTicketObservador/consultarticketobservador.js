@@ -9,6 +9,7 @@ $(document).ready(function () {
     tabla = $('#ticket_data').dataTable({
         "aProcessing": true,
         "aServerSide": true,
+        order: [[0, 'desc']],
         dom: 'Bfrtip',
         "searching": true,
         lengthChange: false,

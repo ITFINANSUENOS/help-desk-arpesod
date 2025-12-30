@@ -12,6 +12,7 @@ $(document).ready(function () {
     tabla_recibidos = $('#ticket_data_recibidos').dataTable({
         "aProcessing": true,
         "aServerSide": true,
+        order: [[0, 'desc']],
         dom: 'Bfrtip',
         "searching": true,
         lengthChange: false,
@@ -58,6 +59,7 @@ $(document).ready(function () {
     tabla_enviados = $('#ticket_data_enviados').dataTable({
         "aProcessing": true,
         "aServerSide": true,
+        order: [[0, 'desc']],
         dom: 'Bfrtip',
         "searching": true,
         lengthChange: false,

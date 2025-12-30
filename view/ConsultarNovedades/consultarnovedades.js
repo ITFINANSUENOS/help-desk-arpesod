@@ -10,6 +10,7 @@ $(document).ready(function() {
     tabla = $('#novedades_data').dataTable({
         "aProcessing": true,
         "aServerSide": true,
+        order: [[0, 'desc']],
         dom: 'Bfrtip',
         "searching": true,
         lengthChange: false,
