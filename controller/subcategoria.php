@@ -20,6 +20,17 @@ switch ($_GET["op"]) {
 
         break;
 
+    case "combo_all":
+        $datos = $subcategoria->get_subcategoriatodo();
+        if (is_array($datos) and count($datos) > 0) {
+            $html = "<option value=''>Seleccionar Subcategoria</option>";
+            foreach ($datos as $row) {
+                $html .= "<option value='" . $row["cats_id"] . "'>" . $row["cats_nom"] . "</option>";
+            }
+            echo $html;
+        }
+        break;
+
     case "guardaryeditar":
 
         if (empty($_POST['cats_id'])) {

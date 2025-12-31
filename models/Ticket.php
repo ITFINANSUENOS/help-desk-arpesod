@@ -139,7 +139,7 @@ class Ticket extends Conectar
         }
     }
 
-    public function listar_ticket_x_usuario($usu_id, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_ticket_x_usuario($usu_id, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -159,10 +159,25 @@ class Ticket extends Conectar
             $params[':end_date'] = $fech_crea_end . " 23:59:59";
         }
 
+        if (!empty($tick_id)) {
+            $conditions .= " AND tm_ticket.tick_id = :tick_id";
+            $params[':tick_id'] = $tick_id;
+        }
+
+        if (!empty($cats_id)) {
+            $conditions .= " AND tm_ticket.cats_id = :cats_id";
+            $params[':cats_id'] = $cats_id;
+        }
+
+        if (!empty($eti_id)) {
+            $conditions .= " AND EXISTS (SELECT 1 FROM td_ticket_etiqueta te WHERE te.tick_id = tm_ticket.tick_id AND te.eti_id = :eti_id AND te.est = 1)";
+            $params[':eti_id'] = $eti_id;
+        }
+
         if (!empty($search_term)) {
+            // User request: Only search in conversation messages (body and details), excluding title.
             $conditions .= " AND (
-                tm_ticket.tick_titulo LIKE :search_term 
-                OR tm_ticket.tick_descrip LIKE :search_term
+                tm_ticket.tick_descrip LIKE :search_term
                 OR EXISTS (
                     SELECT 1 FROM td_ticketdetalle 
                     WHERE td_ticketdetalle.tick_id = tm_ticket.tick_id 
@@ -269,7 +284,7 @@ class Ticket extends Conectar
         ];
     }
 
-    public function listar_ticket_x_agente($usu_asig, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_ticket_x_agente($usu_asig, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -299,10 +314,25 @@ class Ticket extends Conectar
             $params[':end_date'] = $fech_crea_end . " 23:59:59";
         }
 
+        if (!empty($tick_id)) {
+            $conditions .= " AND tm_ticket.tick_id = :tick_id";
+            $params[':tick_id'] = $tick_id;
+        }
+
+        if (!empty($cats_id)) {
+            $conditions .= " AND tm_ticket.cats_id = :cats_id";
+            $params[':cats_id'] = $cats_id;
+        }
+
+        if (!empty($eti_id)) {
+            $conditions .= " AND EXISTS (SELECT 1 FROM td_ticket_etiqueta te WHERE te.tick_id = tm_ticket.tick_id AND te.eti_id = :eti_id AND te.est = 1)";
+            $params[':eti_id'] = $eti_id;
+        }
+
         if (!empty($search_term)) {
+            // User request: Only search in conversation messages (body and details), excluding title.
             $conditions .= " AND (
-                tm_ticket.tick_titulo LIKE :search_term 
-                OR tm_ticket.tick_descrip LIKE :search_term
+                tm_ticket.tick_descrip LIKE :search_term
                 OR EXISTS (
                     SELECT 1 FROM td_ticketdetalle 
                     WHERE td_ticketdetalle.tick_id = tm_ticket.tick_id 
@@ -422,7 +452,7 @@ class Ticket extends Conectar
         ];
     }
 
-    public function listar_ticket($search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_ticket($search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();

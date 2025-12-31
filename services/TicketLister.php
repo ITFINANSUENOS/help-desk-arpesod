@@ -23,13 +23,16 @@ class TicketLister
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
         $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
         $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
+        $tick_id = !empty($_POST['tick_id']) ? $_POST['tick_id'] : null;
+        $cats_id = !empty($_POST['cats_id']) ? $_POST['cats_id'] : null;
+        $eti_id = !empty($_POST['eti_id']) ? $_POST['eti_id'] : null;
 
         $start = isset($_POST['start']) ? $_POST['start'] : 0;
         $length = isset($_POST['length']) ? $_POST['length'] : 10;
         $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
         $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
 
-        $result = $this->ticketModel->listar_ticket_x_usuario($userId, $search, $status, $fech_crea_start, $fech_crea_end, $start, $length, $order_column, $order_dir);
+        $result = $this->ticketModel->listar_ticket_x_usuario($userId, $search, $status, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir);
         $datos = $result['data'];
         $recordsTotal = $result['recordsTotal'];
         $recordsFiltered = $result['recordsFiltered'];
@@ -109,13 +112,16 @@ class TicketLister
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
         $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
         $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
+        $tick_id = !empty($_POST['tick_id']) ? $_POST['tick_id'] : null;
+        $cats_id = !empty($_POST['cats_id']) ? $_POST['cats_id'] : null;
+        $eti_id = !empty($_POST['eti_id']) ? $_POST['eti_id'] : null;
 
         $start = isset($_POST['start']) ? $_POST['start'] : 0;
         $length = isset($_POST['length']) ? $_POST['length'] : 10;
         $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
         $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
 
-        $result = $this->ticketModel->listar_ticket_x_agente($agentId, $search, $status, $fech_crea_start, $fech_crea_end, $start, $length, $order_column, $order_dir);
+        $result = $this->ticketModel->listar_ticket_x_agente($agentId, $search, $status, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir);
         $datos = $result['data'];
         $recordsTotal = $result['recordsTotal'];
         $recordsFiltered = $result['recordsFiltered'];
@@ -196,13 +202,16 @@ class TicketLister
         $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
         $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
         $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
+        $tick_id = !empty($_POST['tick_id']) ? $_POST['tick_id'] : null;
+        $cats_id = !empty($_POST['cats_id']) ? $_POST['cats_id'] : null;
+        $eti_id = !empty($_POST['eti_id']) ? $_POST['eti_id'] : null;
 
         $start = isset($_POST['start']) ? $_POST['start'] : 0;
         $length = isset($_POST['length']) ? $_POST['length'] : 10;
         $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
         $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
 
-        $result = $this->ticketModel->listar_ticket($search, $status, $fech_crea_start, $fech_crea_end, $start, $length, $order_column, $order_dir);
+        $result = $this->ticketModel->listar_ticket($search, $status, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir);
         $datos = $result['data'];
         $recordsTotal = $result['recordsTotal'];
         $recordsFiltered = $result['recordsFiltered'];

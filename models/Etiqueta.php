@@ -53,6 +53,20 @@ class Etiqueta extends Conectar
         return $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // Listar todas las etiquetas activas (para Agentes)
+    public function listar_etiquetas_total()
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT tm_etiqueta.*, tm_usuario.usu_nom, tm_usuario.usu_ape 
+                FROM tm_etiqueta 
+                LEFT JOIN tm_usuario ON tm_etiqueta.usu_id = tm_usuario.usu_id
+                WHERE tm_etiqueta.est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     // Eliminar (soft delete) etiqueta
     public function delete_etiqueta($eti_id)
     {
