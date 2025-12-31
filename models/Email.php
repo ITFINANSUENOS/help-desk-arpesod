@@ -6,18 +6,21 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\SMTP;
 
-
 require_once('../config/conexion.php');
 require_once('../models/Ticket.php');
 require_once('../models/Documento.php');
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 class Email extends PHPMailer
 {
-    protected $gcorreo = '';
-    protected $gpass = ''; // <--- Pon aquí la contraseña de la nueva cuenta
+    protected $gcorreo;
+    protected $gpass;
+
+    public function __construct($exceptions = null)
+    {
+        parent::__construct($exceptions);
+        $this->gcorreo = $_ENV['EMAIL_USER'];
+        $this->gpass = $_ENV['EMAIL_PASS'];
+    }
 
     public function recuperar_contrasena($usu_correo, $link)
     {
@@ -30,7 +33,6 @@ class Email extends PHPMailer
                 'allow_self_signed' => true
             )
         );
-        $this->SMTPDebug = 2;
         $this->Port = 465;
         $this->SMTPAuth = true;
         $this->Username = $this->gcorreo;
