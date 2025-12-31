@@ -31,6 +31,29 @@ switch ($_GET["op"]) {
         }
         break;
 
+    case "combo_usuario_tickets":
+        $usu_id = $_SESSION["usu_id"];
+        $rol_id = $_SESSION["rol_id"];
+
+        // Si es Admin (3) y no queremos restringir, podríamos usar get_subcategoriatodo.
+        // Pero el usuario pidió "subcategorias que me han creado a mi" (o asignado).
+        // Si el usuario insiste en ver SOLO lo suyo, usamos la funcion filtrada.
+        // Si el Admin quiere ver TODO, deberíamos usar combo_all.
+        // Asumiremos que la petición aplica a su vista personal.
+
+        $datos = $subcategoria->get_subcategorias_por_usu_ticket($usu_id, $rol_id);
+        if (is_array($datos) and count($datos) > 0) {
+            $html = "<option value=''>Seleccionar Subcategoria</option>";
+            foreach ($datos as $row) {
+                $html .= "<option value='" . $row["cats_id"] . "'>" . $row["cats_nom"] . "</option>";
+            }
+            echo $html;
+        } else {
+            // Si no hay datos, al menos mostrar la opción por defecto
+            echo "<option value=''>Seleccionar Subcategoria</option>";
+        }
+        break;
+
     case "guardaryeditar":
 
         if (empty($_POST['cats_id'])) {

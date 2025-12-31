@@ -211,4 +211,29 @@ class Subcategoria extends Conectar
         $sql->execute();
         return $resultado = $sql->fetchAll();
     }
+    public function get_subcategorias_por_usu_ticket($usu_id, $rol_id)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+
+        $sql = "SELECT DISTINCT s.cats_id, s.cats_nom 
+                FROM tm_subcategoria s 
+                INNER JOIN tm_ticket t ON s.cats_id = t.cats_id 
+                WHERE s.est = 1 AND t.est = 1";
+
+        if ($rol_id == 1) { // Usuario
+            $sql .= " AND t.usu_id = ?";
+        } else { // Soporte/Admin (viendo sus asignados)
+            // Nota: Para admin podría ser diferente si quiere ver todo, pero la solicitud fue restrictiva.
+            // Asumimos que Admin filtra por asignados también si filtra por "mis subcategorias"
+            $sql .= " AND (FIND_IN_SET(?, t.usu_asig))";
+        }
+
+        $sql .= " ORDER BY s.cats_nom ASC";
+
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $usu_id);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

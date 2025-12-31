@@ -9,7 +9,7 @@ function init() {
 
 
 // Load Subcategories
-$.post("../../controller/subcategoria.php?op=combo_all", function (data) {
+$.post("../../controller/subcategoria.php?op=combo_usuario_tickets", function (data) {
     $("#cats_id").html(data);
 });
 
