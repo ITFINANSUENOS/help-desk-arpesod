@@ -16,29 +16,28 @@ error_reporting(E_ALL);
 
 class Email extends PHPMailer
 {
-    protected $gcorreo = 'mesadeayudaelectroc@gmail.com';
-    protected $gpass = 'xcmo yrcr ekss gyuy';
+    protected $gcorreo = '';
+    protected $gpass = ''; // <--- Pon aquí la contraseña de la nueva cuenta
 
     public function recuperar_contrasena($usu_correo, $link)
     {
         $this->isSMTP();
-        $this->Host = 'smtp.gmail.com';
+        $this->Host = 'mail.electrocreditosdelcauca.com';
         $this->SMTPOptions = array(
             'ssl' => array(
                 'verify_peer' => false,
                 'verify_peer_name' => false,
                 'allow_self_signed' => true
             )
-        ); // A veces necesario para certificados autofirmados o errores SSL
-        $this->Host = gethostbyname('smtp.gmail.com'); // Forzar resolucion a IP para evitar problemas de DNS/IPv6
-        // $this->SMTPDebug = 2; // Descomentar para ver errores en log si es necesario
-        $this->Port = 465; // Probar con 465 y ssl, a veces 587 se bloquea
+        );
+        $this->SMTPDebug = 2;
+        $this->Port = 465;
         $this->SMTPAuth = true;
         $this->Username = $this->gcorreo;
-        $this->Password = str_replace(' ', '', $this->gpass); // Eliminar espacios si los hay
+        $this->Password = trim($this->gpass); // Limpiar espacios accidentales
         $this->From = $this->gcorreo;
-        $this->SMTPSecure = 'ssl'; // Cambiar a ssl para puerto 465
-        $this->FromName = 'Sistema de Tickets';
+        $this->SMTPSecure = 'ssl';
+        $this->FromName = 'Mesa de Ayuda - Electrocreditos del Cauca';
         $this->CharSet = 'UTF-8';
         $this->addAddress($usu_correo);
         $this->WordWrap = 50;

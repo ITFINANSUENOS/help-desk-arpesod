@@ -233,10 +233,10 @@ switch ($_GET["op"]) {
                 if ($email->recuperar_contrasena($usu_correo, $link)) {
                     echo "1";
                 } else {
-                    echo "0";
+                    echo "Error Sending: " . $email->ErrorInfo;
                 }
             } catch (Exception $e) {
-                echo "0";
+                echo "Exception: " . $e->getMessage();
             }
         } else {
             echo "2"; // User not found
