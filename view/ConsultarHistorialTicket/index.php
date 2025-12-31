@@ -72,6 +72,12 @@ if (isset($_SESSION["usu_id"])) {
                             </div>
                             <div class="col-lg-2">
                                 <fieldset class="form-group">
+                                    <label class="form-label" for="usu_nom">Usuario</label>
+                                    <input type="text" class="form-control" id="usu_nom" placeholder="Usuario">
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-2">
+                                <fieldset class="form-group">
                                     <label class="form-label" for="tick_id">N° Ticket</label>
                                     <input type="text" class="form-control" id="tick_id" placeholder="ID">
                                 </fieldset>
@@ -106,7 +112,7 @@ if (isset($_SESSION["usu_id"])) {
                                 <th style="width: 40%;">Título</th>
                                 <th style="width: 10%;">Estado</th>
                                 <th style="width: 10%;">Fecha Creación</th>
-                                <th style="width: 15%;">Asignado a</th>
+                                <th style="width: 15%;">Usuario</th>
                                 <th style="width: 10%;">Etiquetas</th>
                                 <th style="width: 10%;">Ver</th>
                             </tr>

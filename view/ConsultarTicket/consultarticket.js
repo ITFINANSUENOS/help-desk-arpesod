@@ -51,6 +51,7 @@ var dtOptions = {
             d.tick_estado = 'Abierto';
             d.fech_crea_start = $('#fech_crea_start').val();
             d.fech_crea_end = $('#fech_crea_end').val();
+            d.usu_nom = $('#usu_nom').val();
             if (rol_id == 1 && rol_real_id != 3) {
                 d.usu_id = usu_id;
             } else if (rol_id == 2 && rol_real_id != 3) {
@@ -93,12 +94,9 @@ var dtOptions = {
 };
 
 if (rol_id == 1 && rol_real_id != 3) {
-    $('#lblusucrea').remove();
     dtOptions.ajax.url = '../../controller/ticket.php?op=listar_x_usu';
     tabla = $('#ticket_data').dataTable(dtOptions).DataTable();
 } else if (rol_id == 2 && rol_real_id != 3) {
-    $("#lblusertable").html('Usuario')
-    $('#lblusucrea').remove();
     dtOptions.ajax.url = '../../controller/ticket.php?op=listar_x_agente';
     tabla = $('#ticket_data').dataTable(dtOptions).DataTable();
 } else if (rol_id != rol_real_id) {
@@ -140,6 +138,12 @@ $(document).on('keypress', '#custom_search', function (e) {
 });
 // Also trigger search on Enter for tick_id
 $(document).on('keypress', '#tick_id', function (e) {
+    if (e.which == 13) {
+        $('#btn_search').click();
+    }
+});
+
+$(document).on('keypress', '#usu_nom', function (e) {
     if (e.which == 13) {
         $('#btn_search').click();
     }

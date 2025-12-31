@@ -26,13 +26,14 @@ class TicketLister
         $tick_id = !empty($_POST['tick_id']) ? $_POST['tick_id'] : null;
         $cats_id = !empty($_POST['cats_id']) ? $_POST['cats_id'] : null;
         $eti_id = !empty($_POST['eti_id']) ? $_POST['eti_id'] : null;
+        $usu_nom = !empty($_POST['usu_nom']) ? $_POST['usu_nom'] : null;
 
         $start = isset($_POST['start']) ? $_POST['start'] : 0;
         $length = isset($_POST['length']) ? $_POST['length'] : 10;
         $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
         $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
 
-        $result = $this->ticketModel->listar_ticket_x_usuario($userId, $search, $status, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir);
+        $result = $this->ticketModel->listar_ticket_x_usuario($userId, $search, $status, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir, $usu_nom);
         $datos = $result['data'];
         $recordsTotal = $result['recordsTotal'];
         $recordsFiltered = $result['recordsFiltered'];
@@ -70,11 +71,7 @@ class TicketLister
 
             $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
 
-            if ($row['usu_asig'] == null) {
-                $sub_array[] = '<span class="label label-danger">Sin asignar</span>';
-            } else {
-                $sub_array[] = $this->getFormattedUserNames($row['usu_asig'], 'label-success');
-            }
+
 
             // Etiquetas
             $tags = $this->etiquetaModel->listar_etiquetas_x_ticket($row['tick_id'], $userId);
@@ -115,13 +112,14 @@ class TicketLister
         $tick_id = !empty($_POST['tick_id']) ? $_POST['tick_id'] : null;
         $cats_id = !empty($_POST['cats_id']) ? $_POST['cats_id'] : null;
         $eti_id = !empty($_POST['eti_id']) ? $_POST['eti_id'] : null;
+        $usu_nom = !empty($_POST['usu_nom']) ? $_POST['usu_nom'] : null;
 
         $start = isset($_POST['start']) ? $_POST['start'] : 0;
         $length = isset($_POST['length']) ? $_POST['length'] : 10;
         $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
         $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
 
-        $result = $this->ticketModel->listar_ticket_x_agente($agentId, $search, $status, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir);
+        $result = $this->ticketModel->listar_ticket_x_agente($agentId, $search, $status, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir, $usu_nom);
         $datos = $result['data'];
         $recordsTotal = $result['recordsTotal'];
         $recordsFiltered = $result['recordsFiltered'];
@@ -205,13 +203,14 @@ class TicketLister
         $tick_id = !empty($_POST['tick_id']) ? $_POST['tick_id'] : null;
         $cats_id = !empty($_POST['cats_id']) ? $_POST['cats_id'] : null;
         $eti_id = !empty($_POST['eti_id']) ? $_POST['eti_id'] : null;
+        $usu_nom = !empty($_POST['usu_nom']) ? $_POST['usu_nom'] : null;
 
         $start = isset($_POST['start']) ? $_POST['start'] : 0;
         $length = isset($_POST['length']) ? $_POST['length'] : 10;
         $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
         $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
 
-        $result = $this->ticketModel->listar_ticket($search, $status, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir);
+        $result = $this->ticketModel->listar_ticket($search, $status, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir, $usu_nom);
         $datos = $result['data'];
         $recordsTotal = $result['recordsTotal'];
         $recordsFiltered = $result['recordsFiltered'];
@@ -249,11 +248,7 @@ class TicketLister
 
             $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
 
-            if ($row['usu_asig'] == null) {
-                $sub_array[] = '<a><span class="label label-danger">Sin asignar</span></a>';
-            } else {
-                $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" >' . $this->getFormattedUserNames($row['usu_asig'], 'label-success') . '</a> ';
-            }
+
             if ($row['usu_id'] == null) {
                 $sub_array[] = '<a><span class="label label-danger">Sin asignar</span></a>';
             } else {
@@ -377,13 +372,14 @@ class TicketLister
         $tick_id = !empty($_POST['tick_id']) ? $_POST['tick_id'] : null;
         $cats_id = !empty($_POST['cats_id']) ? $_POST['cats_id'] : null;
         $eti_id = !empty($_POST['eti_id']) ? $_POST['eti_id'] : null;
+        $usu_nom = !empty($_POST['usu_nom']) ? $_POST['usu_nom'] : null;
 
         $start = isset($_POST['start']) ? $_POST['start'] : 0;
         $length = isset($_POST['length']) ? $_POST['length'] : 10;
         $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
         $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
 
-        $result = $this->ticketModel->listar_tickets_con_historial($search, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir);
+        $result = $this->ticketModel->listar_tickets_con_historial($search, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir, $usu_nom);
         $datos = $result['data'];
         $recordsTotal = $result['recordsTotal'];
         $recordsFiltered = $result['recordsFiltered'];

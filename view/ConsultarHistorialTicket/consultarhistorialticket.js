@@ -82,6 +82,7 @@ $(document).ready(function () {
                 d.tick_id = $('#tick_id').val();
                 d.cats_id = $('#cats_id').val();
                 d.eti_id = $('#eti_id').val();
+                d.usu_nom = $('#usu_nom').val();
             },
             error: function (e) {
                 console.log(e.responseText);
@@ -103,6 +104,7 @@ $(document).ready(function () {
                 d.tick_id = $('#tick_id').val();
                 d.cats_id = $('#cats_id').val();
                 d.eti_id = $('#eti_id').val();
+                d.usu_nom = $('#usu_nom').val();
             },
             error: function (e) {
                 console.log(e.responseText);
@@ -149,5 +151,12 @@ $(document).ready(function () {
             $('#btn_search').click();
         }
     });
-
 });
+
+$(document).on('keypress', '#usu_nom', function (e) {
+    if (e.which == 13) {
+        $('#btn_search').click();
+    }
+});
+
+

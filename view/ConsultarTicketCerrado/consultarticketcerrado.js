@@ -70,7 +70,6 @@ var commonOptions = {
 };
 
 if (rol_id == 1 && rol_real_id != 3) {
-    $('#lblusucrea').remove();
     var options = $.extend(true, {}, commonOptions);
     options.ajax = {
         url: '../../controller/ticket.php?op=listar_x_usu',
@@ -84,6 +83,7 @@ if (rol_id == 1 && rol_real_id != 3) {
             d.tick_id = $('#tick_id').val();
             d.cats_id = $('#cats_id').val();
             d.eti_id = $('#eti_id').val();
+            d.usu_nom = $('#usu_nom').val();
             d.search_custom = $('#custom_search').val();
         },
         error: function (e) {
@@ -93,8 +93,6 @@ if (rol_id == 1 && rol_real_id != 3) {
     tabla = $('#ticket_data').dataTable(options).DataTable();
 
 } else if (rol_id == 2 && rol_real_id != 3) {
-    $("#lblusertable").html('Usuario');
-    $('#lblusucrea').remove();
     var options = $.extend(true, {}, commonOptions);
     options.ajax = {
         url: '../../controller/ticket.php?op=listar_x_agente',
@@ -108,6 +106,7 @@ if (rol_id == 1 && rol_real_id != 3) {
             d.tick_id = $('#tick_id').val();
             d.cats_id = $('#cats_id').val();
             d.eti_id = $('#eti_id').val();
+            d.usu_nom = $('#usu_nom').val();
             d.search_custom = $('#custom_search').val();
         },
         error: function (e) {
@@ -128,6 +127,7 @@ if (rol_id == 1 && rol_real_id != 3) {
             d.tick_id = $('#tick_id').val();
             d.cats_id = $('#cats_id').val();
             d.eti_id = $('#eti_id').val();
+            d.usu_nom = $('#usu_nom').val();
             d.search_custom = $('#custom_search').val();
         },
         error: function (e) {
@@ -171,6 +171,12 @@ $(document).on('keypress', '#custom_search', function (e) {
 });
 
 $(document).on('keypress', '#tick_id', function (e) {
+    if (e.which == 13) {
+        $('#btn_search').click();
+    }
+});
+
+$(document).on('keypress', '#usu_nom', function (e) {
     if (e.which == 13) {
         $('#btn_search').click();
     }

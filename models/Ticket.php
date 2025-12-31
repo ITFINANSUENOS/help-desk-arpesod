@@ -139,7 +139,7 @@ class Ticket extends Conectar
         }
     }
 
-    public function listar_ticket_x_usuario($usu_id, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_ticket_x_usuario($usu_id, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $usu_nom = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -185,6 +185,19 @@ class Ticket extends Conectar
                 )
             )";
             $params[':search_term'] = "%" . $search_term . "%";
+        }
+
+        if (!empty($usu_nom)) {
+            $conditions .= " AND (
+                (tm_usuario.usu_nom LIKE :usu_nom OR tm_usuario.usu_ape LIKE :usu_nom)
+                OR EXISTS (
+                    SELECT 1 FROM tm_usuario u_asig 
+                    WHERE FIND_IN_SET(u_asig.usu_id, tm_ticket.usu_asig) 
+                    AND (u_asig.usu_nom LIKE :usu_nom_asig OR u_asig.usu_ape LIKE :usu_nom_asig)
+                )
+            )";
+            $params[':usu_nom'] = "%" . $usu_nom . "%";
+            $params[':usu_nom_asig'] = "%" . $usu_nom . "%";
         }
 
         // 1. Get Total Records (without filters) - Approximate or exact depending on needs. 
@@ -284,7 +297,7 @@ class Ticket extends Conectar
         ];
     }
 
-    public function listar_ticket_x_agente($usu_asig, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_ticket_x_agente($usu_asig, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $usu_nom = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -340,6 +353,19 @@ class Ticket extends Conectar
                 )
             )";
             $params[':search_term'] = "%" . $search_term . "%";
+        }
+
+        if (!empty($usu_nom)) {
+            $conditions .= " AND (
+                (tm_usuario.usu_nom LIKE :usu_nom OR tm_usuario.usu_ape LIKE :usu_nom)
+                OR EXISTS (
+                    SELECT 1 FROM tm_usuario u_asig 
+                    WHERE FIND_IN_SET(u_asig.usu_id, tm_ticket.usu_asig) 
+                    AND (u_asig.usu_nom LIKE :usu_nom_asig OR u_asig.usu_ape LIKE :usu_nom_asig)
+                )
+            )";
+            $params[':usu_nom'] = "%" . $usu_nom . "%";
+            $params[':usu_nom_asig'] = "%" . $usu_nom . "%";
         }
 
         // 1. Total Records (Approximate scope - relevant to agent)
@@ -452,7 +478,7 @@ class Ticket extends Conectar
         ];
     }
 
-    public function listar_ticket($search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_ticket($search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $usu_nom = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -483,6 +509,19 @@ class Ticket extends Conectar
                 )
             )";
             $params[':search_term'] = "%" . $search_term . "%";
+        }
+
+        if (!empty($usu_nom)) {
+            $conditions .= " AND (
+                (tm_usuario.usu_nom LIKE :usu_nom OR tm_usuario.usu_ape LIKE :usu_nom)
+                OR EXISTS (
+                    SELECT 1 FROM tm_usuario u_asig 
+                    WHERE FIND_IN_SET(u_asig.usu_id, tm_ticket.usu_asig) 
+                    AND (u_asig.usu_nom LIKE :usu_nom_asig OR u_asig.usu_ape LIKE :usu_nom_asig)
+                )
+            )";
+            $params[':usu_nom'] = "%" . $usu_nom . "%";
+            $params[':usu_nom_asig'] = "%" . $usu_nom . "%";
         }
 
         // 1. Total Records
@@ -784,7 +823,7 @@ class Ticket extends Conectar
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
-    public function listar_tickets_con_historial($search_term = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_tickets_con_historial($search_term = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $usu_nom = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -830,7 +869,22 @@ class Ticket extends Conectar
         $stmt_total = $conectar->prepare($sql_total);
         $stmt_total->execute();
         $recordsTotal = $stmt_total->fetchColumn();
-
+        if (!empty($usu_nom)) {
+            $conditions .= " AND (
+                EXISTS (
+                    SELECT 1 FROM tm_usuario u_crea 
+                    WHERE u_crea.usu_id = t.usu_id
+                    AND (u_crea.usu_nom LIKE :usu_nom OR u_crea.usu_ape LIKE :usu_nom)
+                )
+                OR EXISTS (
+                    SELECT 1 FROM tm_usuario u_asig 
+                    WHERE FIND_IN_SET(u_asig.usu_id, t.usu_asig) 
+                    AND (u_asig.usu_nom LIKE :usu_nom_asig OR u_asig.usu_ape LIKE :usu_nom_asig)
+                )
+            )";
+            $params[':usu_nom'] = "%" . $usu_nom . "%";
+            $params[':usu_nom_asig'] = "%" . $usu_nom . "%";
+        }
 
         // 2. Filtered Records
         $sql_filtered = "SELECT COUNT(*) 
