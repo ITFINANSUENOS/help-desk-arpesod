@@ -36,17 +36,39 @@ if (isset($_SESSION["usu_id"])) {
                     <form class="row" id="ticket_search_form">
                         <div class="col-lg-3">
                             <fieldset class="form-group">
+                                <label class="form-label" for="cats_id">Subcategoria</label>
+                                <select class="select2" id="cats_id" style="width:100%">
+                                    <option value="">Seleccionar</option>
+                                </select>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-3">
+                            <fieldset class="form-group">
+                                <label class="form-label" for="eti_id">Etiqueta</label>
+                                <select class="select2" id="eti_id" style="width:100%">
+                                    <option value="">Seleccionar</option>
+                                </select>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-2">
+                            <fieldset class="form-group">
                                 <label class="form-label" for="fech_crea_start">Fecha Inicio</label>
                                 <input type="date" class="form-control" id="fech_crea_start">
                             </fieldset>
                         </div>
-                        <div class="col-lg-3">
+                        <div class="col-lg-2">
                             <fieldset class="form-group">
                                 <label class="form-label" for="fech_crea_end">Fecha Fin</label>
                                 <input type="date" class="form-control" id="fech_crea_end">
                             </fieldset>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-2">
+                            <fieldset class="form-group">
+                                <label class="form-label" for="tick_id">Nro Ticket</label>
+                                <input type="text" class="form-control" id="tick_id" placeholder="ID">
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-12">
                             <fieldset class="form-group">
                                 <label class="form-label" for="custom_search">Busqueda</label>
                                 <div class="input-group">
@@ -84,8 +106,8 @@ if (isset($_SESSION["usu_id"])) {
                     </table>
                 </div>
             </div>
-            </div>
-            <?php require_once("../MainModal/modal_etiquetas.php"); ?>
+        </div>
+        <?php require_once("../MainModal/modal_etiquetas.php"); ?>
         </div>
 
         <?php require_once('../MainJs/js.php') ?>

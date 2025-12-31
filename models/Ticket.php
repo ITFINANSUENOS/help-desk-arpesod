@@ -784,7 +784,7 @@ class Ticket extends Conectar
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
-    public function listar_tickets_con_historial($search_term = null, $fech_crea_start = null, $fech_crea_end = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_tickets_con_historial($search_term = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -794,6 +794,21 @@ class Ticket extends Conectar
             t.tick_id IN (SELECT tick_id FROM th_ticket_asignacion)
         ";
         $params = [];
+
+        if (!empty($tick_id)) {
+            $conditions .= " AND t.tick_id = :tick_id";
+            $params[':tick_id'] = $tick_id;
+        }
+
+        if (!empty($cats_id)) {
+            $conditions .= " AND t.cats_id = :cats_id";
+            $params[':cats_id'] = $cats_id;
+        }
+
+        if (!empty($eti_id)) {
+            $conditions .= " AND EXISTS (SELECT 1 FROM td_ticket_etiqueta te WHERE te.tick_id = t.tick_id AND te.eti_id = :eti_id AND te.est=1)";
+            $params[':eti_id'] = $eti_id;
+        }
 
         if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
             $conditions .= " AND t.fech_crea BETWEEN :start_date AND :end_date";
@@ -918,7 +933,7 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function listar_tickets_involucrados_por_usuario($usu_id, $search_term = null, $fech_crea_start = null, $fech_crea_end = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_tickets_involucrados_por_usuario($usu_id, $search_term = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::conexion();
         parent::set_names();
@@ -935,6 +950,21 @@ class Ticket extends Conectar
             ':usu_id_2' => $usu_id,
             ':usu_id_3' => $usu_id
         ];
+
+        if (!empty($tick_id)) {
+            $conditions .= " AND t.tick_id = :tick_id";
+            $params[':tick_id'] = $tick_id;
+        }
+
+        if (!empty($cats_id)) {
+            $conditions .= " AND t.cats_id = :cats_id";
+            $params[':cats_id'] = $cats_id;
+        }
+
+        if (!empty($eti_id)) {
+            $conditions .= " AND EXISTS (SELECT 1 FROM td_ticket_etiqueta te WHERE te.tick_id = t.tick_id AND te.eti_id = :eti_id AND te.est=1)";
+            $params[':eti_id'] = $eti_id;
+        }
 
 
         if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
@@ -1577,7 +1607,7 @@ class Ticket extends Conectar
         $sql->execute();
     }
 
-    public function listar_tickets_con_error($search_term = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_tickets_con_error($search_term = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -1587,6 +1617,27 @@ class Ticket extends Conectar
             AND tm_ticket.error_proceso > 0
         ";
         $params = [];
+
+        if (!empty($tick_id)) {
+            $conditions .= " AND tm_ticket.tick_id = :tick_id";
+            $params[':tick_id'] = $tick_id;
+        }
+
+        if (!empty($cats_id)) {
+            $conditions .= " AND tm_ticket.cats_id = :cats_id";
+            $params[':cats_id'] = $cats_id;
+        }
+
+        if (!empty($eti_id)) {
+            $conditions .= " AND EXISTS (SELECT 1 FROM td_ticket_etiqueta te WHERE te.tick_id = tm_ticket.tick_id AND te.eti_id = :eti_id AND te.est=1)";
+            $params[':eti_id'] = $eti_id;
+        }
+
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $conditions .= " AND tm_ticket.fech_crea BETWEEN :start_date AND :end_date";
+            $params[':start_date'] = $fech_crea_start . " 00:00:00";
+            $params[':end_date'] = $fech_crea_end . " 23:59:59";
+        }
 
         if (!empty($search_term)) {
             $conditions .= " AND (

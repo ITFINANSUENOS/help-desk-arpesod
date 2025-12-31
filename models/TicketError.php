@@ -19,13 +19,34 @@ class TicketError extends Conectar
     }
 
     // Errors assigned TO the user (Mis Errores)
-    public function listar_errores_recibidos($usu_id, $search_term = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_errores_recibidos($usu_id, $search_term = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
 
         $conditions = "te.usu_id_responsable = :usu_id AND te.est = 1";
         $params = [':usu_id' => $usu_id];
+
+        if (!empty($tick_id)) {
+            $conditions .= " AND te.tick_id = :tick_id";
+            $params[':tick_id'] = $tick_id;
+        }
+
+        if (!empty($cats_id)) {
+            $conditions .= " AND t.cats_id = :cats_id";
+            $params[':cats_id'] = $cats_id;
+        }
+
+        if (!empty($eti_id)) {
+            $conditions .= " AND EXISTS (SELECT 1 FROM td_ticket_etiqueta et WHERE et.tick_id = te.tick_id AND et.eti_id = :eti_id AND et.est=1)";
+            $params[':eti_id'] = $eti_id;
+        }
+
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $conditions .= " AND te.fech_crea BETWEEN :start_date AND :end_date";
+            $params[':start_date'] = $fech_crea_start . " 00:00:00";
+            $params[':end_date'] = $fech_crea_end . " 23:59:59";
+        }
 
         if (!empty($search_term)) {
             $conditions .= " AND (
@@ -123,13 +144,34 @@ class TicketError extends Conectar
     }
 
     // Errors reported BY the user (Enviados)
-    public function listar_errores_enviados($usu_id, $search_term = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_errores_enviados($usu_id, $search_term = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
 
         $conditions = "te.usu_id_reporta = :usu_id AND te.est = 1";
         $params = [':usu_id' => $usu_id];
+
+        if (!empty($tick_id)) {
+            $conditions .= " AND te.tick_id = :tick_id";
+            $params[':tick_id'] = $tick_id;
+        }
+
+        if (!empty($cats_id)) {
+            $conditions .= " AND t.cats_id = :cats_id";
+            $params[':cats_id'] = $cats_id;
+        }
+
+        if (!empty($eti_id)) {
+            $conditions .= " AND EXISTS (SELECT 1 FROM td_ticket_etiqueta et WHERE et.tick_id = te.tick_id AND et.eti_id = :eti_id AND et.est=1)";
+            $params[':eti_id'] = $eti_id;
+        }
+
+        if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
+            $conditions .= " AND te.fech_crea BETWEEN :start_date AND :end_date";
+            $params[':start_date'] = $fech_crea_start . " 00:00:00";
+            $params[':end_date'] = $fech_crea_end . " 23:59:59";
+        }
 
         if (!empty($search_term)) {
             $conditions .= " AND (

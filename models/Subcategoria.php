@@ -226,7 +226,7 @@ class Subcategoria extends Conectar
         } else { // Soporte/Admin (viendo sus asignados)
             // Nota: Para admin podría ser diferente si quiere ver todo, pero la solicitud fue restrictiva.
             // Asumimos que Admin filtra por asignados también si filtra por "mis subcategorias"
-            $sql .= " AND (FIND_IN_SET(?, t.usu_asig))";
+            $sql .= " AND t.usu_asig = ?";
         }
 
         $sql .= " ORDER BY s.cats_nom ASC";

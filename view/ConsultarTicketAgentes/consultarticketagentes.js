@@ -8,6 +8,17 @@ function init() {
 
 
 $(document).ready(function () {
+    // Load Subcategories
+    $.post("../../controller/subcategoria.php?op=combo_usuario_tickets", function (data) {
+        $("#cats_id").html(data);
+    });
+
+    // Load Tags
+    $.post("../../controller/etiqueta.php?op=combo", function (data) {
+        $("#eti_id").html('<option value="">Seleccionar</option>' + data);
+        $('#eti_id').trigger('change');
+    });
+
     if (rol_id == 2) {
 
         tabla = $('#ticket_data').dataTable({
@@ -15,7 +26,7 @@ $(document).ready(function () {
             "serverSide": true,
             order: [[0, 'desc']],
             dom: 'Bfrtip',
-            "searching": true,
+            "searching": false,
             lengthChange: false,
             colRecorder: true,
             "buttons": [
@@ -33,6 +44,9 @@ $(document).ready(function () {
                     d.search_custom = $('#custom_search').val();
                     d.fech_crea_start = $('#fech_crea_start').val();
                     d.fech_crea_end = $('#fech_crea_end').val();
+                    d.tick_id = $('#tick_id').val();
+                    d.cats_id = $('#cats_id').val();
+                    d.eti_id = $('#eti_id').val();
                 },
                 error: function (e) {
                     console.log(e.responseText);
@@ -86,6 +100,9 @@ $(document).ready(function () {
         $('#fech_crea_start').val('');
         $('#fech_crea_end').val('');
         $('#custom_search').val('');
+        $('#tick_id').val('');
+        $('#cats_id').val('').trigger('change');
+        $('#eti_id').val('').trigger('change');
         $('#ticket_data').DataTable().ajax.reload();
     });
 
@@ -98,6 +115,12 @@ $(document).ready(function () {
     });
 
     $(document).on('keypress', '#custom_search', function (e) {
+        if (e.which == 13) {
+            $('#btn_search').click();
+        }
+    });
+
+    $(document).on('keypress', '#tick_id', function (e) {
         if (e.which == 13) {
             $('#btn_search').click();
         }

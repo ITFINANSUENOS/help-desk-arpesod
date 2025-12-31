@@ -8,231 +8,173 @@ function init() {
 }
 
 
-$(document).ready(function () {
+// Load Subcategories
+$.post("../../controller/subcategoria.php?op=combo_usuario_tickets", function (data) {
+    $("#cats_id").html(data);
+});
 
-    $.post("../../controller/usuario.php?op=usuariosxrol", function (data) {
-        $("#usu_asig").html(data);
-    });
+// Load Tags
+$.post("../../controller/etiqueta.php?op=combo", function (data) {
+    $("#eti_id").html('<option value="">Seleccionar</option>' + data);
+    $('#eti_id').trigger('change');
+});
 
+$.post("../../controller/usuario.php?op=usuariosxrol", function (data) {
+    $("#usu_asig").html(data);
+});
 
-    if (rol_id == 1 && rol_real_id != 3) {
-
-        $('#lblusucrea').remove();
-
-        tabla = $('#ticket_data').dataTable({
-            "processing": true,
-            "serverSide": true,
-            order: [[0, 'desc']],
-            dom: 'Bfrtip',
-            "searching": true,
-            lengthChange: false,
-            colRecorder: true,
-            "buttons": [
-                'copyHtml5',
-                'excelHtml5',
-                'csvHtml5',
-                'pdfHtml5',
-            ],
-            "ajax": {
-                url: '../../controller/ticket.php?op=listar_x_usu',
-                type: 'post',
-                dataType: 'json',
-                data: function (d) {
-                    d.usu_id = usu_id;
-                    d.tick_estado = 'Cerrado';
-                    d.fech_crea_start = $('#fech_crea_start').val();
-                    d.fech_crea_end = $('#fech_crea_end').val();
-                },
-                error: function (e) {
-                    console.log(e.responseText);
-                }
-            },
-            "bDestroy": true,
-            "responsive": true,
-            "bInfo": true,
-            "isDisplayLength": 10,
-            "autoWidth": false,
-            "language": {
-                "sProcessing": "Procesando...",
-                "sLengthMenu": "Mostrar _MENU_ registros",
-                "sZeroRecords": "No se encontraron resultados",
-                "sEmptyTable": "Ningún dato disponible en esta tabla",
-                "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-                "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
-                "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
-                "sInfoPostFix": "",
-                "sSearch": "Buscar:",
-                "sUrl": "",
-                "sInfoThousands": ",",
-                "sLoadingRecords": "Cargando...",
-                "oPaginate": {
-                    "sFirst": "Primero",
-                    "sLast": "Último",
-                    "sNext": "Siguiente",
-                    "sPrevious": "Anterior"
-                },
-                "oAria": {
-                    "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
-                    "sSortDescending": ": Activar para ordenar la columna de manera descendente"
-                }
-            }
-        }).DataTable();
-    } else if (rol_id == 2 && rol_real_id != 3) {
-
-        $("#lblusertable").html('Usuario')
-        $('#lblusucrea').remove();
-
-        tabla = $('#ticket_data').dataTable({
-            "processing": true,
-            "serverSide": true,
-            order: [[0, 'desc']],
-            dom: 'Bfrtip',
-            "searching": true,
-            lengthChange: false,
-            colRecorder: true,
-            "buttons": [
-                'copyHtml5',
-                'excelHtml5',
-                'csvHtml5',
-                'pdfHtml5',
-            ],
-            "ajax": {
-                url: '../../controller/ticket.php?op=listar_x_agente',
-                type: 'post',
-                data: function (d) {
-                    d.usu_asig = usu_asig;
-                    d.search_custom = $('#custom_search').val();
-                    d.tick_estado = 'Cerrado';
-                    d.fech_crea_start = $('#fech_crea_start').val();
-                    d.fech_crea_end = $('#fech_crea_end').val();
-                },
-                dataType: 'json',
-                error: function (e) {
-                    console.log(e.responseText);
-                }
-            },
-            "bDestroy": true,
-            "responsive": true,
-            "bInfo": true,
-            "isDisplayLength": 10,
-            "autoWidth": false,
-            "language": {
-                "sProcessing": "Procesando...",
-                "sLengthMenu": "Mostrar _MENU_ registros",
-                "sZeroRecords": "No se encontraron resultados",
-                "sEmptyTable": "Ningún dato disponible en esta tabla",
-                "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-                "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
-                "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
-                "sInfoPostFix": "",
-                "sSearch": "Buscar:",
-                "sUrl": "",
-                "sInfoThousands": ",",
-                "sLoadingRecords": "Cargando...",
-                "oPaginate": {
-                    "sFirst": "Primero",
-                    "sLast": "Último",
-                    "sNext": "Siguiente",
-                    "sPrevious": "Anterior"
-                },
-                "oAria": {
-                    "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
-                    "sSortDescending": ": Activar para ordenar la columna de manera descendente"
-                }
-            }
-        }).DataTable();
-    } else if (rol_id != rol_real_id) {
-        tabla = $('#ticket_data').dataTable({
-            "processing": true,
-            "serverSide": true,
-            order: [[0, 'desc']],
-            dom: 'Bfrtip',
-            "searching": true,
-            lengthChange: false,
-            colRecorder: true,
-            "buttons": [
-                'copyHtml5',
-                'excelHtml5',
-                'csvHtml5',
-                'pdfHtml5',
-            ],
-            "ajax": {
-                url: '../../controller/ticket.php?op=listar',
-                type: 'post',
-                dataType: 'json',
-                data: function (d) {
-                    d.search_custom = $('#custom_search').val();
-                    d.tick_estado = 'Cerrado';
-                    d.fech_crea_start = $('#fech_crea_start').val();
-                    d.fech_crea_end = $('#fech_crea_end').val();
-                },
-                error: function (e) {
-                    console.log(e.responseText);
-                }
-            },
-            "bDestroy": true,
-            "responsive": true,
-            "bInfo": true,
-            "isDisplayLength": 10,
-            "autoWidth": false,
-            "language": {
-                "sProcessing": "Procesando...",
-                "sLengthMenu": "Mostrar _MENU_ registros",
-                "sZeroRecords": "No se encontraron resultados",
-                "sEmptyTable": "Ningún dato disponible en esta tabla",
-                "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-                "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
-                "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
-                "sInfoPostFix": "",
-                "sSearch": "Buscar:",
-                "sUrl": "",
-                "sInfoThousands": ",",
-                "sLoadingRecords": "Cargando...",
-                "oPaginate": {
-                    "sFirst": "Primero",
-                    "sLast": "Último",
-                    "sNext": "Siguiente",
-                    "sPrevious": "Anterior"
-                },
-                "oAria": {
-                    "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
-                    "sSortDescending": ": Activar para ordenar la columna de manera descendente"
-                }
-            }
-        }).DataTable();
-    }
-
-    // Custom Search Handlers
-    $(document).on('click', '#btn_search', function () {
-        var l = Ladda.create(document.querySelector('#btn_search'));
-        l.start();
-        $('#ticket_data').DataTable().ajax.reload();
-    });
-
-    $(document).on('click', '#btn_clear', function () {
-        var l = Ladda.create(document.querySelector('#btn_clear'));
-        l.start();
-        $('#fech_crea_start').val('');
-        $('#fech_crea_end').val('');
-        $('#custom_search').val('');
-        $('#ticket_data').DataTable().ajax.reload();
-    });
-
-    // Stop Ladda on table draw
-    $('#ticket_data').on('draw.dt', function () {
-        var l_search = Ladda.create(document.querySelector('#btn_search'));
-        var l_clear = Ladda.create(document.querySelector('#btn_clear'));
-        l_search.stop();
-        l_clear.stop();
-    });
-
-    $(document).on('keypress', '#custom_search', function (e) {
-        if (e.which == 13) {
-            $('#btn_search').click();
+// Shared options
+var commonOptions = {
+    "processing": true,
+    "serverSide": true,
+    order: [[0, 'desc']],
+    dom: 'Bfrtip',
+    "searching": false,
+    lengthChange: false,
+    colRecorder: true,
+    "buttons": [
+        'copyHtml5',
+        'excelHtml5',
+        'csvHtml5',
+        'pdfHtml5',
+    ],
+    "bDestroy": true,
+    "responsive": true,
+    "bInfo": true,
+    "isDisplayLength": 10,
+    "autoWidth": false,
+    "language": {
+        "sProcessing": "Procesando...",
+        "sLengthMenu": "Mostrar _MENU_ registros",
+        "sZeroRecords": "No se encontraron resultados",
+        "sEmptyTable": "Ningún dato disponible en esta tabla",
+        "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+        "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
+        "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
+        "sInfoPostFix": "",
+        "sSearch": "Buscar:",
+        "sUrl": "",
+        "sInfoThousands": ",",
+        "sLoadingRecords": "Cargando...",
+        "oPaginate": {
+            "sFirst": "Primero",
+            "sLast": "Último",
+            "sNext": "Siguiente",
+            "sPrevious": "Anterior"
+        },
+        "oAria": {
+            "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
+            "sSortDescending": ": Activar para ordenar la columna de manera descendente"
         }
-    });
+    }
+};
 
-})
+if (rol_id == 1 && rol_real_id != 3) {
+    $('#lblusucrea').remove();
+    var options = $.extend(true, {}, commonOptions);
+    options.ajax = {
+        url: '../../controller/ticket.php?op=listar_x_usu',
+        type: 'post',
+        dataType: 'json',
+        data: function (d) {
+            d.usu_id = usu_id;
+            d.tick_estado = 'Cerrado';
+            d.fech_crea_start = $('#fech_crea_start').val();
+            d.fech_crea_end = $('#fech_crea_end').val();
+            d.tick_id = $('#tick_id').val();
+            d.cats_id = $('#cats_id').val();
+            d.eti_id = $('#eti_id').val();
+            d.search_custom = $('#custom_search').val();
+        },
+        error: function (e) {
+            console.log(e.responseText);
+        }
+    };
+    tabla = $('#ticket_data').dataTable(options).DataTable();
+
+} else if (rol_id == 2 && rol_real_id != 3) {
+    $("#lblusertable").html('Usuario');
+    $('#lblusucrea').remove();
+    var options = $.extend(true, {}, commonOptions);
+    options.ajax = {
+        url: '../../controller/ticket.php?op=listar_x_agente',
+        type: 'post',
+        dataType: 'json',
+        data: function (d) {
+            d.usu_asig = usu_asig;
+            d.tick_estado = 'Cerrado';
+            d.fech_crea_start = $('#fech_crea_start').val();
+            d.fech_crea_end = $('#fech_crea_end').val();
+            d.tick_id = $('#tick_id').val();
+            d.cats_id = $('#cats_id').val();
+            d.eti_id = $('#eti_id').val();
+            d.search_custom = $('#custom_search').val();
+        },
+        error: function (e) {
+            console.log(e.responseText);
+        }
+    };
+    tabla = $('#ticket_data').dataTable(options).DataTable();
+} else if (rol_id != rol_real_id) {
+    var options = $.extend(true, {}, commonOptions);
+    options.ajax = {
+        url: '../../controller/ticket.php?op=listar',
+        type: 'post',
+        dataType: 'json',
+        data: function (d) {
+            d.tick_estado = 'Cerrado';
+            d.fech_crea_start = $('#fech_crea_start').val();
+            d.fech_crea_end = $('#fech_crea_end').val();
+            d.tick_id = $('#tick_id').val();
+            d.cats_id = $('#cats_id').val();
+            d.eti_id = $('#eti_id').val();
+            d.search_custom = $('#custom_search').val();
+        },
+        error: function (e) {
+            console.log(e.responseText);
+        }
+    };
+    tabla = $('#ticket_data').dataTable(options).DataTable();
+}
+
+// Custom Search Handlers
+$(document).on('click', '#btn_search', function () {
+    var l = Ladda.create(document.querySelector('#btn_search'));
+    l.start();
+    $('#ticket_data').DataTable().ajax.reload();
+});
+
+$(document).on('click', '#btn_clear', function () {
+    var l = Ladda.create(document.querySelector('#btn_clear'));
+    l.start();
+    $('#fech_crea_start').val('');
+    $('#fech_crea_end').val('');
+    $('#custom_search').val('');
+    $('#tick_id').val('');
+    $('#cats_id').val('').trigger('change');
+    $('#eti_id').val('').trigger('change');
+    $('#ticket_data').DataTable().ajax.reload();
+});
+
+// Stop Ladda on table draw
+$('#ticket_data').on('draw.dt', function () {
+    var l_search = Ladda.create(document.querySelector('#btn_search'));
+    var l_clear = Ladda.create(document.querySelector('#btn_clear'));
+    l_search.stop();
+    l_clear.stop();
+});
+
+$(document).on('keypress', '#custom_search', function (e) {
+    if (e.which == 13) {
+        $('#btn_search').click();
+    }
+});
+
+$(document).on('keypress', '#tick_id', function (e) {
+    if (e.which == 13) {
+        $('#btn_search').click();
+    }
+});
 
 function ver(tick_id) {
     window.location.href = '/view/DetalleTicket/?ID=' + tick_id

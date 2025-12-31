@@ -300,12 +300,16 @@ class TicketLister
         $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
         $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
 
+        $tick_id = !empty($_POST['tick_id']) ? $_POST['tick_id'] : null;
+        $cats_id = !empty($_POST['cats_id']) ? $_POST['cats_id'] : null;
+        $eti_id = !empty($_POST['eti_id']) ? $_POST['eti_id'] : null;
+
         $start = isset($_POST['start']) ? $_POST['start'] : 0;
         $length = isset($_POST['length']) ? $_POST['length'] : 10;
         $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
         $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
 
-        $result = $this->ticketModel->listar_tickets_involucrados_por_usuario($usuId, $search, $fech_crea_start, $fech_crea_end, $start, $length, $order_column, $order_dir);
+        $result = $this->ticketModel->listar_tickets_involucrados_por_usuario($usuId, $search, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir);
         $datos = $result['data'];
         $recordsTotal = $result['recordsTotal'];
         $recordsFiltered = $result['recordsFiltered'];
@@ -370,12 +374,16 @@ class TicketLister
         $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
         $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
 
+        $tick_id = !empty($_POST['tick_id']) ? $_POST['tick_id'] : null;
+        $cats_id = !empty($_POST['cats_id']) ? $_POST['cats_id'] : null;
+        $eti_id = !empty($_POST['eti_id']) ? $_POST['eti_id'] : null;
+
         $start = isset($_POST['start']) ? $_POST['start'] : 0;
         $length = isset($_POST['length']) ? $_POST['length'] : 10;
         $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
         $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
 
-        $result = $this->ticketModel->listar_tickets_con_historial($search, $fech_crea_start, $fech_crea_end, $start, $length, $order_column, $order_dir);
+        $result = $this->ticketModel->listar_tickets_con_historial($search, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir);
         $datos = $result['data'];
         $recordsTotal = $result['recordsTotal'];
         $recordsFiltered = $result['recordsFiltered'];
@@ -461,12 +469,18 @@ class TicketLister
     public function listTicketsWithError()
     {
         $search = isset($_POST['search']['value']) ? $_POST['search']['value'] : null;
+        $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
+        $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
+        $tick_id = !empty($_POST['tick_id']) ? $_POST['tick_id'] : null;
+        $cats_id = !empty($_POST['cats_id']) ? $_POST['cats_id'] : null;
+        $eti_id = !empty($_POST['eti_id']) ? $_POST['eti_id'] : null;
+
         $start = isset($_POST['start']) ? $_POST['start'] : 0;
         $length = isset($_POST['length']) ? $_POST['length'] : 10;
         $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
         $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
 
-        $result = $this->ticketModel->listar_tickets_con_error($search, $start, $length, $order_column, $order_dir);
+        $result = $this->ticketModel->listar_tickets_con_error($search, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir);
         $datos = $result['data'];
         $recordsTotal = $result['recordsTotal'];
         $recordsFiltered = $result['recordsFiltered'];
@@ -514,12 +528,18 @@ class TicketLister
         $ticketErrorModel = new TicketError();
 
         $search = isset($_POST['search']['value']) ? $_POST['search']['value'] : null;
+        $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
+        $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
+        $tick_id = !empty($_POST['tick_id']) ? $_POST['tick_id'] : null;
+        $cats_id = !empty($_POST['cats_id']) ? $_POST['cats_id'] : null;
+        $eti_id = !empty($_POST['eti_id']) ? $_POST['eti_id'] : null;
+
         $start = isset($_POST['start']) ? $_POST['start'] : 0;
         $length = isset($_POST['length']) ? $_POST['length'] : 10;
         $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
         $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
 
-        $result = $ticketErrorModel->listar_errores_recibidos($usuId, $search, $start, $length, $order_column, $order_dir);
+        $result = $ticketErrorModel->listar_errores_recibidos($usuId, $search, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir);
         return $this->formatErrorListResponse($result);
     }
 
@@ -529,12 +549,18 @@ class TicketLister
         $ticketErrorModel = new TicketError();
 
         $search = isset($_POST['search']['value']) ? $_POST['search']['value'] : null;
+        $fech_crea_start = !empty($_POST['fech_crea_start']) ? $_POST['fech_crea_start'] : null;
+        $fech_crea_end = !empty($_POST['fech_crea_end']) ? $_POST['fech_crea_end'] : null;
+        $tick_id = !empty($_POST['tick_id']) ? $_POST['tick_id'] : null;
+        $cats_id = !empty($_POST['cats_id']) ? $_POST['cats_id'] : null;
+        $eti_id = !empty($_POST['eti_id']) ? $_POST['eti_id'] : null;
+
         $start = isset($_POST['start']) ? $_POST['start'] : 0;
         $length = isset($_POST['length']) ? $_POST['length'] : 10;
         $order_column = isset($_POST['order'][0]['column']) ? $_POST['order'][0]['column'] : null;
         $order_dir = isset($_POST['order'][0]['dir']) ? $_POST['order'][0]['dir'] : null;
 
-        $result = $ticketErrorModel->listar_errores_enviados($usuId, $search, $start, $length, $order_column, $order_dir);
+        $result = $ticketErrorModel->listar_errores_enviados($usuId, $search, $fech_crea_start, $fech_crea_end, $tick_id, $cats_id, $eti_id, $start, $length, $order_column, $order_dir);
         return $this->formatErrorListResponse($result, true);
     }
 
