@@ -25,7 +25,7 @@ class Email extends PHPMailer
     public function recuperar_contrasena($usu_correo, $link)
     {
         $this->isSMTP();
-        $this->Host = 'mail.electrocreditosdelcauca.com';
+        $this->Host = 'helpdesk.electrocreditosdelcauca.com';
         $this->SMTPOptions = array(
             'ssl' => array(
                 'verify_peer' => false,
@@ -33,12 +33,12 @@ class Email extends PHPMailer
                 'allow_self_signed' => true
             )
         );
-        $this->Port = 465;
+        $this->Port = 587;
         $this->SMTPAuth = true;
         $this->Username = $this->gcorreo;
         $this->Password = trim($this->gpass); // Limpiar espacios accidentales
         $this->From = $this->gcorreo;
-        $this->SMTPSecure = 'ssl';
+        $this->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $this->FromName = 'Mesa de Ayuda - Electrocreditos del Cauca';
         $this->CharSet = 'UTF-8';
         $this->addAddress($usu_correo);
