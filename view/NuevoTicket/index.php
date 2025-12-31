@@ -133,7 +133,7 @@ if (isset($_SESSION["usu_id"])) {
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <button type="submit" name="action" value="add" class="btn btn-inline">Guardar</button>
+                                    <button type="submit" name="action" value="add" id="btnguardar" class="btn btn-inline">Guardar</button>
                                 </div>
                             </div>
                         </div>

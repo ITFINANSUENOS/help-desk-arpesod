@@ -435,6 +435,11 @@ function guardaryeditar(e) {
 
 
 
+    // Deshabilitar botón para prevenir doble clic
+    var $btn = $('#btnguardar');
+    var originalText = $btn.text();
+    $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Guardando...');
+
     $.ajax({
         url: "../../controller/ticket.php?op=insert",
         type: "POST",
@@ -442,6 +447,8 @@ function guardaryeditar(e) {
         contentType: false,
         processData: false,
         success: function (data) {
+            $btn.prop('disabled', false).html(originalText);
+
             // Intentamos asegurarnos de que tenemos un objeto JS
             var resp = data;
             try {
@@ -503,6 +510,7 @@ function guardaryeditar(e) {
             swal("Correcto", "Registrado correctamente", "success");
         },
         error: function (jqXHR, textStatus, errorThrown) {
+            $btn.prop('disabled', false).html(originalText);
             console.error("Error AJAX:", textStatus, errorThrown, jqXHR.responseText);
             var msg = "Ocurrió un error al comunicarse con el servidor.";
             // si el backend devolvió JSON con detalles en responseText, intentar parsearlo

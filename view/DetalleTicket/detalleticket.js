@@ -455,6 +455,10 @@ function updateEnviarButtonState() {
         enabled = enabledCheckbox;
     }
 
+    if ($('#btnenviar').data('processing')) {
+        enabled = false;
+    }
+
     $('#btnenviar').prop('disabled', !enabled);
 }
 
@@ -529,10 +533,18 @@ function htmlToPlainText(html) {
 }
 
 function enviarDetalle(signatureData = null) {
+    // Helper para restaurar botón
+    function restoreButton() {
+        var $btn = $('#btnenviar');
+        var originalText = $btn.data('original-text');
+        if (originalText) $btn.html(originalText);
+        $btn.data('processing', false);
+        updateEnviarButtonState();
+    }
+
     if ($('#tickd_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una respuesta o comentario.", "warning");
-        $('#btnenviar').data('processing', false);
-        updateEnviarButtonState();
+        restoreButton();
         return false;
     }
 
@@ -549,15 +561,13 @@ function enviarDetalle(signatureData = null) {
 
     if (!cleanContent || cleanContent.length === 0) {
         swal("Atención", "Debe ingresar una respuesta o comentario.", "warning");
-        $('#btnenviar').data('processing', false).prop('disabled', false);
-        updateEnviarButtonState();
+        restoreButton();
         return false;
     }
 
     if (cleanContent === cleanTemplate) {
         swal("Atención", "Debe agregar información adicional a la plantilla de descripción.", "warning");
-        $('#btnenviar').data('processing', false).prop('disabled', false);
-        updateEnviarButtonState();
+        restoreButton();
         return false;
     }
 
@@ -579,8 +589,7 @@ function enviarDetalle(signatureData = null) {
             // Validar individual
             if (file.size > maxFileSize) {
                 swal("Error", "El archivo '" + file.name + "' supera el límite de 2MB.", "error");
-                $('#btnenviar').data('processing', false).prop('disabled', false);
-                updateEnviarButtonState();
+                restoreButton();
                 return false;
             }
 
@@ -592,8 +601,7 @@ function enviarDetalle(signatureData = null) {
     // Validar total
     if (currentTotalSize > maxTotalSize) {
         swal("Error", "El tamaño total de los archivos supera el límite de 8MB.", "error");
-        $('#btnenviar').data('processing', false).prop('disabled', false);
-        updateEnviarButtonState();
+        restoreButton();
         return false;
     }
 
@@ -612,8 +620,7 @@ function enviarDetalle(signatureData = null) {
         if (!usu_asig) {
             swal("Atención", "Por favor, selecciona un usuario para asignar antes de enviar.", "warning");
             // liberar botón para que el usuario intente de nuevo
-            $('#btnenviar').data('processing', false).prop('disabled', false);
-            updateEnviarButtonState();
+            restoreButton();
             return false;
         }
         formData.append('usu_asig', usu_asig);
@@ -633,8 +640,7 @@ function enviarDetalle(signatureData = null) {
 
         if (camposFaltantes.length > 0) {
             swal("Atención", "Por favor complete los siguientes campos requeridos: " + camposFaltantes.join(', '), "warning");
-            $('#btnenviar').data('processing', false).prop('disabled', false);
-            updateEnviarButtonState();
+            restoreButton();
             return false;
         }
     }
@@ -698,8 +704,7 @@ function enviarDetalle(signatureData = null) {
         },
         complete: function () {
             // Siempre liberar el bloqueo del botón cuando la petición termine
-            $('#btnenviar').data('processing', false);
-            updateEnviarButtonState();
+            restoreButton();
         }
     });
 }
@@ -728,14 +733,21 @@ $(document).on('click', '#btnenviar', function () {
     }
 
     // Marcar en procesamiento y deshabilitar el botón
-    $btn.data('processing', true).prop('disabled', true);
+    var originalText = $btn.html();
+    $btn.data('original-text', originalText);
+    $btn.data('processing', true).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Enviando...');
 
     selected_condicion_clave = null; // No hay clave de condición si se usa el botón de enviar normal
 
     // Verificar si requiere firma
     if (currentStepInfo && currentStepInfo.requiere_firma == 1) {
         $('#modalFirma').modal('show');
-        $btn.data('processing', false).prop('disabled', false); // Re-enable button
+        // Revertir estado visual si cancela o para permitir firmar
+        // PERO: si abre el modal, aún no ha enviado AJAX. 
+        // El usuario debe firmar y luego dar click en "Guardar y Terminar" del modal.
+        // Ese botón llama a enviarDetalle(signatureData).
+        // Así que aquí DEBEMOS revertir el estado del botón principal porque NO se está enviando todavía.
+        $btn.data('processing', false).prop('disabled', false).html(originalText);
         return;
     }
 
