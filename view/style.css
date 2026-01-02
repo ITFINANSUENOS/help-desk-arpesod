@@ -104,3 +104,25 @@
 .menu-footer {
     margin-top: auto;
 }
+
+.site-header .site-logo img {
+  float: left;
+  position: relative;
+  height: 80px !important;
+  top: -20px !important;
+}
+@media (max-width: 767px) {
+  .site-header .site-logo img {
+    height: auto !important;
+    width: 35px;
+    top: 0px !important;
+  }
+}
+
+.site-header .site-header-content {
+  float: right;
+  height: 40px;
+  padding: 5px 0;
+  width: 80% !important;
+  margin-left: -210px;
+}
