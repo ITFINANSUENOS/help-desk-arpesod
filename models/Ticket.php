@@ -446,7 +446,9 @@ class Ticket extends Conectar
                 4 => 'tm_ticket.tick_estado',
                 5 => 'prioridad_usuario',
                 // ...
-                8 => 'tm_ticket.fech_crea'
+                6 => 'pdd.pd_nom',
+                7 => 'tm_ticket.fech_crea',
+                8 => "CONCAT(tm_usuario.usu_nom, ' ', tm_usuario.usu_ape)"
             ];
             $colName = isset($columns[$order_column]) ? $columns[$order_column] : 'tm_ticket.tick_id';
             $dir = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
@@ -582,7 +584,9 @@ class Ticket extends Conectar
                 4 => 'tm_ticket.tick_estado',
                 5 => 'prioridad_usuario',
                 // ...
-                8 => 'tm_ticket.fech_crea'
+                6 => 'pdd.pd_nom',
+                7 => 'tm_ticket.fech_crea',
+                8 => "CONCAT(tm_usuario.usu_nom, ' ', tm_usuario.usu_ape)"
             ];
             $colName = isset($columns[$order_column]) ? $columns[$order_column] : 'tm_ticket.tick_id';
             $dir = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
@@ -925,7 +929,7 @@ class Ticket extends Conectar
                 2 => 't.tick_titulo',
                 3 => 't.tick_estado',
                 4 => 't.fech_crea',
-                5 => 'u.usu_nom'
+                5 => "CONCAT(u.usu_nom, ' ', u.usu_ape)"
             ];
             $colName = isset($columns[$order_column]) ? $columns[$order_column] : 't.tick_id';
             $dir = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
@@ -1090,7 +1094,7 @@ class Ticket extends Conectar
                 2 => 't.tick_titulo',
                 3 => 't.tick_estado',
                 4 => 't.fech_crea',
-                5 => 'u.usu_nom'
+                5 => "CONCAT(u.usu_nom, ' ', u.usu_ape)"
             ];
             $colName = isset($columns[$order_column]) ? $columns[$order_column] : 't.tick_id';
             $dir = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
