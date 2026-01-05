@@ -268,9 +268,10 @@ class Kpi extends Conectar
         if ($scope !== 'all') {
             if (is_array($scope)) {
                 $ids_str = implode(',', $scope);
-                $where_scope .= " AND t.usu_asig IN ($ids_str) ";
+                $where_scope .= " AND (t.usu_asig IN ($ids_str) OR t.usu_id IN ($ids_str)) ";
             } else {
-                $where_scope .= " AND t.usu_asig = $usu_id ";
+                // Should not happen based on get_hierarchy_scope returning array or 'all', but primarily for safety
+                $where_scope .= " AND (t.usu_asig = $usu_id OR t.usu_id = $usu_id) ";
             }
         }
 
