@@ -94,6 +94,7 @@ $sql = "SELECT
             c.car_nom,
             t.fech_cierre,
             t.tick_estado,
+            t.tick_titulo,
             cat.cat_nom,
             sub.cats_nom,
             p.paso_nombre
@@ -291,6 +292,7 @@ $sheet2->setTitle('Detalle Tickets');
 // Encabezados Detalle
 $headers2 = [
     'TICKET #',
+    'TITULO TICKET',
     'CATEGORIA',
     'SUBCATEGORIA',
     'PASO FLUJO',
@@ -314,7 +316,7 @@ foreach ($headers2 as $header) {
     $sheet2->getColumnDimension($col)->setAutoSize(true);
     $col++;
 }
-$sheet2->getStyle('A1:P1')->applyFromArray($headerStyle); // Range A1:P1
+$sheet2->getStyle('A1:Q1')->applyFromArray($headerStyle); // Range A1:Q1
 
 $row2 = 2;
 
@@ -380,6 +382,7 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
 
         // Common Vars
         $t_id = $tick_id; // or $current['tick_id'] if available (assignments have it)
+        $tick_titulo = $current['tick_titulo'] ?? '';
         $date_event = $current['sort_date'];
 
         // Vars specific to Type
@@ -486,9 +489,9 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
             // ERROR ENTRY via tm_ticket_error
             $ref_asig = $assignments[0] ?? null; // Get basic ticket info from first assignment
             if ($ref_asig) {
-                $cat_nom = $ref_asig['cat_nom'];
                 $subcat_nom = $ref_asig['cats_nom'];
                 $tick_estado = $ref_asig['tick_estado'];
+                $tick_titulo = $ref_asig['tick_titulo'];
             }
 
             // FIX: Set a descriptive name instead of empty
@@ -512,43 +515,44 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
 
         // --- WRITE ROW ---
         $sheet2->setCellValue('A' . $row2, $t_id);
-        $sheet2->setCellValue('B' . $row2, $cat_nom);
-        $sheet2->setCellValue('C' . $row2, $subcat_nom);
-        $sheet2->setCellValue('D' . $row2, $paso_nom);
-        $sheet2->setCellValue('E' . $row2, $type);
-        $sheet2->setCellValue('F' . $row2, $reg_nom);
-        $sheet2->setCellValue('G' . $row2, $usu_nom);
-        $sheet2->setCellValue('H' . $row2, $rol_nom);
-        $sheet2->setCellValue('I' . $row2, $car_nom);
-        $sheet2->setCellValue('J' . $row2, $perfiles);
-        $sheet2->setCellValue('K' . $row2, $date_event);
-        $sheet2->setCellValue('L' . $row2, $end_time_str);
-        $sheet2->setCellValue('M' . $row2, $duration_hours);
-        $sheet2->setCellValue('N' . $row2, $estado_tiempo);
-        $sheet2->setCellValue('O' . $row2, $novedad);
-        $sheet2->setCellValue('P' . $row2, $tick_estado);
+        $sheet2->setCellValue('B' . $row2, $tick_titulo);
+        $sheet2->setCellValue('C' . $row2, $cat_nom);
+        $sheet2->setCellValue('D' . $row2, $subcat_nom);
+        $sheet2->setCellValue('E' . $row2, $paso_nom);
+        $sheet2->setCellValue('F' . $row2, $type);
+        $sheet2->setCellValue('G' . $row2, $reg_nom);
+        $sheet2->setCellValue('H' . $row2, $usu_nom);
+        $sheet2->setCellValue('I' . $row2, $rol_nom);
+        $sheet2->setCellValue('J' . $row2, $car_nom);
+        $sheet2->setCellValue('K' . $row2, $perfiles);
+        $sheet2->setCellValue('L' . $row2, $date_event);
+        $sheet2->setCellValue('M' . $row2, $end_time_str);
+        $sheet2->setCellValue('N' . $row2, $duration_hours);
+        $sheet2->setCellValue('O' . $row2, $estado_tiempo);
+        $sheet2->setCellValue('P' . $row2, $novedad);
+        $sheet2->setCellValue('Q' . $row2, $tick_estado);
 
         // Styles
         if ($type == 'ERROR PROCESO') {
-            $sheet2->getStyle('E' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED));
-            $sheet2->getStyle('E' . $row2)->getFont()->setBold(true);
-            $sheet2->getStyle('O' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED));
+            $sheet2->getStyle('F' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED)); // Shifted E->F
+            $sheet2->getStyle('F' . $row2)->getFont()->setBold(true);
+            $sheet2->getStyle('P' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED)); // Shifted O->P
         } elseif ($type == 'ERROR INFORMATIVO') {
-            $sheet2->getStyle('E' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE));
-            $sheet2->getStyle('O' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE));
+            $sheet2->getStyle('F' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE));
+            $sheet2->getStyle('P' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE));
         } else {
             // Asignacion colors
             if (!empty($estado_tiempo)) {
                 $est = mb_strtolower($estado_tiempo);
                 if (strpos($est, 'atrasado') !== false || strpos($est, 'vencido') !== false) {
-                    $sheet2->getStyle('N' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED));
+                    $sheet2->getStyle('O' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED)); // Shifted N->O
                 } elseif (strpos($est, 'tiempo') !== false) {
-                    $sheet2->getStyle('N' . $row2)->getFont()->setColor(new Color(Color::COLOR_DARKGREEN));
+                    $sheet2->getStyle('O' . $row2)->getFont()->setColor(new Color(Color::COLOR_DARKGREEN));
                 }
             }
             if (!empty($novedad) && $type == 'ASIGNACION') {
                 // Novedades en asignacion (retornos)
-                $sheet2->getStyle('O' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED));
+                $sheet2->getStyle('P' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED));
             }
         }
 
@@ -556,7 +560,7 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
     }
 }
 $lastRow2 = $row2 - 1;
-$sheet2->getStyle('A2:P' . $lastRow2)->applyFromArray($styleArray);
+$sheet2->getStyle('A2:Q' . $lastRow2)->applyFromArray($styleArray);
 
 // Volver a la primera hoja antes de guardar
 $spreadsheet->setActiveSheetIndex(0);
