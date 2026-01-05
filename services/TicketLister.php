@@ -71,6 +71,9 @@ class TicketLister
 
             $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
 
+            // Usuario (Creador) - Added to match 11 columns structure
+            $sub_array[] = '<span class="label label-primary">' . $row['usu_nom'] . ' ' . $row['usu_ape'] . '</span>';
+
 
 
             // Etiquetas
