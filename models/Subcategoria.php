@@ -224,8 +224,6 @@ class Subcategoria extends Conectar
         if ($rol_id == 1) { // Usuario
             $sql .= " AND t.usu_id = ?";
         } else { // Soporte/Admin (viendo sus asignados)
-            // Nota: Para admin podría ser diferente si quiere ver todo, pero la solicitud fue restrictiva.
-            // Asumimos que Admin filtra por asignados también si filtra por "mis subcategorias"
             $sql .= " AND t.usu_asig = ?";
         }
 
@@ -235,5 +233,32 @@ class Subcategoria extends Conectar
         $sql->bindValue(1, $usu_id);
         $sql->execute();
         return $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function get_subcategorias_scope($scope)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+
+        $sql = "SELECT DISTINCT s.cats_id, s.cats_nom 
+                FROM tm_subcategoria s 
+                INNER JOIN tm_ticket t ON s.cats_id = t.cats_id 
+                WHERE s.est = 1 AND t.est = 1";
+
+        if ($scope === 'all') {
+            // No additional filter needed, returns all used subcats
+        } elseif (is_array($scope) && count($scope) > 0) {
+            $ids = implode(',', $scope);
+            // Check if any user in scope is Creator OR Assignee
+            $sql .= " AND (t.usu_id IN ($ids) OR t.usu_asig IN ($ids))";
+        } else {
+            return [];
+        }
+
+        $sql .= " ORDER BY s.cats_nom ASC";
+
+        $stmt = $conectar->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

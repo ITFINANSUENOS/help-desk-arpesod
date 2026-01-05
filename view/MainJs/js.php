@@ -23,6 +23,7 @@
 <script src="../../public/js/lib/lobipanel/lobipanel.min.js?v=<?php echo time(); ?>"></script>
 <script src="../../public/js/lib/match-height/jquery.matchHeight.min.js?v=<?php echo time(); ?>"></script>
 <script src="../../public/js/lib/hide-show-password/bootstrap-show-password.min.js?v=<?php echo time(); ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>
         mermaid.initialize({

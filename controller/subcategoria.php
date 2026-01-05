@@ -33,15 +33,15 @@ switch ($_GET["op"]) {
 
     case "combo_usuario_tickets":
         $usu_id = $_SESSION["usu_id"];
-        $rol_id = $_SESSION["rol_id"];
 
-        // Si es Admin (3) y no queremos restringir, podríamos usar get_subcategoriatodo.
-        // Pero el usuario pidió "subcategorias que me han creado a mi" (o asignado).
-        // Si el usuario insiste en ver SOLO lo suyo, usamos la funcion filtrada.
-        // Si el Admin quiere ver TODO, deberíamos usar combo_all.
-        // Asumiremos que la petición aplica a su vista personal.
+        // 1. Get Hierarchy Scope using Kpi Model
+        require_once("../models/Kpi.php");
+        $kpi = new Kpi();
+        $scope = $kpi->get_hierarchy_scope($usu_id);
 
-        $datos = $subcategoria->get_subcategorias_por_usu_ticket($usu_id, $rol_id);
+        // 2. Fetch subcats for this scope
+        $datos = $subcategoria->get_subcategorias_scope($scope);
+
         if (is_array($datos) and count($datos) > 0) {
             $html = "<option value=''>Seleccionar Subcategoria</option>";
             foreach ($datos as $row) {
@@ -49,7 +49,6 @@ switch ($_GET["op"]) {
             }
             echo $html;
         } else {
-            // Si no hay datos, al menos mostrar la opción por defecto
             echo "<option value=''>Seleccionar Subcategoria</option>";
         }
         break;
