@@ -778,10 +778,19 @@ $(document).on('click', '#btn_registrar_evento', function () {
         }, function (isConfirm) {
             if (isConfirm) {
                 $.post("../../controller/ticket.php?op=registrar_error", { tick_id: tick_id, answer_id: answer_id, usu_id: usu_id, error_descrip: $('#error_descrip').val() })
-                    .done(function () {
-                        // MODIFICADO: updateTicket ahora maneja la redirección
-                        updateTicket(tick_id, usu_id);
-                        $('#fast_answer_id').val('');
+                    .done(function (response) {
+                        try {
+                            var data = (typeof response === 'string') ? JSON.parse(response) : response;
+                            if (data.status === 'error') {
+                                swal("Error", data.msg, "error");
+                            } else {
+                                updateTicket(tick_id, usu_id);
+                                $('#fast_answer_id').val('');
+                            }
+                        } catch (e) {
+                            console.error("Invalid JSON", response);
+                            updateTicket(tick_id, usu_id); // Fallback to behave as before if JSON fails
+                        }
                     })
                     .fail(function () {
                         swal("Error", "No se pudo registrar el evento.", "error");
@@ -805,6 +814,11 @@ $(document).on('click', '#btn_registrar_evento', function () {
                         // MODIFICADO: Verificar si la respuesta indica reasignación
                         var data;
                         try { data = JSON.parse(response); } catch (e) { data = {}; }
+
+                        if (data.status === 'error') {
+                            swal("Error", data.msg, "error");
+                            return;
+                        }
 
                         if (data.reassigned) {
                             swal({

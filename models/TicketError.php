@@ -18,6 +18,19 @@ class TicketError extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
+    public function count_errors_by_type($tick_id, $es_error_proceso)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT COUNT(*) as count FROM tm_ticket_error WHERE tick_id = ? AND es_error_proceso = ? AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->bindValue(2, $es_error_proceso);
+        $sql->execute();
+        $result = $sql->fetch(PDO::FETCH_ASSOC);
+        return $result ? (int)$result['count'] : 0;
+    }
+
     // Errors assigned TO the user (Mis Errores)
     public function listar_errores_recibidos($usu_id, $search_term = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
     {

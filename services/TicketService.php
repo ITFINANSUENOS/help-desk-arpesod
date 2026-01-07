@@ -1673,8 +1673,19 @@ class TicketService
             $this->ticketModel->insert_ticket_detalle($tick_id, $usu_id_reporta, $comentario);
 
             // NEW: Insert into relational error table
+            // NEW: Insert into relational error table
             require_once('../models/TicketError.php');
             $ticketErrorModel = new TicketError();
+
+            // Check if error of this type already exists for this ticket
+            // es_error_proceso: 1 = Process, 0 = Info
+            $is_process_val = $es_error_proceso ? 1 : 0;
+            $existing_count = $ticketErrorModel->count_errors_by_type($tick_id, $is_process_val);
+
+            if ($existing_count > 0) {
+                $errorTypeStr = $es_error_proceso ? "de Proceso" : "Informativo";
+                throw new Exception("Ya existe un Error {$errorTypeStr} registrado para este ticket. Solo se permite uno de cada tipo por ticket.");
+            }
             // Determine responsible: if assigned_to is set, use it. Otherwise use Creator?
             // The existing logic sets $assigned_to perfectly for "Who caused this" (The person we are returning to, or the one responsible).
             $responsable_id = $assigned_to ?? $ticket_data['usu_id'];
