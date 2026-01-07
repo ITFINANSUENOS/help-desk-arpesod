@@ -186,6 +186,9 @@ function loadDetailedStats(subcatName) {
                         <a href="#" onclick="viewPerformanceDetails(${u.usu_id}, 'late'); return false;" class="badge badge-danger" title="Atrasados">${u.late}</a>
                     </td>
                     <td class="text-center">
+                        <span class="label label-primary">${u.tick_created}</span>
+                    </td>
+                    <td class="text-center">
                         ${novLink} <br>
                         <small class="text-muted">${u.nov_avg_time} min</small>
                     </td>

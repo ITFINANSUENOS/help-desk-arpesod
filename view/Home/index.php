@@ -123,6 +123,7 @@ if (isset($_SESSION["usu_id"])) {
                                         <tr>
                                             <th>Usuario</th>
                                             <th class="text-center" title="A Tiempo / Atrasados"><i class="fa fa-clock-o"></i></th>
+                                            <th class="text-center" title="Tickets Creados">Creados</th>
                                             <th class="text-center" title="Novedades (Total - Promedio Min)"><i class="fa fa-exclamation-triangle"></i></th>
                                             <th class="text-center" title="Errores (Proceso / Info)"><i class="fa fa-times-circle"></i></th>
                                         </tr>

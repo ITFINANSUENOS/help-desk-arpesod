@@ -31,7 +31,14 @@ switch ($_GET["op"]) {
         } else {
             $hours = floor($datos3 / 60);
             $mins = $datos3 % 60;
-            $output["promedio_formato"] = $hours . "h " . $mins . "m";
+
+            if ($hours >= 24) {
+                $days = floor($hours / 24);
+                $remaining_hours = $hours % 24;
+                $output["promedio_formato"] = $days . " días " . $remaining_hours . "h";
+            } else {
+                $output["promedio_formato"] = $hours . "h " . $mins . "m";
+            }
         }
 
         echo json_encode($output);

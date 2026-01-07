@@ -268,10 +268,10 @@ class Kpi extends Conectar
         if ($scope !== 'all') {
             if (is_array($scope)) {
                 $ids_str = implode(',', $scope);
-                $where_scope .= " AND (t.usu_asig IN ($ids_str) OR t.usu_id IN ($ids_str)) ";
+                $where_scope .= " AND (t.usu_asig IN ($ids_str) OR t.usu_id IN ($ids_str) OR EXISTS (SELECT 1 FROM th_ticket_asignacion ha WHERE ha.tick_id = t.tick_id AND ha.usu_asig IN ($ids_str) AND ha.est=1)) ";
             } else {
                 // Should not happen based on get_hierarchy_scope returning array or 'all', but primarily for safety
-                $where_scope .= " AND (t.usu_asig = $usu_id OR t.usu_id = $usu_id) ";
+                $where_scope .= " AND (t.usu_asig = $usu_id OR t.usu_id = $usu_id OR EXISTS (SELECT 1 FROM th_ticket_asignacion ha WHERE ha.tick_id = t.tick_id AND ha.usu_asig = $usu_id AND ha.est=1)) ";
             }
         }
 
@@ -285,7 +285,8 @@ class Kpi extends Conectar
             $where_filters .= " AND u.car_id = " . intval($filters['car_id']);
         }
         if (!empty($filters['target_usu_id'])) {
-            $where_filters .= " AND t.usu_asig = " . intval($filters['target_usu_id']);
+            $tuid = intval($filters['target_usu_id']);
+            $where_filters .= " AND (t.usu_asig = $tuid OR t.usu_id = $tuid OR EXISTS (SELECT 1 FROM th_ticket_asignacion ha WHERE ha.tick_id = t.tick_id AND ha.usu_asig = $tuid AND ha.est=1)) ";
         }
         if (!empty($filters['cats_id'])) {
             $where_filters .= " AND t.cats_id = " . intval($filters['cats_id']);
@@ -776,12 +777,15 @@ class Kpi extends Conectar
         if ($subcat_name && isset($cats_id)) {
             $sql_users = "SELECT DISTINCT u.usu_id, u.usu_nom, u.usu_ape 
                           FROM tm_usuario u
-                          INNER JOIN th_ticket_asignacion a ON u.usu_id = a.usu_asig
-                          INNER JOIN tm_ticket t ON a.tick_id = t.tick_id
-                          WHERE t.cats_id = ? AND $where_users";
+                          WHERE (
+                            u.usu_id IN (SELECT a.usu_asig FROM th_ticket_asignacion a INNER JOIN tm_ticket t ON a.tick_id = t.tick_id WHERE t.cats_id = ?)
+                            OR
+                            u.usu_id IN (SELECT t2.usu_id FROM tm_ticket t2 WHERE t2.cats_id = ?)
+                          ) AND $where_users";
 
             $stmt_u = $conectar->prepare($sql_users);
             $stmt_u->bindValue(1, $cats_id);
+            $stmt_u->bindValue(2, $cats_id);
             $stmt_u->execute();
             $users = $stmt_u->fetchAll(PDO::FETCH_ASSOC);
         } else {
@@ -799,6 +803,7 @@ class Kpi extends Conectar
                 'usu_nom' => $u['usu_nom'] . ' ' . $u['usu_ape'],
                 'on_time' => 0,
                 'late' => 0,
+                'tick_created' => 0, // Nuevo campo
                 'nov_count' => 0,
                 'nov_avg_time' => 0, // Minutos
                 'err_process' => 0,
@@ -829,6 +834,22 @@ class Kpi extends Conectar
                 } elseif (strpos($est, 'atrasado') !== false || strpos($est, 'vencido') !== false) {
                     $stats[$uid]['late']++;
                 }
+            }
+        }
+
+        // DATOS 3: TICKETS CREADOS
+        $created_where = $subcat_name ? " AND cats_id = $cats_id " : "";
+        $sql_created = "SELECT usu_id, COUNT(*) as total 
+                        FROM tm_ticket 
+                        WHERE est=1 $created_where 
+                        GROUP BY usu_id";
+
+        $stmt_c = $conectar->prepare($sql_created);
+        $stmt_c->execute();
+        while ($row = $stmt_c->fetch(PDO::FETCH_ASSOC)) {
+            $uid = $row['usu_id'];
+            if (isset($stats[$uid])) {
+                $stats[$uid]['tick_created'] = $row['total'];
             }
         }
 
