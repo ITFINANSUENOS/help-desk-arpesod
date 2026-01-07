@@ -186,7 +186,7 @@ function loadDetailedStats(subcatName) {
                         <a href="#" onclick="viewPerformanceDetails(${u.usu_id}, 'late'); return false;" class="badge badge-danger" title="Atrasados">${u.late}</a>
                     </td>
                     <td class="text-center">
-                        <span class="label label-primary">${u.tick_created}</span>
+                        <a href="#" onclick="viewPerformanceDetails(${u.usu_id}, 'created'); return false;" class="label label-primary" title="Ver Creados">${u.tick_created}</a>
                     </td>
                     <td class="text-center">
                         ${novLink} <br>
@@ -264,16 +264,25 @@ function viewPerformanceDetails(usu_id, type) {
     var payload = { usu_id: usu_id, type: type };
     if (currentSearchTerm) payload.subcat_name = currentSearchTerm;
 
-    $('#lblTitleDesempeno').text(type === 'on_time' ? 'Tickets A Tiempo' : 'Tickets Atrasados/Vencidos');
+    $('#lblTitleDesempeno').text(
+        type === 'on_time' ? 'Tickets A Tiempo' :
+            type === 'late' ? 'Tickets Atrasados/Vencidos' :
+                'Tickets Creados'
+    );
 
     $.post("../../controller/kpi.php?op=user_performance_details", payload, function (data) {
         var items = JSON.parse(data);
         var html = '';
         items.forEach(function (i) {
+            var badgeClass = 'label-default';
+            if (type === 'on_time') badgeClass = 'label-success';
+            else if (type === 'late') badgeClass = 'label-danger';
+            else if (type === 'created') badgeClass = 'label-primary';
+
             html += `<tr>
                 <td><a href="../DetalleTicket/?ID=${i.tick_id}" target="_blank">#${i.tick_id}</a></td>
                 <td>${i.tick_titulo}</td>
-                <td><span class="label ${type === 'on_time' ? 'label-success' : 'label-danger'}">${i.estado_tiempo_paso}</span></td>
+                <td><span class="label ${badgeClass}">${i.estado_tiempo_paso || i.tick_estado || 'N/A'}</span></td>
                 <td>${i.fech_asig}</td>
             </tr>`;
         });

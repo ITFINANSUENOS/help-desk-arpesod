@@ -680,35 +680,52 @@ class Kpi extends Conectar
             $cats_id = $cat_row ? $cat_row['cats_id'] : null;
         }
 
-        $join = $cats_id ? " INNER JOIN tm_ticket t_filter ON t.tick_id = t_filter.tick_id " : "";
-        $where = $cats_id ? " AND t_filter.cats_id = $cats_id " : "";
+        if ($type === 'created') {
+            // Logic for Created Tickets (tm_ticket only)
+            // Fix: No need to join tm_ticket again as 't_filter' since 't' is already tm_ticket
+            $where = $cats_id ? " AND t.cats_id = $cats_id " : "";
 
-        // Logic for types
-        // 'on_time' -> 'Atiempo'
-        // 'late' -> 'Atrasado' OR 'Vencido'
-
-        $type_condition = "";
-        if ($type === 'on_time') {
-            $type_condition = " AND t.estado_tiempo_paso LIKE '%tiempo%' ";
+            $sql = "SELECT 
+                        t.tick_id,
+                        t.fech_crea AS fech_asig,
+                        t.tick_estado AS estado_tiempo_paso,
+                        t.tick_titulo
+                    FROM tm_ticket t
+                    WHERE t.usu_id = ? 
+                    AND t.est = 1
+                    $where
+                    ORDER BY t.fech_crea DESC";
         } else {
-            $type_condition = " AND (t.estado_tiempo_paso LIKE '%Atrasado%' OR t.estado_tiempo_paso LIKE '%Vencido%') ";
-        }
+            $join = $cats_id ? " INNER JOIN tm_ticket t_filter ON t.tick_id = t_filter.tick_id " : "";
+            $where = $cats_id ? " AND t_filter.cats_id = $cats_id " : "";
 
-        // We join tm_ticket to get ticket title
-        $sql = "SELECT 
-                    t.tick_id,
-                    t.fech_asig,
-                    t.estado_tiempo_paso,
-                    tk.tick_titulo
-                FROM th_ticket_asignacion t
-                INNER JOIN tm_ticket tk ON t.tick_id = tk.tick_id
-                $join
-                WHERE t.usu_asig = ? 
-                AND t.est = 1 
-                AND t.estado_tiempo_paso IS NOT NULL
-                $type_condition
-                $where
-                ORDER BY t.fech_asig DESC";
+            // Logic for types
+            // 'on_time' -> 'Atiempo'
+            // 'late' -> 'Atrasado' OR 'Vencido'
+
+            $type_condition = "";
+            if ($type === 'on_time') {
+                $type_condition = " AND t.estado_tiempo_paso LIKE '%tiempo%' ";
+            } else {
+                $type_condition = " AND (t.estado_tiempo_paso LIKE '%Atrasado%' OR t.estado_tiempo_paso LIKE '%Vencido%') ";
+            }
+
+            // We join tm_ticket to get ticket title
+            $sql = "SELECT 
+                        t.tick_id,
+                        t.fech_asig,
+                        t.estado_tiempo_paso,
+                        tk.tick_titulo
+                    FROM th_ticket_asignacion t
+                    INNER JOIN tm_ticket tk ON t.tick_id = tk.tick_id
+                    $join
+                    WHERE t.usu_asig = ? 
+                    AND t.est = 1 
+                    AND t.estado_tiempo_paso IS NOT NULL
+                    $type_condition
+                    $where
+                    ORDER BY t.fech_asig DESC";
+        }
 
         $stmt = $conectar->prepare($sql);
         $stmt->bindValue(1, $usu_id);
