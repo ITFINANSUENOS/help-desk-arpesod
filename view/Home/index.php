@@ -215,6 +215,7 @@ if (isset($_SESSION["usu_id"])) {
                                     <th>Ticket</th>
                                     <th>Título</th>
                                     <th>Estado Asignación</th>
+                                    <th>Evento/Fuente</th>
                                     <th>Fecha Asignación</th>
                                 </tr>
                             </thead>

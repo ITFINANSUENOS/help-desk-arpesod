@@ -715,7 +715,13 @@ class Kpi extends Conectar
                         t.tick_id,
                         t.fech_asig,
                         t.estado_tiempo_paso,
-                        tk.tick_titulo
+                        tk.tick_titulo,
+                        CASE
+                            WHEN t.error_code_id IS NOT NULL AND t.error_code_id > 0 THEN 'Error'
+                            WHEN t.asig_comentario LIKE 'Novedad asignada%' THEN 'Novedad'
+                            WHEN t.asig_comentario LIKE 'Ticket devuelto%' THEN 'Devolución'
+                            ELSE 'Asignación'
+                        END AS tipo_evento
                     FROM th_ticket_asignacion t
                     INNER JOIN tm_ticket tk ON t.tick_id = tk.tick_id
                     $join

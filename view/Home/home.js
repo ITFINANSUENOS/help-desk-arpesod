@@ -279,10 +279,19 @@ function viewPerformanceDetails(usu_id, type) {
             else if (type === 'late') badgeClass = 'label-danger';
             else if (type === 'created') badgeClass = 'label-primary';
 
+            // Check event type
+            var eventoBadge = 'label-default';
+            var eventoText = i.tipo_evento || 'Asignación';
+            if (eventoText === 'Error') eventoBadge = 'label-danger';
+            if (eventoText === 'Novedad') eventoBadge = 'label-warning';
+            if (eventoText === 'Devolución') eventoBadge = 'label-info';
+            if (eventoText === 'Asignación') eventoBadge = 'label-success'; // Or secondary
+
             html += `<tr>
                 <td><a href="../DetalleTicket/?ID=${i.tick_id}" target="_blank">#${i.tick_id}</a></td>
                 <td>${i.tick_titulo}</td>
                 <td><span class="label ${badgeClass}">${i.estado_tiempo_paso || i.tick_estado || 'N/A'}</span></td>
+                <td><span class="label ${eventoBadge}">${eventoText}</span></td>
                 <td>${i.fech_asig}</td>
             </tr>`;
         });
