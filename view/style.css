@@ -4,8 +4,10 @@
 .calendar-popover {
     border: 1px solid #e0e0e0;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    border-radius: 8px; /* Esquinas redondeadas */
-    font-family: 'Poppins', sans-serif; /* Usa una fuente moderna, ajústala a la de tu tema */
+    border-radius: 8px;
+    /* Esquinas redondeadas */
+    font-family: 'Poppins', sans-serif;
+    /* Usa una fuente moderna, ajústala a la de tu tema */
 }
 
 /* Cabecera del popover */
@@ -38,9 +40,11 @@
 
 /* Estilo para los íconos */
 .popover-icon {
-    width: 25px; /* Ancho fijo para alinear el texto */
+    width: 25px;
+    /* Ancho fijo para alinear el texto */
     text-align: center;
-    color: #007bff; /* Color principal de los íconos */
+    color: #007bff;
+    /* Color principal de los íconos */
     margin-right: 8px;
     font-size: 1.1em;
 }
@@ -63,28 +67,34 @@
 }
 
 .badge-prioridad-baja {
-    background-color: #6c757d; /* Verde para Abierto */
+    background-color: #6c757d;
+    /* Verde para Abierto */
 }
 
 .badge-prioridad-media {
-    background-color: #28a745; /* Rojo para Cerrado */
+    background-color: #28a745;
+    /* Rojo para Cerrado */
 }
 
 .badge-prioridad-alta {
-    background-color: #dc3545; /* Gris para otros estados */
+    background-color: #dc3545;
+    /* Gris para otros estados */
 }
 
 
 .badge-estado-abierto {
-    background-color: #28a745; /* Verde para Abierto */
+    background-color: #28a745;
+    /* Verde para Abierto */
 }
 
 .badge-estado-cerrado {
-    background-color: #dc3545; /* Rojo para Cerrado */
+    background-color: #dc3545;
+    /* Rojo para Cerrado */
 }
 
 .badge-estado-default {
-    background-color: #6c757d; /* Gris para otros estados */
+    background-color: #6c757d;
+    /* Gris para otros estados */
 }
 
 .side-menu .jspContainer,
@@ -92,12 +102,26 @@
     height: 100% !important;
 }
 
+.side-menu {
+    overflow-y: auto !important;
+    height: 100vh !important;
+    padding-bottom: 60px;
+}
+
+.side-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.side-menu::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
 /* 2. Hacemos que la propia lista (el <ul>) sea nuestro contenedor Flex.
       Le damos una altura mínima para que siempre ocupe todo el espacio que le da su padre. */
 .side-menu-list {
     display: flex;
     flex-direction: column;
-    min-height: 100%; 
+    min-height: 100%;
 }
 
 /* 3. La regla para el footer no cambia. Se empujará hasta abajo dentro del contenedor Flex. */
@@ -106,23 +130,24 @@
 }
 
 .site-header .site-logo img {
-  float: left;
-  position: relative;
-  height: 80px !important;
-  top: -20px !important;
+    float: left;
+    position: relative;
+    height: 80px !important;
+    top: -20px !important;
 }
+
 @media (max-width: 767px) {
-  .site-header .site-logo img {
-    height: auto !important;
-    width: 35px;
-    top: 0px !important;
-  }
+    .site-header .site-logo img {
+        height: auto !important;
+        width: 35px;
+        top: 0px !important;
+    }
 }
 
 .site-header .site-header-content {
-  float: right;
-  height: 40px;
-  padding: 5px 0;
-  width: 80% !important;
-  margin-left: -210px;
+    float: right;
+    height: 40px;
+    padding: 5px 0;
+    width: 80% !important;
+    margin-left: -210px;
 }

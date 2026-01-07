@@ -34,10 +34,11 @@
 	<link rel="stylesheet" href="../../public/css/separate/vendor/bootstrap-datetimepicker.min.css">
 
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-	<link rel="stylesheet" href="../style.css" />
+
 
 	<link href="../../public/css/lib/charts-c3js/c3.min.css" rel="stylesheet" type="text/css">
 
 	<link rel="stylesheet" href="../../public/css/main.css?v=<?php echo time(); ?>">
+	<link rel="stylesheet" href="../style.css" />
 
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
