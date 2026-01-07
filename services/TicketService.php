@@ -1659,9 +1659,16 @@ class TicketService
             }
 
             // Preparar y guardar comentario
+            // Calcular SLA actual antes de registrar el error
+            $sla_state = $this->computeAndUpdateEstadoPaso($tick_id);
+            $badge_class = ($sla_state === 'A Tiempo') ? 'success' : 'danger';
+
             $comentario = "Se registró un evento: <b>{$nombre_respuesta}</b>.";
             if (!empty($error_descrip)) $comentario .= "<br><b>Descripción:</b> " . htmlspecialchars($error_descrip);
             if ($nombre_completo_responsable) $comentario .= "<br><small class='text-muted'>Error atribuido a: <b>{$nombre_completo_responsable}</b></small>";
+
+            // Append SLA Status
+            $comentario .= "<br><small>SLA al momento del reporte: <span class='label label-{$badge_class}'>{$sla_state}</span></small>";
 
             $this->ticketModel->insert_ticket_detalle($tick_id, $usu_id_reporta, $comentario);
 
@@ -1863,7 +1870,12 @@ class TicketService
 
             $this->ticketRepository->updateTicketStatus($tick_id, 'Pausado');
 
+            // Calcular SLA actual al momento de pausar
+            $sla_state = $this->computeAndUpdateEstadoPaso($tick_id);
+            $badge_class = ($sla_state === 'A Tiempo') ? 'success' : 'danger';
+
             $comentario = "Se ha creado una novedad: " . htmlspecialchars($descripcion_novedad);
+            $comentario .= "<br><small>SLA al momento de la novedad: <span class='label label-{$badge_class}'>{$sla_state}</span></small>";
             $this->ticketModel->insert_ticket_detalle($tick_id, $usu_crea_novedad, $comentario);
 
             // Registrar la asignación de la novedad en el historial principal
