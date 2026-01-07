@@ -1668,7 +1668,7 @@ class TicketService
             if ($nombre_completo_responsable) $comentario .= "<br><small class='text-muted'>Error atribuido a: <b>{$nombre_completo_responsable}</b></small>";
 
             // Append SLA Status
-            $comentario .= "<br><small>SLA al momento del reporte: <span class='label label-{$badge_class}'>{$sla_state}</span></small>";
+            $comentario .= "<small class='text-muted sla-info' style='display:block; margin-top: 5px;'>SLA al momento del reporte: <span class='label label-{$badge_class}'>{$sla_state}</span></small>";
 
             $this->ticketModel->insert_ticket_detalle($tick_id, $usu_id_reporta, $comentario);
 
@@ -1875,7 +1875,7 @@ class TicketService
             $badge_class = ($sla_state === 'A Tiempo') ? 'success' : 'danger';
 
             $comentario = "Se ha creado una novedad: " . htmlspecialchars($descripcion_novedad);
-            $comentario .= "<br><small>SLA al momento de la novedad: <span class='label label-{$badge_class}'>{$sla_state}</span></small>";
+            $comentario .= "<small class='text-muted sla-info' style='display:block; margin-top: 5px;'>SLA al momento de la novedad: <span class='label label-{$badge_class}'>{$sla_state}</span></small>";
             $this->ticketModel->insert_ticket_detalle($tick_id, $usu_crea_novedad, $comentario);
 
             // Registrar la asignación de la novedad en el historial principal

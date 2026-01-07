@@ -19,6 +19,13 @@ if (isset($_SESSION["usu_id"])) {
         <!-- contenido -->
         <div class="page-content">
             <div class="container-fluid">
+                <style>
+                    /* Hide SLA info in the main detail view conversation */
+                    #lbldetalle .sla-info,
+                    #lbldetalle .activity-line-item .sla-info {
+                        display: none !important;
+                    }
+                </style>
                 <style media="print">
                     @media print {
                         @page {
