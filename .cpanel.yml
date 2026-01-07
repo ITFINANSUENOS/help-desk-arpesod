@@ -1,13 +1,16 @@
 ---
 deployment:
   tasks:
-    # Ruta de despliegue para toda la aplicación.
     - export DEPLOYPATH=/home/electroc/helpdesk.electrocreditosdelcauca.com/
-
-    # Crea la carpeta de destino si no existe.
-    - mkdir -p $DEPLOYPATH
-
-    # Copia todos los archivos y carpetas del proyecto. Esto incluye la carpeta 'public'
-    # y el nuevo .htaccess que está dentro de ella.
-    - /bin/cp -R * $DEPLOYPATH
     
+    # Copy directories
+    - /bin/cp -R config controller models public view services cargues Event vendor $DEPLOYPATH
+
+    # Copy individual PHP files
+    - /bin/cp index.php sso-login.php server.php export_desempeno.php export_flujos.php $DEPLOYPATH
+
+    # Copy configuration files (ensure .htaccess is copied)
+    - /bin/cp .htaccess $DEPLOYPATH
+    
+    # Optional: Uncomment if you want to deploy the environment file (be careful not to overwrite production credentials)
+    # - /bin/cp .env $DEPLOYPATH
