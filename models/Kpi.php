@@ -760,10 +760,10 @@ class Kpi extends Conectar
         // 1. Obtener lista de usuarios RELEVANTES según SCOPE
         // SI hay un usuario objetivo seleccionado en el filtro ($target_usu_id)
         if ($target_usu_id) {
-            $where_users = " u.usu_id = " . intval($target_usu_id) . " AND u.est=1 ";
+            $where_users = " u.usu_id = " . intval($target_usu_id) . " ";
         } else {
             $scope = $this->get_hierarchy_scope($usu_id);
-            $where_users = " u.est=1 ";
+            $where_users = " 1=1 ";
             if ($scope !== 'all') {
                 $ids_str = implode(',', $scope);
                 $where_users .= " AND u.usu_id IN ($ids_str) ";
