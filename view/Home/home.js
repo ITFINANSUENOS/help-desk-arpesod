@@ -104,9 +104,34 @@ var flowChartInstance;
 function renderFlowChart(name, data) {
     var ctx = document.getElementById('flowChart').getContext('2d');
 
+    // Determine standard unit
+    // Calculate max value to decide unit
+    var maxVal = 0;
+    data.forEach(function (d) {
+        if (d.avg_minutes > maxVal) maxVal = d.avg_minutes;
+    });
+
+    // Default unit
+    var unitLabel = "Min";
+    var divisor = 1;
+
+    // If max > 1440 min (24 hours), switch to Days
+    if (maxVal > 1440) {
+        unitLabel = "Días";
+        divisor = 1440;
+    }
+    // If max > 60 min, switch to Hours
+    else if (maxVal > 60) {
+        unitLabel = "Horas";
+        divisor = 60;
+    }
+
     // Process Data
     var labels = data.map(item => item.step_name);
-    var values = data.map(item => item.avg_minutes);
+    // Convert values
+    var values = data.map(function (item) {
+        return parseFloat((item.avg_minutes / divisor).toFixed(1));
+    });
 
     // Highlight colors
     var pointColors = data.map(item => item.is_novedad ? 'red' : 'rgba(75, 192, 192, 1)');
@@ -119,7 +144,7 @@ function renderFlowChart(name, data) {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Promedio Tiempo (Min) - ' + name,
+                label: 'Promedio Tiempo (' + unitLabel + ') - ' + name,
                 data: values,
                 borderColor: 'rgba(75, 192, 192, 1)',
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -133,7 +158,7 @@ function renderFlowChart(name, data) {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'Minutos' } }
+                y: { beginAtZero: true, title: { display: true, text: unitLabel } }
             },
             plugins: {
                 tooltip: {
@@ -145,7 +170,7 @@ function renderFlowChart(name, data) {
                             if (label) {
                                 label += ': ';
                             }
-                            label += context.parsed.y + ' min';
+                            label += context.parsed.y + ' ' + unitLabel;
                             if (item.is_novedad) {
                                 label += ' (Intervención Externa)';
                             }
