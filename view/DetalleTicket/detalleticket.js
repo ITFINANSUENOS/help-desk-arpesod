@@ -23,32 +23,41 @@ $(document).ready(function () {
         if (isChecked) {
             var tick_id = getUrlParameter('ID');
             $.post("../../controller/ticket.php?op=check_next_step_candidates", { tick_id: tick_id }, function (data) {
-                var candidates = [];
+                var requirements = [];
                 try {
-                    candidates = JSON.parse(data);
+                    requirements = JSON.parse(data);
                 } catch (e) {
                     console.error("Invalid JSON response", data);
                 }
 
-                if (candidates && candidates.length > 1) {
-                    // Multiple candidates found -> Require manual selection
-                    var $select = $('#usuario_seleccionado');
-                    $select.empty();
-                    $select.append('<option value="">Seleccionar...</option>');
+                // Logic:
+                // 1. If multiple ROLES (Parallel) -> Hide Inline Panel (Modal will handle manual assignment if needed).
+                // 2. If single ROLE but multiple CANDIDATES -> Show Inline Panel (User must pick one).
+                // 3. Else -> Hide Inline Panel.
 
-                    $.each(candidates, function (i, user) {
-                        $select.append('<option value="' + user.usu_id + '">' + user.usu_nom + ' ' + user.usu_ape + '</option>');
-                    });
+                var $select = $('#usuario_seleccionado');
+                $select.empty();
 
-                    $('#panel_seleccion_usuario').show();
-
-                    // Show a small toast or notification? Maybe too intrusive.
-                    // Just showing the panel is enough as per requirements.
+                if (requirements && Array.isArray(requirements) && requirements.length === 1) {
+                    // Single Role case
+                    var req = requirements[0];
+                    if (req.candidates && req.candidates.length > 1) {
+                        // Ambiguity in linear step -> Show Inline Panel
+                        $select.append('<option value="">Seleccionar...</option>');
+                        $.each(req.candidates, function (i, user) {
+                            $select.append('<option value="' + user.usu_id + '">' + user.usu_nom + ' ' + user.usu_ape + '</option>');
+                        });
+                        $('#panel_seleccion_usuario').show();
+                    } else {
+                        // 0 or 1 candidate -> Auto handled
+                        $('#panel_seleccion_usuario').hide();
+                    }
                 } else {
-                    // 0 or 1 candidate -> Automatic handling
+                    // Parallel (length > 1) or Error (length 0) -> Hide Inline Panel
+                    // If Parallel logic requires manual assignment, the MODAL logic (triggered elsewhere) will handle it.
                     $('#panel_seleccion_usuario').hide();
-                    $('#usuario_seleccionado').empty();
                 }
+
                 updateEnviarButtonState();
             });
         } else {
@@ -571,10 +580,67 @@ function enviarDetalle(signatureData = null) {
         return false;
     }
 
+    // --- PARALLEL STEP VALIDATION ---
+    var isAdvancing = $('#checkbox_avanzar_flujo').is(':checked');
+    // Check if we already have manual assignments (from a previous validation pass)
+    var manualAssignments = window.currentManualAssignments || null;
+
+    if (isAdvancing && !manualAssignments) {
+        var tick_id = getUrlParameter('ID');
+        var isValid = true; // Sync flag (hacky but needed if we want to block)
+        // We must switch to Async flow.
+
+        // Block UI
+        $('#btnenviar').prop('disabled', true);
+
+        $.ajax({
+            url: "../../controller/ticket.php?op=check_next_step_candidates",
+            type: "POST",
+            data: { tick_id: tick_id },
+            async: false, // We need to block to validate before creating FormData
+            success: function (response) {
+                try {
+                    var requirements = JSON.parse(response);
+                    var missingRoles = [];
+
+                    if (Array.isArray(requirements)) {
+                        requirements.forEach(function (req) {
+                            if (req.candidates.length === 0) {
+                                missingRoles.push(req);
+                            }
+                        });
+                    }
+
+
+                    if (missingRoles.length > 0) {
+                        isValid = false;
+                        // Trigger Manual Selection UI
+                        showManualAssignmentModal(missingRoles);
+                    }
+                } catch (e) {
+                    console.error("Error parsing candidates", e);
+                }
+            }
+        });
+
+        if (!isValid) {
+            restoreButton();
+            return false; // Stop submission
+        }
+    }
+    // -------------------------------
+
     var formData = new FormData($('#detalle_form')[0]);
     formData.append("tick_id", getUrlParameter('ID'));
     formData.append("usu_id", $('#user_idx').val());
     formData.append("tickd_descrip", $('#tickd_descrip').summernote('code'));
+
+    // Append Manual Assignments if they exist
+    if (manualAssignments) {
+        formData.append("manual_assignments", JSON.stringify(manualAssignments));
+        // Clear them after use? Maybe not in case of failure.
+        window.currentManualAssignments = null;
+    }
 
     // Explicitly handle file upload to ensure it works
     var fileInput = document.getElementById('fileElem');
@@ -1362,7 +1428,33 @@ $(document).on('change', '#checkbox_avanzar_flujo', function () {
         } else if (acciones.siguiente_paso) {
             // Avance lineal -> sí se puede marcar directamente
             // dejarlo marcado y avisar
-            swal("Avance Lineal", "Al enviar su respuesta, el ticket avanzará al siguiente paso.", "info");
+            $.post("../../controller/ticket.php?op=check_next_step_candidates", { tick_id: getUrlParameter('ID') }, function (resRaw) {
+                try {
+                    var requirements = JSON.parse(resRaw);
+                    // Check for missing candidates
+                    var missingRoles = []; // Array of requirement objects
+
+                    if (Array.isArray(requirements)) {
+                        requirements.forEach(function (req) {
+                            if (!req.candidates || req.candidates.length === 0) {
+                                missingRoles.push(req);
+                            }
+                        });
+                    }
+
+                    if (missingRoles.length > 0) {
+                        // Fix: Open the modal explicitly so the user can resolve it NOW, 
+                        // instead of waiting for the submit button.
+                        showManualAssignmentModal(missingRoles);
+                    } else {
+                        // Optional: clear any previous manual assignments if everything is now automatic?
+                        // window.currentManualAssignments = null; 
+                        swal("Avance Lineal", "Al enviar su respuesta, el ticket avanzará al siguiente paso.", "info");
+                    }
+                } catch (e) {
+                    console.error("Error parsing candidates check", e);
+                }
+            });
         } else {
             // No hay acciones -> revertir y avisar
             $chk.prop('checked', false);
@@ -1756,3 +1848,120 @@ $(document).on('click', '#btn_confirmar_despacho', function () {
         }
     });
 });
+
+// Helper function for Manual Assignment
+function showManualAssignmentModal(missingRoles) {
+    // Remove existing modal if any
+    $('#manualAssignmentModal').remove();
+
+    var modalHtml = `
+    <div class="modal fade" id="manualAssignmentModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="modal-close" data-dismiss="modal" aria-label="Close">
+                        <i class="font-icon-close-2"></i>
+                    </button>
+                    <h4 class="modal-title">Asignación Manual Requerida</h4>
+                </div>
+                <div class="modal-body">
+                    <p>No se encontraron usuarios automáticos para los siguientes roles. Por favor seleccione manualmente:</p>
+                    <form id="manualAssignmentForm">
+    `;
+
+    missingRoles.forEach(function (role, index) {
+        modalHtml += `
+            <div class="form-group">
+                <label class="form-label semibold" for="manual_role_${index}">${role.role_name}</label>
+                <select class="form-control manual-role-select manual" id="manual_role_${index}" data-role-key="${role.role_key}" style="width:100%">
+                    <option value="">Cargando usuarios...</option>
+                </select>
+            </div>
+        `;
+    });
+
+    modalHtml += `
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-rounded btn-default" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-rounded btn-primary" id="btnConfirmManualAssignment">Confirmar y Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+
+    $('body').append(modalHtml);
+
+    // Initialise Select2 and Load Users
+    // Initialise Select2 and Load Users using JSON data to prevent "undefined" strings
+    $.post("../../controller/usuario.php?op=combo_usuarios_select2", function (data) {
+        try {
+            var userData = JSON.parse(data);
+            console.log("Manual Assignment User Data:", userData);
+            // Prepend a placeholder option
+            userData.unshift({ id: "", text: "Seleccione..." });
+
+            $('.manual-role-select').each(function () {
+                // Clear and init select2 with data
+                $(this).empty();
+                $(this).select2({
+                    dropdownParent: $('#manualAssignmentModal'),
+                    data: userData,
+                    width: '100%',
+                    templateResult: function (d) {
+                        if (d.text) return d.text;
+                        // Debugging: show the object structure in dropdown
+                        return "DBG: " + JSON.stringify(d);
+                    },
+                    templateSelection: function (d) {
+                        if (d.text) return d.text;
+                        return d.id;
+                    }
+                });
+            });
+        } catch (e) {
+            console.error("Error loading users for manual assignment", e);
+            swal("Error", "No se pudo cargar la lista de usuarios.", "error");
+        }
+    });
+
+    $('#manualAssignmentModal').modal('show');
+
+    // Handle Confirm
+    $('#btnConfirmManualAssignment').on('click', function () {
+        var assignments = [];
+        var allSelected = true;
+
+        $('.manual-role-select').each(function () {
+            var val = $(this).val();
+            // Need to handle both string and integer keys carefully
+            var roleKey = $(this).data('role-key');
+
+            if (!val) {
+                allSelected = false;
+                return false;
+            }
+
+            assignments.push({
+                role_key: roleKey,
+                usu_id: val
+            });
+        });
+
+        if (!allSelected) {
+            swal("Atención", "Debe seleccionar un usuario para todos los roles pendientes.", "warning");
+            return;
+        }
+
+        // Store and Retry
+        window.currentManualAssignments = assignments;
+        $('#manualAssignmentModal').modal('hide');
+
+        // Restore button state
+        $('#btnenviar').prop('disabled', false);
+        // Trigger click again to bypass the check (as manualAssignments is now set)
+        $('#btnenviar').click();
+    });
+}

@@ -23,6 +23,10 @@ use models\repository\NotificationRepository;
 use models\repository\AssignmentRepository;
 use models\repository\NovedadRepository;
 
+require_once('../models/repository/CargoRepository.php');
+
+use models\repository\CargoRepository;
+
 
 class TicketService
 {
@@ -47,6 +51,7 @@ class TicketService
     private NotificationRepository $notificationRepository;
     private AssignmentRepository $assignmentRepository;
     private NovedadRepository $novedadRepository;
+    private CargoRepository $cargoRepository;
     private PDO $pdo;
 
     public function __construct(PDO $pdo)
@@ -73,6 +78,8 @@ class TicketService
         $this->ticketRepository = new TicketRepository($pdo);
         $this->notificationRepository = new NotificationRepository($pdo);
         $this->assignmentRepository = new AssignmentRepository($pdo);
+        $this->novedadRepository = new NovedadRepository($pdo);
+        $this->cargoRepository = new CargoRepository($pdo);
         $this->novedadRepository = new NovedadRepository($pdo);
     }
 
@@ -595,25 +602,25 @@ class TicketService
             error_log("TicketService::handleDynamicFields - Failed to copy template.");
         }
     }
-    public function avanzar_ticket_en_ruta($ticket, $usu_asig = null)
+    public function avanzar_ticket_en_ruta($ticket, $usu_asig = null, $manual_assignments = [])
     {
         $ruta_paso_orden_actual = $ticket["ruta_paso_orden"];
         $siguiente_orden = $ruta_paso_orden_actual + 1;
         $siguiente_paso_info = $this->rutaPasoModel->get_paso_por_orden($ticket["ruta_id"], $siguiente_orden);
 
         if ($siguiente_paso_info) {
-            return $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], $ticket["ruta_id"], $siguiente_orden, $usu_asig);
+            return $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], $ticket["ruta_id"], $siguiente_orden, $usu_asig, $manual_assignments);
         } else {
             $this->cerrar_ticket($ticket['tick_id'], "Ruta completada.");
             return null;
         }
     }
 
-    public function iniciar_ruta_para_ticket($ticket, $ruta_id, $usu_asig = null)
+    public function iniciar_ruta_para_ticket($ticket, $ruta_id, $usu_asig = null, $manual_assignments = [])
     {
         $primer_paso_info = $this->rutaPasoModel->get_paso_por_orden($ruta_id, 1);
         if ($primer_paso_info) {
-            return $this->actualizar_estado_ticket($ticket['tick_id'], $primer_paso_info["paso_id"], $ruta_id, $primer_paso_info["paso_orden"], $usu_asig);
+            return $this->actualizar_estado_ticket($ticket['tick_id'], $primer_paso_info["paso_id"], $ruta_id, $primer_paso_info["paso_orden"], $usu_asig, $manual_assignments);
         } else {
             throw new Exception("La ruta seleccionada no tiene pasos definidos.");
         }
@@ -645,18 +652,18 @@ class TicketService
         }
     }
 
-    public function avanzar_ticket_lineal($ticket, $usu_asig = null)
+    public function avanzar_ticket_lineal($ticket, $usu_asig = null, $manual_assignments = [])
     {
         $siguiente_paso_info = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
         if ($siguiente_paso_info) {
-            return $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, $usu_asig);
+            return $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, $usu_asig, $manual_assignments);
         } else {
             $this->cerrar_ticket($ticket['tick_id'], "Flujo principal completado.");
             return null;
         }
     }
 
-    public function actualizar_estado_ticket($ticket_id, $nuevo_paso_id, $ruta_id, $ruta_paso_orden, $usu_asig)
+    public function actualizar_estado_ticket($ticket_id, $nuevo_paso_id, $ruta_id, $ruta_paso_orden, $usu_asig, $manual_assignments = [])
     {
         error_log("TicketService::actualizar_estado_ticket - Called. Ticket: $ticket_id, Nuevo Paso: $nuevo_paso_id");
 
@@ -740,6 +747,27 @@ class TicketService
                     $creador_data = $this->usuarioModel->get_usuario_detalle_x_id($creador_usu_id);
 
                     foreach ($cargos_especificos as $cargo_id) {
+
+                        // --- CHECK MANUAL ASSIGNMENT ---
+                        $manual_user_id = null;
+                        if (!empty($manual_assignments)) {
+                            foreach ($manual_assignments as $ma) {
+                                // Convert to array if object (from json_decode)
+                                $ma = (array)$ma;
+                                if (isset($ma['role_key']) && $ma['role_key'] == $cargo_id) {
+                                    $manual_user_id = $ma['usu_id'];
+                                    break;
+                                }
+                            }
+                        }
+
+                        if ($manual_user_id) {
+                            error_log("TicketService::actualizar_estado_ticket - Using Manual Assignment for Cargo $cargo_id: User $manual_user_id");
+                            $usuarios_destino[] = $manual_user_id;
+                            continue;
+                        }
+                        // -------------------------------
+
                         error_log("TicketService::actualizar_estado_ticket - Processing cargo_id: $cargo_id");
                         if ($cargo_id === 'JEFE_INMEDIATO') {
                             // New Logic: Check against usu_id_jefe_aprobador stored in tm_ticket
@@ -1293,6 +1321,13 @@ class TicketService
         $tickdDescrip = $postData['tickd_descrip'];
         $usu_asig = $postData['usu_asig'] ?? null;
         $signature_data = isset($postData['signature_data']) ? $postData['signature_data'] : null;
+        $manual_assignments = [];
+        if (isset($postData['manual_assignments']) && !empty($postData['manual_assignments'])) {
+            $decoded = json_decode($postData['manual_assignments'], true);
+            if (is_array($decoded)) {
+                $manual_assignments = $decoded;
+            }
+        }
 
         // 1. Guardar comentario y archivos
         $datos = $this->ticketModel->insert_ticket_detalle($tickId, $usuId, $tickdDescrip);
@@ -1388,13 +1423,13 @@ class TicketService
 
                 if ($decision_tomada) {
                     // CASO 1: El usuario eligió una decisión específica.
-                    $nuevo_paso_id_result = $this->iniciar_ruta_desde_decision($ticket, $decision_tomada, $usu_asig);
+                    $nuevo_paso_id_result = $this->iniciar_ruta_desde_decision($ticket, $decision_tomada, $usu_asig, $manual_assignments);
                 } elseif (!empty($ticket["ruta_id"])) {
                     // CASO 2: El ticket YA ESTÁ en una ruta y no se tomó decisión explícita. Avanzamos en la ruta.
-                    $nuevo_paso_id_result = $this->avanzar_ticket_en_ruta($ticket, $usu_asig);
+                    $nuevo_paso_id_result = $this->avanzar_ticket_en_ruta($ticket, $usu_asig, $manual_assignments);
                 } elseif ($avanzar_lineal) {
                     // CASO 3: El usuario quiere avanzar en un flujo sin decisiones.
-                    $nuevo_paso_id_result = $this->avanzar_ticket_lineal($ticket, $usu_asig);
+                    $nuevo_paso_id_result = $this->avanzar_ticket_lineal($ticket, $usu_asig, $manual_assignments);
                 }
                 $reassigned = true; // Si entramos en este bloque, significa que se avanzó/reasignó.
             } else {
@@ -1430,7 +1465,7 @@ class TicketService
         }
     }
 
-    public function iniciar_ruta_desde_decision($ticket, $decision_nombre, $usu_asig = null)
+    public function iniciar_ruta_desde_decision($ticket, $decision_nombre, $usu_asig = null, $manual_assignments = [])
     {
         $paso_actual_id = $ticket['paso_actual_id'];
 
@@ -1440,7 +1475,7 @@ class TicketService
         if ($transicion) {
             if (!empty($transicion['ruta_id'])) {
                 // CASO A: La transición lleva a una RUTA
-                return $this->iniciar_ruta_para_ticket($ticket, $transicion['ruta_id'], $usu_asig);
+                return $this->iniciar_ruta_para_ticket($ticket, $transicion['ruta_id'], $usu_asig, $manual_assignments);
             } elseif (!empty($transicion['paso_destino_id'])) {
                 // CASO B: La transición lleva DIRECTAMENTE a un PASO
                 $nuevo_paso_id = $transicion['paso_destino_id'];
@@ -1471,7 +1506,7 @@ class TicketService
                     $nuevo_asignado_id = $ticket['usu_asig'];
                 }
 
-                $this->actualizar_estado_ticket($ticket['tick_id'], $nuevo_paso_id, null, null, $nuevo_asignado_id);
+                $this->actualizar_estado_ticket($ticket['tick_id'], $nuevo_paso_id, null, null, $nuevo_asignado_id, $manual_assignments);
             } else {
                 throw new Exception("La transición configurada no tiene destino (ni ruta ni paso).");
             }
@@ -2292,16 +2327,13 @@ class TicketService
         if (!$ticket) return [];
 
         $siguiente_paso = null;
-        $is_national = false;
-        $siguiente_cargo_id = null;
 
-        // 1. Determine Next Step (Logic copied from avanzar methods)
+        // 1. Determine Next Step
         if (!empty($ticket['ruta_id'])) {
             $ruta_paso_orden_actual = $ticket["ruta_paso_orden"];
             $siguiente_orden = $ruta_paso_orden_actual + 1;
             $siguiente_paso = $this->rutaPasoModel->get_paso_por_orden($ticket["ruta_id"], $siguiente_orden);
         } else {
-            // Linear flow
             $siguiente_paso = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
         }
 
@@ -2309,15 +2341,98 @@ class TicketService
             return []; // End of flow
         }
 
-        $siguiente_cargo_id = $siguiente_paso['cargo_id_asignado'];
-        $is_national = (!empty($siguiente_paso['es_tarea_nacional']) && $siguiente_paso['es_tarea_nacional'] == 1);
+        $candidates_requirements = [];
+        $regional_origen_id = $this->ticketModel->get_ticket_region($ticket_id);
 
-        $regional_origen_id = null;
-        if (!$is_national) {
-            $regional_origen_id = $this->ticketModel->get_ticket_region($ticket_id);
+        // --- PARALLEL LOGIC ---
+        if (isset($siguiente_paso['es_paralelo']) && $siguiente_paso['es_paralelo'] == 1 && (empty($siguiente_paso['asignar_a_creador']) || $siguiente_paso['asignar_a_creador'] == 0)) {
+
+            // Replicate logic from actualizar_estado_ticket
+            $usuarios_especificos = $this->flujoPasoModel->get_usuarios_especificos($siguiente_paso['paso_id']);
+            $cargos_especificos = $this->flujoPasoModel->get_cargos_especificos($siguiente_paso['paso_id']);
+
+            $firma_config = $this->flujoPasoModel->get_firma_config($siguiente_paso['paso_id']);
+            if (!empty($firma_config)) {
+                foreach ($firma_config as $fc) {
+                    if (!empty($fc['car_id'])) $cargos_especificos[] = $fc['car_id'];
+                    if (!empty($fc['usu_id'])) $usuarios_especificos[] = $fc['usu_id'];
+                }
+            }
+            $cargos_especificos = array_unique($cargos_especificos);
+            $usuarios_especificos = array_unique($usuarios_especificos);
+
+            // 1. Specific Users
+            // If they are specific users, we assume they exist (no fallback needed usually, but could check active status)
+            // For now, we focus on Cargo resolution which is dynamic.
+
+            // 2. Specific Cargos
+            foreach ($cargos_especificos as $cargo_id) {
+                $role_name = "Cargo ID: " . $cargo_id;
+                $candidates = [];
+
+                if ($cargo_id === 'JEFE_INMEDIATO') {
+                    $role_name = "Jefe Inmediato";
+                    // Check existing boss assignment
+                    $current_ticket_data = $this->ticketModel->listar_ticket_x_id($ticket_id);
+                    if (!empty($current_ticket_data['usu_id_jefe_aprobador'])) {
+                        // Boss is already identified
+                        $boss_user = $this->usuarioModel->get_usuario_x_id($current_ticket_data['usu_id_jefe_aprobador']);
+                        if ($boss_user) $candidates[] = $boss_user;
+                    } else {
+                        // Fallback Logic (Must match actualizar_estado_ticket)
+                        $creador_usu_id = $current_ticket_data['usu_id'];
+                        $creador_data = $this->usuarioModel->get_usuario_detalle_x_id($creador_usu_id);
+                        $subordinate_car_id = null;
+                        if ($creador_data && !empty($creador_data['car_id'])) {
+                            $subordinate_car_id = $creador_data['car_id'];
+                        }
+
+                        if ($subordinate_car_id) {
+                            require_once('../models/Organigrama.php');
+                            $organigramaModel = new Organigrama();
+                            $jefe_car_id = $organigramaModel->get_jefe_cargo_id($subordinate_car_id);
+                            if ($jefe_car_id) {
+                                // Asignar a usuarios con ese cargo (en la misma regional o nacionales)
+                                $candidates = $this->usuarioModel->get_usuarios_por_cargo_regional_o_nacional($jefe_car_id, $regional_origen_id);
+                            }
+                        }
+                    }
+                } else {
+                    // Standard Cargo
+                    // Get Cargo Name for display
+                    $active_cargo = $this->cargoRepository->getById($cargo_id);
+                    if ($active_cargo) $role_name = $active_cargo['car_nom'];
+
+                    // Resolve candidates for this cargo in region OR national (Match actual logic)
+                    $candidates = $this->usuarioModel->get_usuarios_por_cargo_regional_o_nacional($cargo_id, $regional_origen_id);
+                }
+
+                // Add to requirements
+                $candidates_requirements[] = [
+                    'role_key' => $cargo_id, // Key to identify this requirement
+                    'role_name' => $role_name,
+                    'candidates' => $candidates
+                ];
+            }
+        } else {
+            // --- LINEAR LOGIC ---
+            $siguiente_cargo_id = $siguiente_paso['cargo_id_asignado'];
+            $is_national = (!empty($siguiente_paso['es_tarea_nacional']) && $siguiente_paso['es_tarea_nacional'] == 1);
+
+            // Only relevant if cargo is defined and not assigning to creator
+            if ($siguiente_cargo_id && (empty($siguiente_paso['asignar_a_creador']) || $siguiente_paso['asignar_a_creador'] == 0)) {
+                $candidates = $this->resolveCandidates($siguiente_cargo_id, $regional_origen_id, $is_national);
+                $role_name = "Asignado"; // Generic name for linear
+
+                $candidates_requirements[] = [
+                    'role_key' => 'linear_assign',
+                    'role_name' => $role_name,
+                    'candidates' => $candidates
+                ];
+            }
         }
 
-        return $this->resolveCandidates($siguiente_cargo_id, $regional_origen_id, $is_national);
+        return $candidates_requirements;
     }
 
     public function processBulkDispatch($tick_id, $file_path)
