@@ -435,6 +435,8 @@ class TicketService
         }
 
         // Logic to capture Jefe Inmediato User (Refactored)
+        error_log("Debug Boss Lookup - Captured Cargo: " . ($captured_cargo_id ?? 'NULL') . ", Regional: " . ($captured_regional_id ?? 'NULL'));
+
         if ($captured_cargo_id && $captured_regional_id) {
             require_once('../models/Usuario.php');
             require_once('../models/Organigrama.php');
@@ -444,18 +446,30 @@ class TicketService
             // 1. Identify the Subordinate (User identified by Template Fields)
             // We look for a user with the captured Cargo and Regional
             $subordinate_user = $usuarioModel->get_usuario_por_cargo_y_regional($captured_cargo_id, $captured_regional_id);
+            error_log("Debug Boss Lookup - Subordinate User Found: " . ($subordinate_user ? 'YES (' . $subordinate_user['usu_id'] . ')' : 'NO'));
 
             // If not found in regional, check if there is a national user with that cargo? 
             // The requirement implies the template defines the subordinate's location. 
             // If the subordinate is national, they might not have a specific regional_id in the template or the template regional matches their record.
             // Let's assume strict match for subordinate first.
 
+            $subordinate_car_id = null;
+            $subordinate_reg_id = null;
+
             if ($subordinate_user) {
                 $subordinate_car_id = $subordinate_user['car_id'];
-                $subordinate_reg_id = $subordinate_user['reg_id']; // Should match captured_regional_id
+                $subordinate_reg_id = $subordinate_user['reg_id'];
+            } else {
+                error_log("Debug Boss Lookup - Subordinate not found. Using captured IDs as fallback: Car $captured_cargo_id, Reg $captured_regional_id");
+                $subordinate_car_id = $captured_cargo_id;
+                $subordinate_reg_id = $captured_regional_id;
+            }
+
+            if ($subordinate_car_id && $subordinate_reg_id) {
 
                 // 2. Find the Boss's Cargo from Organigrama
                 $jefe_car_id = $organigramaModel->get_jefe_cargo_id($subordinate_car_id);
+                error_log("Debug Boss Lookup - Boss Cargo ID: " . ($jefe_car_id ?? 'NULL'));
 
                 if ($jefe_car_id) {
                     // 3. Find the Boss User(s)
@@ -474,6 +488,7 @@ class TicketService
                             $jefe_encontrado_id = $boss_national['usu_id'];
                         }
                     }
+                    error_log("Debug Boss Lookup - Boss User Found ID: " . ($jefe_encontrado_id ?? 'NO'));
 
                     // 4. Update tm_ticket with the Boss's ID
                     if ($jefe_encontrado_id) {
@@ -482,9 +497,12 @@ class TicketService
                         $stmt->bindValue(1, $jefe_encontrado_id);
                         $stmt->bindValue(2, $tick_id);
                         $stmt->execute();
+                        error_log("Debug Boss Lookup - Ticket Updated for tick_id: $tick_id");
                     }
                 }
             }
+        } else {
+            error_log("Debug Boss Lookup - Skipping logic because cargo or regional is missing.");
         }
 
         if (empty($textDataArray)) return;
