@@ -2080,6 +2080,12 @@ class TicketService
 
         if ($user_info && $ticket_info) {
             $ticket_regional = $ticket_info['reg_id'];
+            
+            // Check if user is a parallel assignee (bypass regional check)
+            $is_parallel_assignee = $this->ticketModel->check_usuario_paralelo($tick_id, $paso_id, $usu_id);
+            if ($is_parallel_assignee) {
+                error_log("TicketService::handleSignature - User $usu_id is explicitly assigned in Parallel Step $paso_id. Bypassing regional check.");
+            }
 
             foreach ($firma_configs as $config) {
                 $is_match = false;
@@ -2123,7 +2129,7 @@ class TicketService
 
                                 if ($jefe_car_id && $jefe_car_id == $user_info['car_id']) {
                                     // Check Regional or National
-                                    if ($user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
+                                    if ($is_parallel_assignee || $user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
                                         $is_jefe_match = true;
                                     }
                                 }
@@ -2139,7 +2145,7 @@ class TicketService
 
                         // 1. Check if user actually has the role
                         if ($config['car_id'] == $user_info['car_id']) {
-                            if ($user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
+                            if ($is_parallel_assignee || $user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
                                 $is_cargo_match = true;
                             }
                         }

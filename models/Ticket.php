@@ -1798,4 +1798,24 @@ class Ticket extends Conectar
             'recordsFiltered' => $recordsFiltered
         ];
     }
+    public function check_usuario_paralelo($tick_id, $paso_id, $usu_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT COUNT(*) as total 
+                FROM tm_ticket_paralelo 
+                WHERE tick_id = ? 
+                AND paso_id = ? 
+                AND usu_id = ? 
+                AND est = 1 
+                AND estado IN ('Pendiente', 'Aprobado', 'Rechazado')";
+
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->bindValue(2, $paso_id);
+        $sql->bindValue(3, $usu_id);
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado['total'] > 0;
+    }
 }
