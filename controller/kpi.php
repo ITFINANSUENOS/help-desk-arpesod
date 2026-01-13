@@ -86,7 +86,8 @@ switch ($_GET["op"]) {
         $usu_id = $_POST['usu_id'];
         $type = $_POST['type']; // 'process' or 'info'
         $subcat = isset($_POST['subcat_name']) ? $_POST['subcat_name'] : null;
-        $datos = $kpi->get_error_details($usu_id, $type, $subcat);
+        $role = isset($_POST['role']) ? $_POST['role'] : 'received';
+        $datos = $kpi->get_error_details($usu_id, $type, $subcat, $role);
         $datos = utf8_converter($datos);
         echo json_encode($datos, JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS);
         break;

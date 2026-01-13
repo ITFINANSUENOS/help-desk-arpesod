@@ -218,8 +218,12 @@ function loadDetailedStats(subcatName) {
                         <small class="text-muted">${u.nov_avg_time} min</small>
                     </td>
                     <td class="text-center">
-                        <a href="#" onclick="viewErrorDetails(${u.usu_id}, 'process'); return false;" class="badge badge-warning" title="Errores de Proceso">${u.err_process}</a> / 
-                        <a href="#" onclick="viewErrorDetails(${u.usu_id}, 'info'); return false;" class="badge badge-info" title="Errores Informativos">${u.err_info}</a>
+                        <a href="#" onclick="viewErrorDetails(${u.usu_id}, 'process', 'received'); return false;" class="badge badge-warning" title="Errores de Proceso Recibidos">${u.err_process}</a> / 
+                        <a href="#" onclick="viewErrorDetails(${u.usu_id}, 'info', 'received'); return false;" class="badge badge-info" title="Errores Informativos Recibidos">${u.err_info}</a>
+                    </td>
+                    <td class="text-center">
+                        <a href="#" onclick="viewErrorDetails(${u.usu_id}, 'process', 'sent'); return false;" class="badge badge-warning" title="Errores de Proceso Reportados">${u.err_process_sent}</a> / 
+                        <a href="#" onclick="viewErrorDetails(${u.usu_id}, 'info', 'sent'); return false;" class="badge badge-info" title="Errores Informativos Reportados">${u.err_info_sent}</a>
                     </td>
                 </tr>`;
             });
@@ -257,11 +261,14 @@ function viewNovedadesDetails(usu_id) {
     });
 }
 
-function viewErrorDetails(usu_id, type) {
-    var payload = { usu_id: usu_id, type: type };
+function viewErrorDetails(usu_id, type, role) {
+    if (!role) role = 'received';
+    var payload = { usu_id: usu_id, type: type, role: role };
     if (currentSearchTerm) payload.subcat_name = currentSearchTerm;
 
-    $('#lblTitleError').text(type === 'process' ? 'Errores de Proceso' : 'Errores Informativos');
+    var title = (type === 'process' ? 'Errores de Proceso' : 'Errores Informativos');
+    title += (role === 'sent' ? ' (Reportados)' : ' (Recibidos/Responsable)');
+    $('#lblTitleError').text(title);
 
     $.post("../../controller/kpi.php?op=user_error_details", payload, function (data) {
         var errores = JSON.parse(data);

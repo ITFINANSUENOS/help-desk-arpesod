@@ -621,7 +621,7 @@ class Kpi extends Conectar
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function get_error_details($usu_id, $type, $subcat_name = null)
+    public function get_error_details($usu_id, $type, $subcat_name = null, $role = 'received')
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -643,6 +643,9 @@ class Kpi extends Conectar
         // Filter by type: 'process' or 'info'
         $is_process = ($type === 'process') ? 1 : 0;
 
+        // Filter by Role
+        $role_field = ($role === 'sent') ? 'usu_id_reporta' : 'usu_id_responsable';
+
         $sql = "SELECT 
                     e.error_id,
                     e.tick_id,
@@ -652,7 +655,7 @@ class Kpi extends Conectar
                 FROM tm_ticket_error e
                 LEFT JOIN tm_fast_answer fa ON e.answer_id = fa.answer_id
                 $join
-                WHERE e.usu_id_responsable = ? 
+                WHERE e.$role_field = ? 
                 AND e.es_error_proceso = ?
                 AND e.est = 1
                 $where
@@ -830,7 +833,9 @@ class Kpi extends Conectar
                 'nov_count' => 0,
                 'nov_avg_time' => 0, // Minutos
                 'err_process' => 0,
-                'err_info' => 0
+                'err_info' => 0,
+                'err_process_sent' => 0,
+                'err_info_sent' => 0
             ];
         }
 
@@ -918,7 +923,7 @@ class Kpi extends Conectar
         $err_join = $subcat_name ? " INNER JOIN tm_ticket t_filter ON t.tick_id = t_filter.tick_id " : "";
         $err_where = $subcat_name ? " AND t_filter.cats_id = $cats_id " : "";
 
-        $sql_err = "SELECT t.usu_id_responsable, t.es_error_proceso 
+        $sql_err = "SELECT t.usu_id_responsable, t.usu_id_reporta, t.es_error_proceso 
                     FROM tm_ticket_error t 
                     $err_join
                     WHERE t.est=1 $err_where";
@@ -927,11 +932,25 @@ class Kpi extends Conectar
         $stmt_e->execute();
         while ($row = $stmt_e->fetch(PDO::FETCH_ASSOC)) {
             $uid = $row['usu_id_responsable'];
-            if (isset($stats[$uid])) {
-                if ($row['es_error_proceso'] == 1) {
-                    $stats[$uid]['err_process']++;
+            $uid_resp = $row['usu_id_responsable'];
+            $uid_rep = $row['usu_id_reporta'];
+            $is_proc = ($row['es_error_proceso'] == 1);
+
+            // Count Received (Responsible)
+            if (isset($stats[$uid_resp])) {
+                if ($is_proc) {
+                    $stats[$uid_resp]['err_process']++;
                 } else {
-                    $stats[$uid]['err_info']++;
+                    $stats[$uid_resp]['err_info']++;
+                }
+            }
+
+            // Count Sent (Reporter)
+            if (isset($stats[$uid_rep])) {
+                if ($is_proc) {
+                    $stats[$uid_rep]['err_process_sent']++;
+                } else {
+                    $stats[$uid_rep]['err_info_sent']++;
                 }
             }
         }
