@@ -87,7 +87,43 @@ class TicketDetailLister
     public function listTicketDetailRecord($ticketId)
     {
         $datos = $this->ticketModel->listar_historial_completo($ticketId);
+
+        // Fetch signed flow documents
+        require_once('../models/DocumentoFlujo.php');
+        $documentoFlujoModel = new DocumentoFlujo();
+        $doc = $documentoFlujoModel->get_ultimo_documento_flujo($ticketId);
     ?>
+        <?php if (!empty($doc)) : ?>
+            <div class="box-typical box-typical-padding" style="margin-bottom: 20px;">
+                <h5 class="m-t-lg with-border"><i class="fa fa-file-pdf-o"></i> Documentos Firmados del Flujo</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Paso</th>
+                                <th>Documento</th>
+                                <th class="text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                                $docUrl = '../../public/document/flujo/' . $doc['flujo_id'] . '/' . $doc['paso_id'] . '/' . $doc['usu_id'] . '/' . $doc['doc_nom'];
+                            ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($doc['paso_nombre'] ?? 'N/A'); ?></td>
+                                    <td><i class="fa fa-file-pdf-o"></i> <?php echo htmlspecialchars($doc['doc_nom']); ?></td>
+                                    <td class="text-center">
+                                        <a href="<?php echo $docUrl; ?>" target="_blank" class="btn btn-sm btn-primary">
+                                            <i class="fa fa-eye"></i> Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        <?php endif; ?>
         <?php
         foreach ($datos as $row) {
             $actor_name = $row['usu_nom'] . ' ' . $row['usu_ape'];

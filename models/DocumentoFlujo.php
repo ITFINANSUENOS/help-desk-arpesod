@@ -27,4 +27,20 @@ class DocumentoFlujo extends Conectar
         $sql->execute();
         return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
     }
+
+    public function get_all_documentos_flujo($tick_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT df.*, fp.paso_nombre, u.usu_nom, u.usu_ape 
+                FROM tm_documento_flujo df
+                LEFT JOIN tm_flujo_paso fp ON df.paso_id = fp.paso_id
+                LEFT JOIN tm_usuario u ON df.usu_id = u.usu_id
+                WHERE df.tick_id = ? AND df.est = 1 
+                ORDER BY df.doc_flujo_id ASC";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
