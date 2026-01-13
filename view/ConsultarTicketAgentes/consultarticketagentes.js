@@ -19,6 +19,12 @@ $(document).ready(function () {
         $('#eti_id').trigger('change');
     });
 
+    // Load Empresas
+    $.post("../../controller/empresa.php?op=combo", function (data) {
+        $("#emp_id").html('<option value="">Seleccionar</option>' + data);
+        $('#emp_id').trigger('change');
+    });
+
     if (rol_id == 2) {
 
         tabla = $('#ticket_data').dataTable({
@@ -47,6 +53,7 @@ $(document).ready(function () {
                     d.tick_id = $('#tick_id').val();
                     d.cats_id = $('#cats_id').val();
                     d.eti_id = $('#eti_id').val();
+                    d.emp_id = $('#emp_id').val();
                 },
                 error: function (e) {
                     console.log(e.responseText);
@@ -103,6 +110,7 @@ $(document).ready(function () {
         $('#tick_id').val('');
         $('#cats_id').val('').trigger('change');
         $('#eti_id').val('').trigger('change');
+        $('#emp_id').val('').trigger('change');
         $('#ticket_data').DataTable().ajax.reload();
     });
 

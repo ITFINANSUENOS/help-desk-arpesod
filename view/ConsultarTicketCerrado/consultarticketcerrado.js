@@ -19,6 +19,12 @@ $.post("../../controller/etiqueta.php?op=combo", function (data) {
     $('#eti_id').trigger('change');
 });
 
+// Load Empresas
+$.post("../../controller/empresa.php?op=combo", function (data) {
+    $("#emp_id").html('<option value="">Seleccionar</option>' + data);
+    $('#emp_id').trigger('change');
+});
+
 $.post("../../controller/usuario.php?op=usuariosxrol", function (data) {
     $("#usu_asig").html(data);
 });
@@ -83,6 +89,7 @@ if (rol_id == 1 && rol_real_id != 3) {
             d.tick_id = $('#tick_id').val();
             d.cats_id = $('#cats_id').val();
             d.eti_id = $('#eti_id').val();
+            d.emp_id = $('#emp_id').val();
             d.usu_nom = $('#usu_nom').val();
             d.search_custom = $('#custom_search').val();
         },
@@ -106,6 +113,7 @@ if (rol_id == 1 && rol_real_id != 3) {
             d.tick_id = $('#tick_id').val();
             d.cats_id = $('#cats_id').val();
             d.eti_id = $('#eti_id').val();
+            d.emp_id = $('#emp_id').val();
             d.usu_nom = $('#usu_nom').val();
             d.search_custom = $('#custom_search').val();
         },
@@ -127,6 +135,7 @@ if (rol_id == 1 && rol_real_id != 3) {
             d.tick_id = $('#tick_id').val();
             d.cats_id = $('#cats_id').val();
             d.eti_id = $('#eti_id').val();
+            d.emp_id = $('#emp_id').val();
             d.usu_nom = $('#usu_nom').val();
             d.search_custom = $('#custom_search').val();
         },
@@ -153,6 +162,7 @@ $(document).on('click', '#btn_clear', function () {
     $('#tick_id').val('');
     $('#cats_id').val('').trigger('change');
     $('#eti_id').val('').trigger('change');
+    $('#emp_id').val('').trigger('change');
     $('#ticket_data').DataTable().ajax.reload();
 });
 

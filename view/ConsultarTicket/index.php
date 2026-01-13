@@ -38,6 +38,14 @@ if (isset($_SESSION["usu_id"])) {
                         <div class="row">
                             <div class="col-lg-3">
                                 <fieldset class="form-group">
+                                    <label class="form-label" for="emp_id">Empresa</label>
+                                    <select class="select2" id="emp_id" style="width:100%;">
+                                        <option value="">Seleccionar</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-3">
+                                <fieldset class="form-group">
                                     <label class="form-label" for="cats_id">Subcategoria</label>
                                     <select class="select2" id="cats_id" style="width:100%;">
                                         <option value="">Seleccionar</option>
@@ -52,6 +60,14 @@ if (isset($_SESSION["usu_id"])) {
                                     </select>
                                 </fieldset>
                             </div>
+                            <div class="col-lg-3">
+                                <fieldset class="form-group">
+                                    <label class="form-label" for="tick_id">N° Ticket</label>
+                                    <input type="text" class="form-control" id="tick_id" placeholder="ID">
+                                </fieldset>
+                            </div>
+                        </div>
+                        <div class="row">
                             <div class="col-lg-2">
                                 <fieldset class="form-group">
                                     <label class="form-label" for="fech_crea_start">Fecha Inicio</label>
@@ -70,15 +86,7 @@ if (isset($_SESSION["usu_id"])) {
                                     <input type="text" class="form-control" id="usu_nom" placeholder="Usuario">
                                 </fieldset>
                             </div>
-                            <div class="col-lg-2">
-                                <fieldset class="form-group">
-                                    <label class="form-label" for="tick_id">N° Ticket</label>
-                                    <input type="text" class="form-control" id="tick_id" placeholder="ID">
-                                </fieldset>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-lg-12">
+                            <div class="col-lg-6">
                                 <fieldset class="form-group">
                                     <label class="form-label" for="custom_search">Busqueda Mensajes</label>
                                     <div class="input-group">

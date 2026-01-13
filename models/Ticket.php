@@ -139,7 +139,7 @@ class Ticket extends Conectar
         }
     }
 
-    public function listar_ticket_x_usuario($usu_id, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $usu_nom = null)
+    public function listar_ticket_x_usuario($usu_id, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $usu_nom = null, $emp_id = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -198,6 +198,11 @@ class Ticket extends Conectar
             )";
             $params[':usu_nom'] = "%" . $usu_nom . "%";
             $params[':usu_nom_asig'] = "%" . $usu_nom . "%";
+        }
+
+        if (!empty($emp_id)) {
+            $conditions .= " AND tm_ticket.emp_id = :emp_id";
+            $params[':emp_id'] = $emp_id;
         }
 
         // 1. Get Total Records (without filters) - Approximate or exact depending on needs. 
@@ -297,7 +302,7 @@ class Ticket extends Conectar
         ];
     }
 
-    public function listar_ticket_x_agente($usu_asig, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $usu_nom = null)
+    public function listar_ticket_x_agente($usu_asig, $search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $usu_nom = null, $emp_id = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -366,6 +371,11 @@ class Ticket extends Conectar
             )";
             $params[':usu_nom'] = "%" . $usu_nom . "%";
             $params[':usu_nom_asig'] = "%" . $usu_nom . "%";
+        }
+
+        if (!empty($emp_id)) {
+            $conditions .= " AND tm_ticket.emp_id = :emp_id";
+            $params[':emp_id'] = $emp_id;
         }
 
         // 1. Total Records (Approximate scope - relevant to agent)
@@ -480,7 +490,7 @@ class Ticket extends Conectar
         ];
     }
 
-    public function listar_ticket($search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $usu_nom = null)
+    public function listar_ticket($search_term = null, $status = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $usu_nom = null, $emp_id = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -524,6 +534,11 @@ class Ticket extends Conectar
             )";
             $params[':usu_nom'] = "%" . $usu_nom . "%";
             $params[':usu_nom_asig'] = "%" . $usu_nom . "%";
+        }
+
+        if (!empty($emp_id)) {
+            $conditions .= " AND tm_ticket.emp_id = :emp_id";
+            $params[':emp_id'] = $emp_id;
         }
 
         // 1. Total Records
@@ -827,7 +842,7 @@ class Ticket extends Conectar
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
-    public function listar_tickets_con_historial($search_term = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $usu_nom = null)
+    public function listar_tickets_con_historial($search_term = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $usu_nom = null, $emp_id = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -888,6 +903,11 @@ class Ticket extends Conectar
             )";
             $params[':usu_nom'] = "%" . $usu_nom . "%";
             $params[':usu_nom_asig'] = "%" . $usu_nom . "%";
+        }
+
+        if (!empty($emp_id)) {
+            $conditions .= " AND t.emp_id = :emp_id";
+            $params[':emp_id'] = $emp_id;
         }
 
         // 2. Filtered Records
@@ -991,7 +1011,7 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function listar_tickets_involucrados_por_usuario($usu_id, $search_term = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null)
+    public function listar_tickets_involucrados_por_usuario($usu_id, $search_term = null, $fech_crea_start = null, $fech_crea_end = null, $tick_id = null, $cats_id = null, $eti_id = null, $start = 0, $length = 10, $order_column = null, $order_dir = null, $emp_id = null)
     {
         $conectar = parent::conexion();
         parent::set_names();
@@ -1038,6 +1058,11 @@ class Ticket extends Conectar
                 OR EXISTS (SELECT 1 FROM td_ticketdetalle d WHERE d.tick_id = t.tick_id AND d.tickd_descrip LIKE :search_term)
             )";
             $params[':search_term'] = "%" . $search_term . "%";
+        }
+
+        if (!empty($emp_id)) {
+            $conditions .= " AND t.emp_id = :emp_id";
+            $params[':emp_id'] = $emp_id;
         }
 
         // 1. Total Records (Approximate logic: distinct count based on base condition)
