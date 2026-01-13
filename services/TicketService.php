@@ -1294,6 +1294,15 @@ class TicketService
             }
         }
         $output['estado_tiempo'] = $estado_tiempo;
+
+        // Agregar campos con días transcurridos solo para tickets abiertos
+        $output['campos_dias_transcurridos'] = [];
+        if ($row['tick_estado'] == 'Abierto') {
+            require_once('../models/CampoPlantilla.php');
+            $campoPlantillaModel = new CampoPlantilla();
+            $output['campos_dias_transcurridos'] = $campoPlantillaModel->get_campos_con_dias_transcurridos($tickId);
+        }
+
         echo json_encode($output);
     }
 
@@ -2080,7 +2089,7 @@ class TicketService
 
         if ($user_info && $ticket_info) {
             $ticket_regional = $ticket_info['reg_id'];
-            
+
             // Check if user is a parallel assignee (bypass regional check)
             $is_parallel_assignee = $this->ticketModel->check_usuario_paralelo($tick_id, $paso_id, $usu_id);
             if ($is_parallel_assignee) {

@@ -141,7 +141,8 @@
                                         <th style="width: 5%;">X</th>
                                         <th style="width: 10%;">Y</th>
                                         <th style="width: 5%;">Trig</th>
-                                        <th style="width: 20%;">Fuente</th>
+                                        <th style="width: 18%;">Fuente</th>
+                                        <th style="width: 5%;">Días</th>
                                         <th style="width: 5%;"></th>
                                     </tr>
                                 </thead>

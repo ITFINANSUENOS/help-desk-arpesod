@@ -201,8 +201,9 @@ class FlujoPaso extends Conectar
                 $font_size = isset($campo['font_size']) ? $campo['font_size'] : 10;
                 $campo_trigger = isset($campo['campo_trigger']) ? $campo['campo_trigger'] : 0;
                 $campo_query = isset($campo['campo_query']) ? $campo['campo_query'] : null;
+                $mostrar_dias_transcurridos = isset($campo['mostrar_dias_transcurridos']) ? $campo['mostrar_dias_transcurridos'] : 0;
 
-                $campoModel->insert_campo($paso_id, $campo['campo_nombre'], $campo['campo_codigo'], $campo['coord_x'], $campo['coord_y'], $campo['pagina'], $campo['campo_tipo'], $font_size, $campo_trigger, $campo_query);
+                $campoModel->insert_campo($paso_id, $campo['campo_nombre'], $campo['campo_codigo'], $campo['coord_x'], $campo['coord_y'], $campo['pagina'], $campo['campo_tipo'], $font_size, $campo_trigger, $campo_query, $mostrar_dias_transcurridos);
             }
         }
     }

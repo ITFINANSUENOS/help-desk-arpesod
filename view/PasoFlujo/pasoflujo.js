@@ -72,6 +72,7 @@ function guardaryeditar(e) {
         var coord_y = row.find('.campo_y').val();
         var campo_trigger = row.find('.campo_trigger').val();
         var campo_query = row.find('.campo_query').val();
+        var mostrar_dias_transcurridos = row.find('.mostrar_dias_transcurridos').val();
 
         if (campo_nombre && campo_codigo) {
             camposPlantilla.push({
@@ -83,7 +84,8 @@ function guardaryeditar(e) {
                 coord_x: coord_x,
                 coord_y: coord_y,
                 campo_trigger: campo_trigger,
-                campo_query: campo_query
+                campo_query: campo_query,
+                mostrar_dias_transcurridos: mostrar_dias_transcurridos
             });
         }
     });
@@ -1025,6 +1027,7 @@ function addCampoPlantillaRow(campo = null) {
     var campo_trigger = campo ? campo.campo_trigger : 0;
     // Ensure campo_query is a string to prevent startsWith errors
     var campo_query = campo && campo.campo_query ? String(campo.campo_query) : '';
+    var mostrar_dias_transcurridos = campo ? campo.mostrar_dias_transcurridos : 0;
 
     var newRow = `
         <tr>
@@ -1075,6 +1078,12 @@ function addCampoPlantillaRow(campo = null) {
                 </div>
 
                 <input type="hidden" class="form-control form-control-sm campo_query" value="${campo_query ? campo_query.replace(/"/g, '&quot;') : ''}">
+            </td>
+            <td>
+                <select class="form-control form-control-sm mostrar_dias_transcurridos">
+                    <option value="0" ${mostrar_dias_transcurridos == 0 ? 'selected' : ''}>No</option>
+                    <option value="1" ${mostrar_dias_transcurridos == 1 ? 'selected' : ''}>Si</option>
+                </select>
             </td>
             <td><button type="button" class="btn btn-sm btn-danger btn-remove-campo"><i class="fa fa-trash"></i></button></td>
         </tr>

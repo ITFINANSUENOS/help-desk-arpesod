@@ -1089,6 +1089,20 @@ function listarDetalle(tick_id) {
         $('#tick_titulo').val(ticketData.tick_titulo);
         $('#tickd_descripusu').summernote('code', ticketData.tick_descrip);
 
+        // Mostrar contador de días transcurridos (solo tickets abiertos)
+        $('#panel_dias_transcurridos').remove(); // Limpiar previo
+        if (ticketData.campos_dias_transcurridos && ticketData.campos_dias_transcurridos.length > 0) {
+            var diasHtml = '<div id="panel_dias_transcurridos" class="alert alert-warning" style="margin-top: 15px; margin-bottom: 15px;"><h5><i class="fa fa-clock-o"></i> Días Transcurridos</h5><ul style="margin-bottom: 0;">';
+            ticketData.campos_dias_transcurridos.forEach(function (campo) {
+                if (campo.formato) {
+                    diasHtml += '<li><strong>' + campo.campo_nombre + ':</strong> ' + campo.formato + ' (desde ' + campo.valor + ')</li>';
+                }
+            });
+            diasHtml += '</ul></div>';
+            // Insertar después del panel de línea de tiempo
+            $('#panel_linea_tiempo').after(diasHtml);
+        }
+
         // Limpiar paneles de acciones antes de re-evaluar
         $('#panel_seleccion_usuario').hide();
         $('#usuario_seleccionado').html('');

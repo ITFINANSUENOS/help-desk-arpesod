@@ -3,11 +3,11 @@ class CampoPlantilla extends Conectar
 {
     // --- tm_campo_plantilla methods ---
 
-    public function insert_campo($paso_id, $campo_nombre, $campo_codigo, $coord_x, $coord_y, $pagina, $campo_tipo = 'text', $font_size = 10, $campo_trigger = 0, $campo_query = null)
+    public function insert_campo($paso_id, $campo_nombre, $campo_codigo, $coord_x, $coord_y, $pagina, $campo_tipo = 'text', $font_size = 10, $campo_trigger = 0, $campo_query = null, $mostrar_dias_transcurridos = 0)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_campo_plantilla (paso_id, campo_nombre, campo_codigo, coord_x, coord_y, pagina, campo_tipo, font_size, campo_trigger, campo_query, est, fech_crea) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())";
+        $sql = "INSERT INTO tm_campo_plantilla (paso_id, campo_nombre, campo_codigo, coord_x, coord_y, pagina, campo_tipo, font_size, campo_trigger, campo_query, mostrar_dias_transcurridos, est, fech_crea) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_id);
         $sql->bindValue(2, $campo_nombre);
@@ -20,15 +20,16 @@ class CampoPlantilla extends Conectar
         $sql->bindValue(8, $font_size);
         $sql->bindValue(9, $campo_trigger);
         $sql->bindValue(10, $campo_query);
+        $sql->bindValue(11, $mostrar_dias_transcurridos);
         $sql->execute();
         return $resultado = $sql->fetchAll();
     }
 
-    public function update_campo($campo_id, $campo_nombre, $campo_codigo, $coord_x, $coord_y, $pagina, $campo_tipo = 'text', $font_size = 10, $campo_trigger = 0, $campo_query = null)
+    public function update_campo($campo_id, $campo_nombre, $campo_codigo, $coord_x, $coord_y, $pagina, $campo_tipo = 'text', $font_size = 10, $campo_trigger = 0, $campo_query = null, $mostrar_dias_transcurridos = 0)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "UPDATE tm_campo_plantilla SET campo_nombre=?, campo_codigo=?, coord_x=?, coord_y=?, pagina=?, campo_tipo=?, font_size=?, campo_trigger=?, campo_query=? WHERE campo_id=?";
+        $sql = "UPDATE tm_campo_plantilla SET campo_nombre=?, campo_codigo=?, coord_x=?, coord_y=?, pagina=?, campo_tipo=?, font_size=?, campo_trigger=?, campo_query=?, mostrar_dias_transcurridos=? WHERE campo_id=?";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $campo_nombre);
         $sql->bindValue(2, $campo_codigo);
@@ -40,7 +41,8 @@ class CampoPlantilla extends Conectar
         $sql->bindValue(7, $font_size);
         $sql->bindValue(8, $campo_trigger);
         $sql->bindValue(9, $campo_query);
-        $sql->bindValue(10, $campo_id);
+        $sql->bindValue(10, $mostrar_dias_transcurridos);
+        $sql->bindValue(11, $campo_id);
         $sql->execute();
         return $resultado = $sql->fetchAll();
     }
@@ -237,5 +239,44 @@ class CampoPlantilla extends Conectar
         $sql->execute();
         $resultado = $sql->fetch(PDO::FETCH_ASSOC);
         return $resultado ? $resultado['valor'] : null;
+    }
+
+    /**
+     * Obtiene los campos de plantilla con mostrar_dias_transcurridos activo y sus valores para un ticket
+     * @param int $tick_id ID del ticket
+     * @return array Campos con sus valores y días transcurridos calculados
+     */
+    public function get_campos_con_dias_transcurridos($tick_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT v.valor, c.campo_nombre, c.campo_codigo, c.campo_tipo
+                FROM td_ticket_campo_valor v 
+                INNER JOIN tm_campo_plantilla c ON v.campo_id = c.campo_id 
+                WHERE v.tick_id = ? 
+                AND v.est = 1 
+                AND c.mostrar_dias_transcurridos = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->execute();
+        $resultados = $sql->fetchAll(PDO::FETCH_ASSOC);
+
+        // Calcular días transcurridos para cada campo
+        foreach ($resultados as &$campo) {
+            if (!empty($campo['valor'])) {
+                $fecha = strtotime($campo['valor']);
+                if ($fecha !== false) {
+                    $dias = floor((time() - $fecha) / 86400);
+                    $semanas = floor($dias / 7);
+                    $dias_restantes = $dias % 7;
+                    $campo['dias_transcurridos'] = $dias;
+                    $campo['semanas'] = $semanas;
+                    $campo['dias_restantes'] = $dias_restantes;
+                    $campo['formato'] = $semanas . " semanas y " . $dias_restantes . " días";
+                }
+            }
+        }
+
+        return $resultados;
     }
 }

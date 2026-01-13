@@ -1,13 +1,13 @@
-function init(){
+function init() {
     // Esta función se puede dejar vacía o usar para inicializar otros componentes si es necesario.
 }
 
-$(document).ready(function(){
+$(document).ready(function () {
     // Obtenemos el ID del ticket desde la URL
     var tick_id = getUrlParameter('ID');
 
     // Cargar la cabecera del ticket (título, estado, etc.)
-    $.post("../../controller/ticket.php?op=mostrar", { tick_id : tick_id }, function (data) {
+    $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
         data = JSON.parse(data);
         $('#lbltickestadoh').html(data.tick_estado);
         $('#lblprioridadh').html(data.pd_nom);
@@ -21,6 +21,19 @@ $(document).ready(function(){
         $('#tick_titulo').val(data.tick_titulo);
         // Usamos summernote para mostrar la descripción con formato
         $('#tickd_descripusu').summernote('code', data.tick_descrip);
+
+        // Mostrar contador de días transcurridos (solo tickets abiertos)
+        $('#panel_dias_transcurridos').remove(); // Limpiar previo
+        if (data.campos_dias_transcurridos && data.campos_dias_transcurridos.length > 0) {
+            var diasHtml = '<div id="panel_dias_transcurridos" class="alert alert-warning" style="margin-top: 15px; margin-bottom: 15px;"><h5><i class="fa fa-clock-o"></i> Días Transcurridos</h5><ul style="margin-bottom: 0;">';
+            data.campos_dias_transcurridos.forEach(function (campo) {
+                if (campo.formato) {
+                    diasHtml += '<li><strong>' + campo.campo_nombre + ':</strong> ' + campo.formato + ' (desde ' + campo.valor + ')</li>';
+                }
+            });
+            diasHtml += '</ul></div>';
+            $('#panel_linea_tiempo').after(diasHtml);
+        }
 
         if (data.timeline_graph && data.timeline_graph.length > 0) {
             $('#panel_linea_tiempo').show();
@@ -61,7 +74,7 @@ $(document).ready(function(){
                             }).catch(err => {
                                 console.error("mermaid.render (promise) falló:", err);
                                 // fallback a init
-                                try { mermaid.init(undefined, mermaidContainer); } catch(e){ console.error(e); }
+                                try { mermaid.init(undefined, mermaidContainer); } catch (e) { console.error(e); }
                             });
                         } else if (renderResult) {
                             // resultado inmediato
@@ -76,7 +89,7 @@ $(document).ready(function(){
                         }
                     } catch (err) {
                         console.error("Error al renderizar con mermaid.render:", err);
-                        try { mermaid.init(undefined, mermaidContainer); } catch(e){ console.error(e); }
+                        try { mermaid.init(undefined, mermaidContainer); } catch (e) { console.error(e); }
                     }
                 } else {
                     console.error("Mermaid no está cargado en window cuando intentamos renderizar.");
@@ -88,7 +101,7 @@ $(document).ready(function(){
     });
 
     // Cargar el historial completo del ticket (comentarios, asignaciones, etc.)
-    $.post("../../controller/ticket.php?op=listarhistorial", { tick_id : tick_id }, function (data) {
+    $.post("../../controller/ticket.php?op=listarhistorial", { tick_id: tick_id }, function (data) {
         $('#lbldetalle').html(data);
     });
 
