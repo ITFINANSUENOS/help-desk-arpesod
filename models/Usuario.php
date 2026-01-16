@@ -292,6 +292,7 @@ class Usuario extends Conectar
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
 
+    //no se utiliza
     public function get_usuario_total_id($usu_id)
     {
         $conectar = parent::Conexion();
@@ -304,6 +305,7 @@ class Usuario extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
+    //no se utiliza
     public function get_usuario_totalabierto_id($usu_id)
     {
         $conectar = parent::Conexion();
@@ -316,6 +318,7 @@ class Usuario extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
+    //no se utiliza
     public function get_usuario_totalcerrado_id($usu_id)
     {
         $conectar = parent::Conexion();
@@ -328,6 +331,7 @@ class Usuario extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
+    //no se utiliza
     public function get_total_categoria_usuario($usu_id)
     {
         $conectar = parent::Conexion();
@@ -378,6 +382,7 @@ class Usuario extends Conectar
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
 
+    //no se utiliza
     public function get_usuario_por_cargo_y_departamento($car_id, $dp_id)
     {
         $conectar = parent::Conexion();
