@@ -483,6 +483,11 @@ if (isset($_SESSION["usu_id"])) {
                                 <textarea class="form-control" id="descripcion_novedad" name="descripcion_novedad" rows="4" required></textarea>
                             </div>
                             <div class="form-group">
+                                <label for="novedad_files">Adjuntar Archivos</label>
+                                <input type="file" class="form-control-file" id="novedad_files" name="files[]" multiple>
+                                <small class="text-muted">Máximo 2MB por archivo. Total máximo 8MB.</small>
+                            </div>
+                            <div class="form-group">
                                 <label for="usu_asig_novedad">Asignar a</label>
                                 <select class="select2" id="usu_asig_novedad" name="usu_asig_novedad" data-placeholder="Seleccione un usuario" required>
                                     <!-- Opciones de usuario se cargarán dinámicamente -->

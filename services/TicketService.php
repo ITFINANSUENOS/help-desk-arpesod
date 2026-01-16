@@ -1941,6 +1941,11 @@ class TicketService
 
             $this->novedadRepository->crearNovedad($tick_id, $paso_id_pausado, $usu_asig_novedad, $usu_crea_novedad, $descripcion_novedad);
 
+            // Insertar documentos si los hay
+            if (isset($_FILES['files'])) {
+                $this->insertDocument($tick_id);
+            }
+
             $this->ticketRepository->updateTicketStatus($tick_id, 'Pausado');
 
             // Calcular SLA actual al momento de pausar
@@ -1948,6 +1953,20 @@ class TicketService
             $badge_class = ($sla_state === 'A Tiempo') ? 'success' : 'danger';
 
             $comentario = "Se ha creado una novedad: " . htmlspecialchars($descripcion_novedad);
+
+            if (isset($_FILES['files']) && count($_FILES['files']['name']) > 0) {
+                $comentario .= "<br><strong>Archivos adjuntos:</strong><br>";
+                $countFiles = count($_FILES['files']['name']);
+                for ($i = 0; $i < $countFiles; $i++) {
+                    if ($_FILES['files']['error'][$i] === UPLOAD_ERR_OK) {
+                        $nombreArchivo = htmlspecialchars(basename($_FILES['files']['name'][$i]));
+                        // Path relative to the view (view/DetalleTicket/index.php -> ../../public/...)
+                        $urlArchivo = "../../public/document/ticket/{$tick_id}/{$nombreArchivo}";
+                        $comentario .= "- <a href='{$urlArchivo}' target='_blank'>{$nombreArchivo}</a><br>";
+                    }
+                }
+            }
+
             $comentario .= "<small class='text-muted sla-info' style='display:block; margin-top: 5px;'>SLA al momento de la novedad: <span class='label label-{$badge_class}'>{$sla_state}</span></small>";
             $this->ticketModel->insert_ticket_detalle($tick_id, $usu_crea_novedad, $comentario);
 

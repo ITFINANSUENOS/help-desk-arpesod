@@ -295,6 +295,28 @@ $(document).ready(function () {
             return;
         }
 
+        // File Validation
+        var fileInput = document.getElementById('novedad_files');
+        var maxFileSize = 2 * 1024 * 1024; // 2MB
+        var maxTotalSize = 8 * 1024 * 1024; // 8MB
+        var currentTotalSize = 0;
+
+        if (fileInput && fileInput.files.length > 0) {
+            for (var i = 0; i < fileInput.files.length; i++) {
+                var file = fileInput.files[i];
+                if (file.size > maxFileSize) {
+                    swal("Error", "El archivo '" + file.name + "' supera el límite de 2MB.", "error");
+                    return;
+                }
+                currentTotalSize += file.size;
+            }
+        }
+
+        if (currentTotalSize > maxTotalSize) {
+            swal("Error", "El tamaño total de los archivos supera el límite de 8MB.", "error");
+            return;
+        }
+
         var selectedUserName = $('#usu_asig_novedad option:selected').text();
         // Remove extra info in parens if any
         selectedUserName = selectedUserName.split('(')[0].trim();
@@ -314,6 +336,15 @@ $(document).ready(function () {
                 formData.append('tick_id', getUrlParameter('ID'));
                 formData.append('usu_id', $('#user_idx').val());
 
+                // Manually append files if not caught by form constructor (safeguard)
+                if (fileInput && fileInput.files.length > 0) {
+                    // Clean existing key to avoid duplicates if browser handles it differently
+                    formData.delete('files[]');
+                    for (var i = 0; i < fileInput.files.length; i++) {
+                        formData.append('files[]', fileInput.files[i]);
+                    }
+                }
+
                 $.ajax({
                     url: '../../controller/ticket.php?op=crear_novedad',
                     type: 'POST',
@@ -323,7 +354,6 @@ $(document).ready(function () {
                     success: function (response) {
                         var data = JSON.parse(response);
                         if (data.status === 'success') {
-                            // swal("¡Éxito!", data.message, "success"); // Removed immediate success to allow redirect logic
                             $('#modal_crear_novedad').modal('hide');
 
                             swal({
