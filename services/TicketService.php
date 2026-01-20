@@ -369,6 +369,18 @@ class TicketService
             }
 
             // Handle Dynamic Fields for PDF Template
+            
+            // FIX: If the ticket started at Step 0 but jumped to Step X (due to transition), we must also save Step 0 fields.
+            $pasos_flujo = $this->flujoPasoModel->get_pasos_por_flujo($flujo['flujo_id']);
+            if (count($pasos_flujo) > 0) {
+                $primer_paso_id = $pasos_flujo[0]['paso_id'];
+                // Only save if different (avoid double save, though handleDynamicFields is likely idempotent except for PDF generation overhead)
+                if ($resolveResult['paso_actual_id_final'] != $primer_paso_id) {
+                    error_log("TicketService::createTicket - Ticket jumped from Start Step $primer_paso_id to {$resolveResult['paso_actual_id_final']}. Saving Start Step fields.");
+                    $this->handleDynamicFields($datos, $postData, $primer_paso_id, $usu_id_creador);
+                }
+            }
+
             $this->handleDynamicFields($datos, $postData, $resolveResult['paso_actual_id_final'], $usu_id_creador);
 
             $this->pdo->commit();
