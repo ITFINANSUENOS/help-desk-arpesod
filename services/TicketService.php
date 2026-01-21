@@ -1501,33 +1501,25 @@ class TicketService
                 // CASO B: La transición lleva DIRECTAMENTE a un PASO
                 $nuevo_paso_id = $transicion['paso_destino_id'];
 
-                // Obtenemos info del nuevo paso para saber si requiere asignación manual, etc.
-                $nuevo_paso_info = $this->flujoPasoModel->get_paso_por_id($nuevo_paso_id);
-
-                $nuevo_asignado_id = null;
-
-                // Si viene un usuario asignado explícitamente, lo usamos con prioridad
-                if ($usu_asig) {
-                    $nuevo_asignado_id = $usu_asig;
-                }
-
-                if (empty($nuevo_asignado_id)) {
-                    // Intentar asignación automática por cargo
-                    $cargo_id = $nuevo_paso_info['cargo_id_asignado'];
-
-                    $regional_origen_id = $this->ticketModel->get_ticket_region($ticket['tick_id']);
-                    $usuario_asignado = $this->usuarioModel->get_usuario_por_cargo_y_regional($cargo_id, $regional_origen_id);
-                    if ($usuario_asignado) {
-                        $nuevo_asignado_id = $usuario_asignado['usu_id'];
-                    }
-                }
-
-                // Si aún no tenemos asignado, mantenemos el actual (o null si se prefiere)
-                if (empty($nuevo_asignado_id)) {
-                    $nuevo_asignado_id = $ticket['usu_asig'];
-                }
-
-                $this->actualizar_estado_ticket($ticket['tick_id'], $nuevo_paso_id, null, null, $nuevo_asignado_id, $manual_assignments);
+                // FIX: Delegar TODA la lógica de asignación a actualizar_estado_ticket
+                // Este método ya maneja correctamente:
+                // - Asignación al creador (asignar_a_creador)
+                // - Pasos paralelos (es_paralelo)
+                // - Aprobación de jefe inmediato (necesita_aprobacion_jefe)
+                // - Tareas nacionales vs regionales (es_tarea_nacional)
+                // - Múltiples candidatos (lanza excepción REQ_SELECTION)
+                // - Usuarios específicos configurados
+                // - Cargos específicos configurados
+                
+                // Ya no necesitamos hacer asignación manual aquí
+                return $this->actualizar_estado_ticket(
+                    $ticket['tick_id'], 
+                    $nuevo_paso_id, 
+                    null,  // ruta_id (no aplica para paso directo)
+                    null,  // ruta_paso_orden (no aplica para paso directo)
+                    $usu_asig,  // puede ser null, actualizar_estado_ticket lo manejará
+                    $manual_assignments
+                );
             } else {
                 throw new Exception("La transición configurada no tiene destino (ni ruta ni paso).");
             }
