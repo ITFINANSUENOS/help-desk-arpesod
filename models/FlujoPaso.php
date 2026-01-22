@@ -576,7 +576,8 @@ class FlujoPaso extends Conectar
         $sql = "SELECT 
                     t.condicion_clave, 
                     t.condicion_nombre,
-                    t.paso_destino_id
+                    t.paso_destino_id,
+                    t.ruta_id
                 FROM tm_flujo_transiciones t
                 INNER JOIN tm_flujo_paso p_origen ON t.paso_origen_id = p_origen.paso_id
                 WHERE p_origen.flujo_id = ? AND p_origen.paso_orden = 0 AND t.est = 1";

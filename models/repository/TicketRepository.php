@@ -1,4 +1,5 @@
 <?php
+
 namespace models\repository;
 
 use PDO;
@@ -14,10 +15,10 @@ class TicketRepository
         $this->pdo->exec("SET NAMES 'utf8'");
     }
 
-    public function insertTicket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip, $error_proceso, $usu_asig, $how_asig, $emp_id, $dp_id, $paso_actual_id = null, $reg_id = null)
+    public function insertTicket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip, $error_proceso, $usu_asig, $how_asig, $emp_id, $dp_id, $paso_actual_id = null, $reg_id = null, $ruta_id = null, $ruta_paso_orden = null)
     {
         try {
-            $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,error_proceso,fech_crea,usu_asig,paso_actual_id,how_asig,est,emp_id,dp_id, reg_id) VALUES (NULL,?,?,?,?,?,?,'Abierto',?,NOW(),?,?,?, '1',?,?,?)";
+            $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,error_proceso,fech_crea,usu_asig,paso_actual_id,how_asig,est,emp_id,dp_id,reg_id,ruta_id,ruta_paso_orden) VALUES (NULL,?,?,?,?,?,?,'Abierto',?,NOW(),?,?,?, '1',?,?,?,?,?)";
             $sql = $this->pdo->prepare($sql);
             $sql->bindValue(1, $usu_id);
             $sql->bindValue(2, $cat_id);
@@ -32,10 +33,11 @@ class TicketRepository
             $sql->bindValue(11, $emp_id);
             $sql->bindValue(12, $dp_id);
             $sql->bindValue(13, $reg_id);
+            $sql->bindValue(14, $ruta_id);
+            $sql->bindValue(15, $ruta_paso_orden);
             $sql->execute();
 
             return (int)$this->pdo->lastInsertId();
-
         } catch (Exception $e) {
             error_log("TicketRepository::insertTicket() error" . $e->getMessage());
             throw $e;
@@ -68,8 +70,4 @@ class TicketRepository
         $stmt->bindValue(2, $tick_id);
         $stmt->execute();
     }
-
-
-
 }
-?>

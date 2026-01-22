@@ -98,12 +98,45 @@ class TicketService
         $creador_car_id = $datos_creador['car_id'] ?? null;
         $errors = [];
         $paso_actual_id_final = null;
+        $ruta_id = null;
+        $ruta_paso_orden = null;
 
         if ($flujo) { {
                 // Check if a specific start step was selected (Conditional Start)
                 if (isset($postData['paso_inicio_id']) && !empty($postData['paso_inicio_id'])) {
                     error_log("Conditional Start: paso_inicio_id received = " . $postData['paso_inicio_id']);
-                    $paso_inicial = $this->flujoPasoModel->get_paso_por_id($postData['paso_inicio_id']);
+
+                    // Parse the paso_inicio_id which can be "paso:X" or "ruta:Y"
+                    $inicio_value = $postData['paso_inicio_id'];
+
+                    if (strpos($inicio_value, 'ruta:') === 0) {
+                        // Es una ruta - obtener el primer paso de la ruta
+                        $ruta_id = substr($inicio_value, 5); // Remover "ruta:"
+                        $ruta_paso_orden = 1; // Empezamos en el primer paso de la ruta
+                        error_log("Conditional Start: Detected ROUTE with ID = " . $ruta_id);
+
+                        require_once('../models/RutaPaso.php');
+                        $rutaPasoModel = new RutaPaso();
+                        $primer_paso_ruta = $rutaPasoModel->get_paso_por_orden($ruta_id, 1);
+
+                        if ($primer_paso_ruta) {
+                            $paso_inicial = $this->flujoPasoModel->get_paso_por_id($primer_paso_ruta['paso_id']);
+                            error_log("Conditional Start: First step of route = " . json_encode($paso_inicial));
+                        } else {
+                            $errors[] = "La ruta seleccionada no tiene pasos definidos.";
+                            $paso_inicial = null;
+                        }
+                    } elseif (strpos($inicio_value, 'paso:') === 0) {
+                        // Es un paso directo
+                        $paso_id = substr($inicio_value, 5); // Remover "paso:"
+                        error_log("Conditional Start: Detected DIRECT STEP with ID = " . $paso_id);
+                        $paso_inicial = $this->flujoPasoModel->get_paso_por_id($paso_id);
+                    } else {
+                        // Formato antiguo (solo ID numérico) - mantener compatibilidad
+                        error_log("Conditional Start: Legacy format detected, treating as paso_id = " . $inicio_value);
+                        $paso_inicial = $this->flujoPasoModel->get_paso_por_id($inicio_value);
+                    }
+
                     error_log("Conditional Start: Resolved paso_inicial = " . json_encode($paso_inicial));
                 } else {
                     error_log("Conditional Start: No paso_inicio_id received. Using default.");
@@ -233,6 +266,8 @@ class TicketService
         return [
             'usu_asig_final' => $usu_asig_final ?? null,
             'paso_actual_id_final' => $paso_actual_id_final,
+            'ruta_id' => $ruta_id ?? null,
+            'ruta_paso_orden' => $ruta_paso_orden ?? null,
             'errors' => $errors
         ];
     }
@@ -334,7 +369,9 @@ class TicketService
                 $emp_id,
                 $dp_id,
                 $resolveResult['paso_actual_id_final'],
-                $ticket_reg_id
+                $ticket_reg_id,
+                $resolveResult['ruta_id'] ?? null,
+                $resolveResult['ruta_paso_orden'] ?? null
             );
 
             // Manejar asignaciones múltiples (paralelo) o simple
@@ -369,7 +406,7 @@ class TicketService
             }
 
             // Handle Dynamic Fields for PDF Template
-            
+
             // FIX: If the ticket started at Step 0 but jumped to Step X (due to transition), we must also save Step 0 fields.
             $pasos_flujo = $this->flujoPasoModel->get_pasos_por_flujo($flujo['flujo_id']);
             if (count($pasos_flujo) > 0) {
@@ -1510,11 +1547,11 @@ class TicketService
                 // - Múltiples candidatos (lanza excepción REQ_SELECTION)
                 // - Usuarios específicos configurados
                 // - Cargos específicos configurados
-                
+
                 // Ya no necesitamos hacer asignación manual aquí
                 return $this->actualizar_estado_ticket(
-                    $ticket['tick_id'], 
-                    $nuevo_paso_id, 
+                    $ticket['tick_id'],
+                    $nuevo_paso_id,
                     null,  // ruta_id (no aplica para paso directo)
                     null,  // ruta_paso_orden (no aplica para paso directo)
                     $usu_asig,  // puede ser null, actualizar_estado_ticket lo manejará

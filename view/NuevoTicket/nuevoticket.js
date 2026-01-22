@@ -238,7 +238,16 @@ $('#cats_id').on('change', function () {
             if (data.length > 0) {
                 var options = '<option value="">Seleccione una opción...</option>';
                 data.forEach(function (transicion) {
-                    options += `<option value="${transicion.paso_destino_id}">${transicion.condicion_nombre}</option>`;
+                    // Determinar si es paso directo o ruta
+                    var value = '';
+                    if (transicion.ruta_id) {
+                        // Es una ruta
+                        value = 'ruta:' + transicion.ruta_id;
+                    } else if (transicion.paso_destino_id) {
+                        // Es un paso directo
+                        value = 'paso:' + transicion.paso_destino_id;
+                    }
+                    options += `<option value="${value}">${transicion.condicion_nombre}</option>`;
                 });
                 $('#paso_inicio_id').html(options);
                 $('#panel_condicion_inicio').show();
