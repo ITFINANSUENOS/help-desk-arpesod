@@ -1014,7 +1014,12 @@ class TicketService
 
             return $nuevo_paso_id;
         } else {
-            throw new Exception("No se encontró un usuario para asignar al cargo ID: $siguiente_cargo_id.");
+            // Si no hay usuario asignado y tampoco hay cargo configurado, es válido para pasos con selección manual
+            if (!empty($siguiente_cargo_id)) {
+                throw new Exception("No se encontró un usuario para asignar al cargo ID: $siguiente_cargo_id.");
+            }
+            // Si siguiente_cargo_id está vacío, es porque el paso usa selección manual sin cargo
+            // No lanzamos error, simplemente continuamos sin asignación automática
         }
     }
 
