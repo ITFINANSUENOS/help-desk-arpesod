@@ -956,13 +956,22 @@ class TicketService
         }
 
 
+        // --- LÓGICA DE ASIGNACIÓN NORMAL (No paralelo, no jefe inmediato, no creador) ---
+        // FIX: Priorizar selección manual sobre cargo_id_asignado
         if (!$nuevo_asignado_info) {
-            if (!empty($usu_asig) || $usu_asig != null) {
+            // PRIORIDAD 1: Selección manual (usu_asig)
+            // Si el usuario seleccionó manualmente un usuario, esa es la máxima prioridad
+            if (!empty($usu_asig)) {
+                error_log("TicketService::actualizar_estado_ticket - PRIORITY 1: Using manual selection: $usu_asig");
                 $nuevo_asignado_info = $usu_asig;
-            } else {
+            }
+            // PRIORIDAD 2: Si no hay selección manual, buscar por cargo_id_asignado
+            elseif (!empty($siguiente_cargo_id)) {
+                error_log("TicketService::actualizar_estado_ticket - PRIORITY 2: No manual selection, using cargo: $siguiente_cargo_id");
+
                 if ($siguiente_paso['es_tarea_nacional'] == 1) {
                     $is_national = true;
-                    $regional_origen_id = null; // Ignored in national? or needed? resolveCandidates expects it but might not use it if national
+                    $regional_origen_id = null;
                 } else {
                     $is_national = false;
                     $regional_origen_id = $this->ticketModel->get_ticket_region($ticket_id);
