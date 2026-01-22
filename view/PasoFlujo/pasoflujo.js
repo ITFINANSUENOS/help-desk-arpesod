@@ -354,8 +354,14 @@ $(document).ready(function () {
     $('#requiere_seleccion_manual').on('change', function () {
         if ($(this).is(':checked')) {
             $('#usuarios_especificos_container').show();
+            // Deshabilitar y limpiar cargo cuando se activa selección manual
+            $('#cargo_id_asignado').val('').prop('disabled', true).trigger('change');
         } else {
             $('#usuarios_especificos_container').hide();
+            // Rehabilitar cargo si no hay otros checkboxes que lo deshabiliten
+            if (!$('#necesita_aprobacion_jefe').is(':checked') && !$('#asignar_a_creador').is(':checked') && !$('#es_paralelo').is(':checked')) {
+                $('#cargo_id_asignado').prop('disabled', false);
+            }
         }
     });
 
@@ -534,6 +540,8 @@ function editar(paso_id) {
             $('#requiere_seleccion_manual').prop('checked', true);
             $('#usuarios_especificos_container').show();
             cargarUsuariosEspecificos(data.usuarios_especificos_data);
+            // Deshabilitar cargo si tiene selección manual
+            $('#cargo_id_asignado').prop('disabled', true);
         } else {
             $('#requiere_seleccion_manual').prop('checked', false);
             $('#usuarios_especificos_container').hide();
