@@ -146,6 +146,12 @@ class TicketService
                 $paso_actual_id_final = $paso_inicial ? $paso_inicial['paso_id'] : null;
                 error_log("Conditional Start: Final paso_actual_id_final = " . $paso_actual_id_final);
 
+                // Verificar si se proporcionó un usuario específico para la decisión inicial
+                if (isset($postData['usu_asig_inicial']) && !empty($postData['usu_asig_inicial'])) {
+                    $usu_asig_final = $postData['usu_asig_inicial'];
+                    error_log("Conditional Start: Using manually selected user from usu_asig_inicial = " . $usu_asig_final);
+                }
+
                 if (!$paso_inicial) {
                     $errors[] = "El flujo (id: {$flujo['flujo_id']}) no tiene paso inicial definido.";
                 } else {

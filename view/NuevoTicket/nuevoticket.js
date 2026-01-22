@@ -251,6 +251,45 @@ $('#cats_id').on('change', function () {
                 });
                 $('#paso_inicio_id').html(options);
                 $('#panel_condicion_inicio').show();
+
+                // Agregar evento onChange para verificar usuarios disponibles
+                $('#paso_inicio_id').off('change').on('change', function () {
+                    var paso_inicio_value = $(this).val();
+
+                    if (!paso_inicio_value) {
+                        $('#panel_asignacion_manual_inicial').hide();
+                        $('#usu_asig_inicial').html('');
+                        return;
+                    }
+
+                    // Obtener regional si el usuario es nacional
+                    var reg_id = $('#reg_id').val();
+
+                    // Verificar si hay múltiples usuarios para este paso
+                    $.post("../../controller/get_usuarios_paso_inicial.php", {
+                        paso_inicio_id: paso_inicio_value,
+                        cats_id: cats_id,
+                        reg_id: reg_id
+                    }, function (response) {
+                        if (response.success && response.requiere_seleccion) {
+                            // Mostrar panel de selección
+                            var userOptions = '<option value="">Seleccione un usuario...</option>';
+                            response.usuarios.forEach(function (user) {
+                                var regional = user.reg_nom ? ' (' + user.reg_nom + ')' : '';
+                                userOptions += `<option value="${user.usu_id}">${user.usu_nom} ${user.usu_ape}${regional}</option>`;
+                            });
+                            $('#usu_asig_inicial').html(userOptions);
+                            $('#panel_asignacion_manual_inicial').show();
+                        } else {
+                            // No requiere selección
+                            $('#panel_asignacion_manual_inicial').hide();
+                            $('#usu_asig_inicial').html('');
+                        }
+                    }, 'json').fail(function () {
+                        console.error('Error al obtener usuarios del paso inicial');
+                        $('#panel_asignacion_manual_inicial').hide();
+                    });
+                });
             } else {
                 $('#panel_condicion_inicio').hide();
                 $('#paso_inicio_id').empty();
