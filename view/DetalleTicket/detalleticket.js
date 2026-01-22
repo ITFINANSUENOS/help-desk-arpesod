@@ -701,26 +701,32 @@ function enviarDetalle(signatureData = null) {
         return false;
     }
 
-    if ($('#checkbox_avanzar_flujo').is(':checked')) {
+    // FIX: Si hay selección manual de usuario, también debemos avanzar el flujo
+    if ($('#panel_seleccion_usuario').is(':visible')) {
+        var usu_asig = $('#usuario_seleccionado').val();
+        console.log("Manual user selection:", usu_asig);
+
+        if (!usu_asig) {
+            swal("Atención", "Por favor, selecciona un usuario para asignar antes de enviar.", "warning");
+            restoreButton();
+            return false;
+        }
+        formData.append('usu_asig', usu_asig);
+        formData.append('assign_on_send', 'true');
+
+        // CRÍTICO: Cuando hay selección manual, también debemos avanzar el flujo
+        // El checkbox está oculto pero necesitamos enviar avanzar_lineal
+        if (!decisionSeleccionada) {
+            formData.append("avanzar_lineal", "true");
+            console.log("Manual selection: adding avanzar_lineal=true");
+        }
+    } else if ($('#checkbox_avanzar_flujo').is(':checked')) {
+        // Solo procesar checkbox si NO hay selección manual
         if (decisionSeleccionada) {
             formData.append("decision_nombre", decisionSeleccionada);
         } else {
             formData.append("avanzar_lineal", "true");
         }
-    }
-
-    if ($('#panel_seleccion_usuario').is(':visible')) {
-        var usu_asig = $('#usuario_seleccionado').val();
-        console.log(usu_asig);
-
-        if (!usu_asig) {
-            swal("Atención", "Por favor, selecciona un usuario para asignar antes de enviar.", "warning");
-            // liberar botón para que el usuario intente de nuevo
-            restoreButton();
-            return false;
-        }
-        formData.append('usu_asig', usu_asig);
-        formData.append('assign_on_send', 'true'); // flag opcional para proceso server-side
     }
 
     // Recopilar campos dinámicos de plantilla
