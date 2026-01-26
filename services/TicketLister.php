@@ -327,6 +327,8 @@ class TicketLister
 
             if ($row['tick_estado'] == 'Abierto') {
                 $sub_array[] = '<span class="label label-success">Abierto</span>';
+            } elseif ($row['tick_estado'] == 'Pausado') {
+                $sub_array[] = '<span class="label label-warning">Pausado</span>';
             } else {
                 $sub_array[] = '<span class="label label-danger">Cerrado</span>';
             }
@@ -403,6 +405,8 @@ class TicketLister
 
             if ($row['tick_estado'] == 'Abierto') {
                 $sub_array[] = '<span class="label label-success">Abierto</span>';
+            } elseif ($row['tick_estado'] == 'Pausado') {
+                $sub_array[] = '<span class="label label-warning">Pausado</span>';
             } else {
                 $sub_array[] = '<span class="label label-danger">Cerrado</span>';
             }
