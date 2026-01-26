@@ -322,8 +322,12 @@ class Ticket extends Conectar
         }
 
         if (!empty($status)) {
-            $conditions .= " AND tm_ticket.tick_estado = :status";
-            $params[':status'] = $status;
+            if ($status == 'Abierto') {
+                $conditions .= " AND tm_ticket.tick_estado IN ('Abierto', 'Pausado')";
+            } else {
+                $conditions .= " AND tm_ticket.tick_estado = :status";
+                $params[':status'] = $status;
+            }
         }
 
         if (!empty($fech_crea_start) && !empty($fech_crea_end)) {
