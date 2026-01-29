@@ -722,6 +722,29 @@ class TicketService
     {
         error_log("TicketService::actualizar_estado_ticket - Called. Ticket: $ticket_id, Nuevo Paso: $nuevo_paso_id");
 
+        // 1. LOCK: Ensure sequential processing for transitions
+        $stmtLock = $this->pdo->prepare("SELECT tick_id, paso_actual_id, tick_estado FROM tm_ticket WHERE tick_id = ? FOR UPDATE");
+        $stmtLock->execute([$ticket_id]);
+        $lockedTicket = $stmtLock->fetch(PDO::FETCH_ASSOC);
+
+        if (!$lockedTicket) {
+            throw new Exception("Ticket no encontrado.");
+        }
+
+        // 2. VALIDATION: Check if we are acting on stale data?
+        // Optimistic locking logic: If the ticket is already closed, we shouldn't be here (unless reopening, but this function is strictly 'avanzar').
+        if ($lockedTicket['tick_estado'] == 'Cerrado') {
+            throw new Exception("El ticket ya se encuentra Cerrado. No se puede avanzar.");
+        }
+
+        // Check against duplicate "next step" requests
+        // If the current step in DB is ALREADY the new step we are trying to go to, means duplicate request.
+        if ($lockedTicket['paso_actual_id'] == $nuevo_paso_id) {
+            // This happens if user double clicks "Advance".
+            // We can silently return success or throw exception. Exception is safer.
+            throw new Exception("El ticket ya se encuentra en el paso destino. Posible duplicidad de solicitud.");
+        }
+
         $ticket_info_current = $this->ticketModel->listar_ticket_x_id($ticket_id);
         if ($ticket_info_current['paso_actual_id']) {
             $current_step_info = $this->flujoPasoModel->get_paso_por_id($ticket_info_current['paso_actual_id']);
@@ -1702,6 +1725,24 @@ class TicketService
                 throw new Exception("Parámetros incompletos.");
             }
 
+            // 1. LOCKING: Lock the ticket row to prevent concurrent modifications
+            $stmtLock = $this->pdo->prepare("SELECT tick_id, tick_estado FROM tm_ticket WHERE tick_id = ? FOR UPDATE");
+            $stmtLock->execute([$tick_id]);
+            $lockedTicket = $stmtLock->fetch(PDO::FETCH_ASSOC);
+
+            if (!$lockedTicket) {
+                throw new Exception("Ticket no encontrado.");
+            }
+
+            // 2. VALIDATION (Concurrency Check)
+            if ($lockedTicket['tick_estado'] == 'Cerrado') {
+                // Optimization: If already closed, check if it was closed by THIS error type recently?
+                // For now, simpler safety: simply abort if closed preventing double closure.
+                // We can throw exception or just return silent success (to avoid user error alert).
+                // Exception is safer to verify fix.
+                throw new Exception("El ticket ya se encuentra Cerrado. Posible duplicidad de solicitud.");
+            }
+
             require_once('../models/RespuestaRapida.php');
             $respuesta_rapida = new RespuestaRapida();
             $datos_respuesta = $respuesta_rapida->get_respuestarapida_x_id($answer_id);
@@ -1711,10 +1752,9 @@ class TicketService
             $nombre_respuesta = $datos_respuesta["answer_nom"] ?? 'Respuesta desconocida';
             $es_error_proceso = !empty($datos_respuesta["es_error_proceso"]);
 
+            // Re-fetch ticket data using the standard model to get full context (optional if lockedTicket has enough, but we need relations)
             $ticket_data = $this->ticketModel->listar_ticket_x_id($tick_id);
-            if (!$ticket_data) {
-                throw new Exception("Ticket no encontrado.");
-            }
+
 
             // Determinar a quién reasignar PRIMERO
             $assigned_to = null;
