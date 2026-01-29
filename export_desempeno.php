@@ -1,4 +1,5 @@
 <?php
+ob_start();
 require 'vendor/autoload.php';
 require_once 'config/conexion.php';
 require_once 'models/Usuario.php';
