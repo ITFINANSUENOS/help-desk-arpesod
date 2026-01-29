@@ -13,6 +13,9 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 // 1. Setup
+ini_set('memory_limit', '1024M'); // Aumentar límite de memoria para exportaciones grandes
+ini_set('max_execution_time', 300); // Aumentar tiempo de ejecución a 5 minutos
+
 $spreadsheet = new Spreadsheet();
 $sheet = $spreadsheet->getActiveSheet();
 $sheet->setTitle('Desempeño Usuarios');
@@ -615,9 +618,8 @@ $sql_creators = "SELECT
 
 $stmt_crea = $conectar->prepare($sql_creators);
 $stmt_crea->execute();
-$creators_data = $stmt_crea->fetchAll(PDO::FETCH_ASSOC);
 
-foreach ($creators_data as $crea) {
+while ($crea = $stmt_crea->fetch(PDO::FETCH_ASSOC)) {
     $t_id = $crea['tick_id'];
     $tick_titulo = $crea['tick_titulo'];
     $cat_nom = $crea['cat_nom'];
