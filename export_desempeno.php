@@ -126,6 +126,17 @@ $stmt->execute();
 $historial = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
+// DEBUG: Verificar si llegan datos
+if (empty($historial)) {
+    die("DEBUG: La consulta SQL no retornó resultados.");
+} else {
+    echo "DEBUG: Se encontraron " . count($historial) . " registros.<br>";
+    echo "<pre>";
+    print_r($historial[0]);
+    echo "</pre>";
+    exit;
+}
+
 // Helper to get profiles for a user
 function getPerfiles($conectar, $usu_id)
 {
