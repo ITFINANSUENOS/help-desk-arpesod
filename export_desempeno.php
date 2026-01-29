@@ -613,6 +613,9 @@ $sheet2->getStyle('A2:R' . $lastRow2)->applyFromArray($styleArray);
 // Volver a la primera hoja antes de guardar
 $spreadsheet->setActiveSheetIndex(0);
 
+// Clean output buffer to assure no whitespace or warnings corrupt the file
+if (ob_get_length()) ob_end_clean();
+
 // 5. Output
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header('Content-Disposition: attachment;filename="Reporte_Desempeno_' . date('Y-m-d') . '.xlsx"');
