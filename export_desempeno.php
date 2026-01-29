@@ -565,6 +565,132 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
 $lastRow2 = $row2 - 1;
 $sheet2->getStyle('A2:R' . $lastRow2)->applyFromArray($styleArray);
 
+// ==========================================
+// TERCERA HOJA: COMPORTAMIENTO CREADORES
+// ==========================================
+
+$spreadsheet->createSheet();
+$spreadsheet->setActiveSheetIndex(2);
+$sheet3 = $spreadsheet->getActiveSheet();
+$sheet3->setTitle('Comportamiento Creadores');
+
+// Reuse headers from Sheet 2
+$col = 'A';
+foreach ($headers2 as $header) {
+    $sheet3->setCellValue($col . '1', $header);
+    $sheet3->getColumnDimension($col)->setAutoSize(true);
+    $col++;
+}
+$sheet3->getStyle('A1:R1')->applyFromArray($headerStyle);
+
+$row3 = 2;
+
+// Fetch all tickets with Creator Info
+$sql_creators = "SELECT 
+            t.tick_id,
+            t.tick_titulo,
+            t.fech_crea,
+            t.fech_cierre,
+            t.tick_estado,
+            t.tick_descrip,
+            u_crea.usu_id as crea_id,
+            u_crea.usu_nom as crea_nom,
+            u_crea.usu_ape as crea_ape,
+            u_crea.rol_id as crea_rol,
+            r_crea.reg_nom as crea_reg,
+            c_crea.car_nom as crea_car,
+            cat.cat_nom,
+            sub.cats_nom,
+            p.paso_nombre,
+            p.paso_id,
+            (SELECT estado_tiempo_paso FROM th_ticket_asignacion WHERE tick_id = t.tick_id ORDER BY fech_asig ASC LIMIT 1) as primer_estado_tiempo
+        FROM tm_ticket t
+        INNER JOIN tm_usuario u_crea ON t.usu_id = u_crea.usu_id
+        LEFT JOIN tm_regional r_crea ON u_crea.reg_id = r_crea.reg_id
+        LEFT JOIN tm_cargo c_crea ON u_crea.car_id = c_crea.car_id
+        LEFT JOIN tm_categoria cat ON t.cat_id = cat.cat_id
+        LEFT JOIN tm_subcategoria sub ON t.cats_id = sub.cats_id
+        LEFT JOIN tm_flujo_paso p ON t.paso_actual_id = p.paso_id
+        ORDER BY t.tick_id DESC";
+
+$stmt_crea = $conectar->prepare($sql_creators);
+$stmt_crea->execute();
+$creators_data = $stmt_crea->fetchAll(PDO::FETCH_ASSOC);
+
+foreach ($creators_data as $crea) {
+    $t_id = $crea['tick_id'];
+    $tick_titulo = $crea['tick_titulo'];
+    $cat_nom = $crea['cat_nom'];
+    $subcat_nom = $crea['cats_nom'];
+    $paso_nom = $crea['paso_nombre'] ?? 'N/A';
+
+    // Type is always CREACION or CREACION TICKET
+    $type = 'CREACION TICKET';
+
+    $reg_nom = $crea['crea_reg'] ?? 'N/A';
+    $usu_nom = $crea['crea_nom'] . ' ' . $crea['crea_ape'];
+    $car_nom = $crea['crea_car'];
+
+    $r_id = $crea['crea_rol'];
+    $rol_nom = 'Usuario';
+    if ($r_id == 2) $rol_nom = 'Soporte';
+    if ($r_id == 3) $rol_nom = 'Admin';
+
+    $perfiles = getPerfiles($conectar, $crea['crea_id']);
+
+    $date_event = $crea['fech_crea'];
+
+    // End Time: Fech cierrre or Now
+    $end_time_str = '';
+    $duration_hours = 0;
+    $start_time = strtotime($crea['fech_crea']);
+
+    if ($crea['tick_estado'] == 'Cerrado' && !empty($crea['fech_cierre'])) {
+        $end_time = strtotime($crea['fech_cierre']);
+        $end_time_str = $crea['fech_cierre'];
+    } else {
+        $end_time = time();
+        $end_time_str = 'En curso';
+    }
+
+    if ($end_time > $start_time) {
+        $duration_hours = round(($end_time - $start_time) / 3600, 2);
+    }
+
+    $estado_tiempo = $crea['primer_estado_tiempo'] ?? '-';
+    // Description can include generic info
+    $tipo_novedad = '';
+    $desc_novedad = strip_tags($crea['tick_descrip']);
+
+    $tick_estado = $crea['tick_estado'];
+
+    // --- WRITE ROW ---
+    $sheet3->setCellValue('A' . $row3, $t_id);
+    $sheet3->setCellValue('B' . $row3, $tick_titulo);
+    $sheet3->setCellValue('C' . $row3, $cat_nom);
+    $sheet3->setCellValue('D' . $row3, $subcat_nom);
+    $sheet3->setCellValue('E' . $row3, $paso_nom);
+    $sheet3->setCellValue('F' . $row3, $type);
+    $sheet3->setCellValue('G' . $row3, $reg_nom);
+    $sheet3->setCellValue('H' . $row3, $usu_nom);
+    $sheet3->setCellValue('I' . $row3, $rol_nom);
+    $sheet3->setCellValue('J' . $row3, $car_nom);
+    $sheet3->setCellValue('K' . $row3, $perfiles);
+    $sheet3->setCellValue('L' . $row3, $date_event);
+    $sheet3->setCellValue('M' . $row3, $end_time_str);
+    $sheet3->setCellValue('N' . $row3, $duration_hours);
+    $sheet3->setCellValue('O' . $row3, $estado_tiempo);
+    $sheet3->setCellValue('P' . $row3, $tipo_novedad);
+    $sheet3->setCellValue('Q' . $row3, $desc_novedad);
+    $sheet3->setCellValue('R' . $row3, $tick_estado);
+
+    $row3++;
+}
+
+$lastRow3 = $row3 - 1;
+$sheet3->getStyle('A2:R' . $lastRow3)->applyFromArray($styleArray);
+
+
 // Volver a la primera hoja antes de guardar
 $spreadsheet->setActiveSheetIndex(0);
 
