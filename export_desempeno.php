@@ -306,7 +306,8 @@ $headers2 = [
     'FECHA FIN/CIERRE',
     'DURACIÓN (Horas)',
     'ESTADO TIEMPO',
-    'NOVEDAD/ERROR',
+    'TIPO NOVEDAD',      // SPLIT 1
+    'DESCRIPCION NOVEDAD', // SPLIT 2
     'ESTADO TICKET ACTUAL'
 ];
 
@@ -316,7 +317,7 @@ foreach ($headers2 as $header) {
     $sheet2->getColumnDimension($col)->setAutoSize(true);
     $col++;
 }
-$sheet2->getStyle('A1:Q1')->applyFromArray($headerStyle); // Range A1:Q1
+$sheet2->getStyle('A1:R1')->applyFromArray($headerStyle); // Updated Range A1:R1
 
 $row2 = 2;
 
@@ -397,7 +398,8 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
         $end_time_str = '';
         $duration_hours = '';
         $estado_tiempo = '';
-        $novedad = '';
+        $tipo_novedad = '';
+        $desc_novedad = '';
         $tick_estado = '';
 
         if ($type == 'ASIGNACION') {
@@ -419,23 +421,23 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
             $tick_estado = $current['tick_estado'];
 
             $estado_tiempo = $current['estado_tiempo_paso'] ?? '';
-            $novedad = $current['error_descrip'] ?? '';
+            $desc_novedad = $current['error_descrip'] ?? '';
 
             // Check implicit novelty in comments (if error_descrip is empty)
-            if (empty($novedad) && !empty($current['asig_comentario'])) {
+            if (empty($desc_novedad) && !empty($current['asig_comentario'])) {
                 // Heuristic: If comment looks like a novelty or just usage of fallback
                 $comment = $current['asig_comentario'];
                 // Only treat as novelty if it's substantial or matches user concern
                 // "Ticket trasladado" is default; maybe check if DIFFERENT? 
                 // Or if Time Status is empty, use the comment as explanation.
                 if (stripos($comment, 'novedad') !== false || stripos($comment, 'error') !== false || stripos($comment, 'falta') !== false) {
-                    $novedad = $comment;
+                    $desc_novedad = $comment;
                 }
             }
 
             // FIX: If Time Status is empty but there's a novelty/error, label it
             if (empty($estado_tiempo)) {
-                if (!empty($novedad)) {
+                if (!empty($desc_novedad)) {
                     $estado_tiempo = 'Reasignado por Novedad';
                 } else {
                     // NEW: Look ahead! If the NEXT event is an error or a novelty assignment,
@@ -504,11 +506,9 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
             $rol_nom = 'Responsable Error';
             $perfiles = ''; // Could fetch if needed
 
-            $novedad = strip_tags($current['error_descrip']);
-            if (!empty($current['answer_nom'])) {
-                $novedad = '[' . $current['answer_nom'] . '] ' . $novedad;
-            }
-
+            $tipo_novedad = $current['answer_nom'] ?? ''; 
+            $desc_novedad = strip_tags($current['error_descrip']);
+            
             $end_time_str = '-';
             $duration_hours = '-';
         }
@@ -529,17 +529,20 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
         $sheet2->setCellValue('M' . $row2, $end_time_str);
         $sheet2->setCellValue('N' . $row2, $duration_hours);
         $sheet2->setCellValue('O' . $row2, $estado_tiempo);
-        $sheet2->setCellValue('P' . $row2, $novedad);
-        $sheet2->setCellValue('Q' . $row2, $tick_estado);
+        $sheet2->setCellValue('P' . $row2, $tipo_novedad);
+        $sheet2->setCellValue('Q' . $row2, $desc_novedad);
+        $sheet2->setCellValue('R' . $row2, $tick_estado);
 
         // Styles
         if ($type == 'ERROR PROCESO') {
             $sheet2->getStyle('F' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED)); // Shifted E->F
             $sheet2->getStyle('F' . $row2)->getFont()->setBold(true);
-            $sheet2->getStyle('P' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED)); // Shifted O->P
+            $sheet2->getStyle('P' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED)); // Tipo Red
+            $sheet2->getStyle('Q' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED)); // Desc Red
         } elseif ($type == 'ERROR INFORMATIVO') {
             $sheet2->getStyle('F' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE));
-            $sheet2->getStyle('P' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE));
+            $sheet2->getStyle('P' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE)); // Tipo Blue
+            $sheet2->getStyle('Q' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE)); // Desc Blue
         } else {
             // Asignacion colors
             if (!empty($estado_tiempo)) {
@@ -550,9 +553,9 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
                     $sheet2->getStyle('O' . $row2)->getFont()->setColor(new Color(Color::COLOR_DARKGREEN));
                 }
             }
-            if (!empty($novedad) && $type == 'ASIGNACION') {
+            if (!empty($desc_novedad) && $type == 'ASIGNACION') {
                 // Novedades en asignacion (retornos)
-                $sheet2->getStyle('P' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED));
+                $sheet2->getStyle('Q' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED));
             }
         }
 
@@ -560,7 +563,7 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
     }
 }
 $lastRow2 = $row2 - 1;
-$sheet2->getStyle('A2:Q' . $lastRow2)->applyFromArray($styleArray);
+$sheet2->getStyle('A2:R' . $lastRow2)->applyFromArray($styleArray);
 
 // Volver a la primera hoja antes de guardar
 $spreadsheet->setActiveSheetIndex(0);
