@@ -1,5 +1,4 @@
 <?php
-ob_start();
 require 'vendor/autoload.php';
 require_once 'config/conexion.php';
 require_once 'models/Usuario.php';
@@ -94,27 +93,16 @@ $sql = "SELECT
             r.reg_nom,
             c.car_nom,
             t.fech_cierre,
-            t.fech_crea, /* NEW: Need creation date */
-            t.usu_id as usu_id_creador, /* NEW: Creator ID */
             t.tick_estado,
             t.tick_titulo,
             cat.cat_nom,
             sub.cats_nom,
-            p.paso_nombre,
-            /* Creator Details */
-            uc.usu_nom as crea_nom,
-            uc.usu_ape as crea_ape,
-            uc.rol_id as crea_rol,
-            rc.reg_nom as crea_reg,
-            cc.car_nom as crea_car
+            p.paso_nombre
         FROM th_ticket_asignacion h
         INNER JOIN tm_usuario u ON h.usu_asig = u.usu_id
         LEFT JOIN tm_regional r ON u.reg_id = r.reg_id
         LEFT JOIN tm_cargo c ON u.car_id = c.car_id
         INNER JOIN tm_ticket t ON h.tick_id = t.tick_id
-        LEFT JOIN tm_usuario uc ON t.usu_id = uc.usu_id /* Creator Join */
-        LEFT JOIN tm_regional rc ON uc.reg_id = rc.reg_id
-        LEFT JOIN tm_cargo cc ON uc.car_id = cc.car_id
         LEFT JOIN tm_categoria cat ON t.cat_id = cat.cat_id
         LEFT JOIN tm_subcategoria sub ON t.cats_id = sub.cats_id
         LEFT JOIN tm_flujo_paso p ON h.paso_id = p.paso_id
@@ -124,7 +112,6 @@ $sql = "SELECT
 $stmt = $conectar->prepare($sql);
 $stmt->execute();
 $historial = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
 
 // Helper to get profiles for a user
 function getPerfiles($conectar, $usu_id)
@@ -144,14 +131,12 @@ function getPerfiles($conectar, $usu_id)
 // $data[usu_id] = [name, reg, count, ontime, late, errors, total_seconds]
 $stats = [];
 $assignments_by_ticket = [];
-$user_errors = []; // Initialize if used later
 
 // Pre-procesar para agrupar por ticket y calcular duraciones
 foreach ($historial as $row) {
     $assignments_by_ticket[$row['tick_id']][] = $row;
 }
 
-// --- Process Logic for Sheet 1 (User Stats) ---
 foreach ($assignments_by_ticket as $tick_id => $entries) {
     $count = count($entries);
 
@@ -170,7 +155,7 @@ foreach ($assignments_by_ticket as $tick_id => $entries) {
                 'gestionados' => 0,
                 'a_tiempo' => 0,
                 'atrasados' => 0,
-                'novedades' => 0,
+                'novedades' => 0, // Keeps historical count if needed, but we use new breakdown
                 'total_sec' => 0
             ];
         }
@@ -179,6 +164,7 @@ foreach ($assignments_by_ticket as $tick_id => $entries) {
         $stats[$usu_id]['gestionados']++;
 
         if (!empty($current['estado_tiempo_paso'])) {
+            // Normalizar texto por si acaso (ej. "A Tiempo", "a tiempo")
             $est = mb_strtolower($current['estado_tiempo_paso']);
             if (strpos($est, 'tiempo') !== false) {
                 $stats[$usu_id]['a_tiempo']++;
@@ -192,18 +178,31 @@ foreach ($assignments_by_ticket as $tick_id => $entries) {
         }
 
         // Duration Calculation
+        // Start: current fech_asig
+        // End: Next assignment fech_asig OR Ticket fech_cierre OR NOW
         $start_time = strtotime($current['fech_asig']);
         $end_time = null;
 
         if (isset($entries[$i + 1])) {
+            // There is a next step
             $end_time = strtotime($entries[$i + 1]['fech_asig']);
         } else {
+            // Last step recorded
             if ($current['tick_estado'] == 'Cerrado' && !empty($current['fech_cierre'])) {
                 $end_time = strtotime($current['fech_cierre']);
+                // If the ticket is closed, and this is the last assignment, and the assignment date is after the closure date,
+                // it means the closure happened *after* this assignment. So, the duration for this assignment
+                // should end at the closure time.
+                // However, if the assignment date is *after* the closure date, it's an anomaly or the closure date is for the ticket, not the assignment.
+                // For simplicity, we'll assume fech_cierre is the end of the *ticket's* last activity.
+                // If the assignment is the last one, its duration ends at ticket closure.
+                // If fech_asig is after fech_cierre, it's an issue with data or logic.
+                // Let's ensure end_time is not before start_time.
                 if ($end_time < $start_time) {
-                    $end_time = $start_time;
+                    $end_time = $start_time; // Avoid negative duration
                 }
             } else {
+                // Still open/active: use NOW
                 $end_time = time();
             }
         }
@@ -215,15 +214,16 @@ foreach ($assignments_by_ticket as $tick_id => $entries) {
     }
 }
 
-// 4. Fill Excel Sheet 1
+// 4. Fill Excel
 $row = 2;
+// RE-FIXING SORT LOGIC TO PRESERVE ID OR MERGE ERRORS BEFORE SORT
+// Re-building stats with ID inside
 $final_stats = [];
 foreach ($stats as $uid => $dat) {
     $dat['usu_id'] = $uid;
-    // We assume explicit validation of user_errors array elsewhere or remove if unused in this scope
-    // For now, using what was logically there or 0
-    $dat['err_proceso'] = 0;
-    $dat['err_info'] = 0;
+    // Merge errors here
+    $dat['err_proceso'] = $user_errors[$uid]['proceso'] ?? 0;
+    $dat['err_info'] = $user_errors[$uid]['informativo'] ?? 0;
     $final_stats[] = $dat;
 }
 
@@ -233,11 +233,6 @@ usort($final_stats, function ($a, $b) {
 
 
 foreach ($final_stats as $stat) {
-    // Recalculate errors per user if needed or leave as placeholders if that logic was removed/simplified
-    // Since we didn't calculate 'err_proceso' and 'err_info' in the loop above (only 'novedades'), 
-    // we would need the error query first if we want them here. 
-    // BUT the user request focused on Sheet 2. To avoid breaking Sheet 1, I will leave placeholders or 'novedades'.
-
     $avg_sec = ($stat['gestionados'] > 0) ? ($stat['total_sec'] / $stat['gestionados']) : 0;
     $total_hours = round($stat['total_sec'] / 3600, 2);
     $avg_hours = round($avg_sec / 3600, 2);
@@ -251,24 +246,28 @@ foreach ($final_stats as $stat) {
     $sheet->setCellValue('A' . $row, $stat['reg_nom']);
     $sheet->setCellValue('B' . $row, $stat['usu_nom']);
     $sheet->setCellValue('C' . $row, $rol_nom);
-    $sheet->setCellValue('D' . $row, $stat['car_nom']);
-    $sheet->setCellValue('E' . $row, $stat['perfiles']);
+    $sheet->setCellValue('D' . $row, $stat['car_nom']); // Cargo
+    $sheet->setCellValue('E' . $row, $stat['perfiles']); // Perfiles
     $sheet->setCellValue('F' . $row, $stat['gestionados']);
     $sheet->setCellValue('G' . $row, $stat['a_tiempo']);
     $sheet->setCellValue('H' . $row, $stat['atrasados']);
-    $sheet->setCellValue('I' . $row, $stat['novedades']); // Using generic novedades count
-    $sheet->setCellValue('J' . $row, 0);
+    $sheet->setCellValue('I' . $row, $stat['err_proceso']);      // NEW
+    $sheet->setCellValue('J' . $row, $stat['err_info']);         // NEW
     $sheet->setCellValue('K' . $row, $total_hours);
     $sheet->setCellValue('L' . $row, $avg_hours);
 
+    // Conditional format for Late
     if ($stat['atrasados'] > 0) {
         $sheet->getStyle('H' . $row)->getFont()->setColor(new Color(Color::COLOR_RED));
+    }
+    if ($stat['err_proceso'] > 0) {
+        $sheet->getStyle('I' . $row)->getFont()->setColor(new Color(Color::COLOR_RED));
     }
 
     $row++;
 }
 
-// Auto-borders Sheet 1
+// Auto-borders
 $lastRow = $row - 1;
 $styleArray = [
     'borders' => [
@@ -278,11 +277,11 @@ $styleArray = [
         ],
     ],
 ];
-$sheet->getStyle('A2:L' . $lastRow)->applyFromArray($styleArray);
+$sheet->getStyle('A2:L' . $lastRow)->applyFromArray($styleArray); // Updated range
 
 
 // ==========================================
-// SEGUNDA HOJA: DETALLE (POR TICKET/ASIGNACION + ERRORES + CREADOR)
+// SEGUNDA HOJA: DETALLE (POR TICKET/ASIGNACION + ERRORES)
 // ==========================================
 
 $spreadsheet->createSheet();
@@ -318,20 +317,7 @@ foreach ($headers2 as $header) {
     $sheet2->getColumnDimension($col)->setAutoSize(true);
     $col++;
 }
-
-// Reuse header style if available, or define simple one
-$headerStyle = [
-    'font' => ['bold' => true],
-    'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
-    'borders' => [
-        'bottom' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THICK],
-    ],
-    'fill' => [
-        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-        'startColor' => ['argb' => 'FFCCCCCC'],
-    ]
-];
-$sheet2->getStyle('A1:R1')->applyFromArray($headerStyle);
+$sheet2->getStyle('A1:R1')->applyFromArray($headerStyle); // Updated Range A1:R1
 
 $row2 = 2;
 
@@ -365,30 +351,6 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
     // 1. Merge Lists
     $timeline = [];
 
-    // NEW: Add Creator Event
-    // We can get creator details from the first assignment row (since they are joined from ticket)
-    if (!empty($assignments)) {
-        $first = $assignments[0];
-        $creator_item = [
-            'type' => 'CREADOR',
-            'sort_date' => $first['fech_crea'],
-            'tick_id' => $tick_id,
-            'tick_titulo' => $first['tick_titulo'],
-            'cat_nom' => $first['cat_nom'],
-            'cats_nom' => $first['cats_nom'],
-            'paso_nombre' => 'Inicio', // Or 'Creación'
-            'tick_estado' => $first['tick_estado'],
-            // Creator specific fields mapped to standard keys for render
-            'usu_nom' => $first['crea_nom'],
-            'usu_ape' => $first['crea_ape'],
-            'rol_id' => $first['crea_rol'],
-            'reg_nom' => $first['crea_reg'],
-            'car_nom' => $first['crea_car'],
-            'usu_asig' => $first['usu_id_creador']
-        ];
-        $timeline[] = $creator_item;
-    }
-
     // Add Assignments
     foreach ($assignments as $asig) {
         $item = $asig;
@@ -403,7 +365,7 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
             $item = $err; // Has te.*, answer_nom, resp_nom, etc.
             $item['type'] = ($err['es_error_proceso'] == 1) ? 'ERROR PROCESO' : 'ERROR INFORMATIVO';
             $item['sort_date'] = $err['fech_crea'];
-            // Map keys
+            // Map keys to match assignment structure where possible or handle in display
             $timeline[] = $item;
         }
     }
@@ -420,7 +382,7 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
         $type = $current['type'];
 
         // Common Vars
-        $t_id = $tick_id; // or $current['tick_id']if available
+        $t_id = $tick_id; // or $current['tick_id'] if available (assignments have it)
         $tick_titulo = $current['tick_titulo'] ?? '';
         $date_event = $current['sort_date'];
 
@@ -433,37 +395,14 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
         $rol_nom = '';
         $car_nom = '';
         $perfiles = '';
-        $end_time_str = ''; // Duration end
+        $end_time_str = '';
         $duration_hours = '';
         $estado_tiempo = '';
         $tipo_novedad = '';
         $desc_novedad = '';
         $tick_estado = '';
 
-        if ($type == 'CREADOR') {
-            $cat_nom = $current['cat_nom'] ?? '';
-            $subcat_nom = $current['cats_nom'] ?? '';
-            $paso_nom = 'Creación del Ticket';
-
-            $usu_id = $current['usu_asig']; // This is creator ID mapped above
-            $usu_nom = $current['usu_nom'] . ' ' . $current['usu_ape'];
-            $reg_nom = $current['reg_nom'] ?? 'N/A';
-            $car_nom = $current['car_nom'] ?? 'N/A';
-
-            $r_id = $current['rol_id'];
-            if ($r_id == 1) $rol_nom = 'Usuario';
-            elseif ($r_id == 2) $rol_nom = 'Soporte';
-            elseif ($r_id == 3) $rol_nom = 'Admin';
-
-            $perfiles = getPerfiles($conectar, $usu_id);
-            $tick_estado = $current['tick_estado'];
-
-            // Duration for creation? usually 0 or N/A
-            $end_time_str = '-';
-            $duration_hours = '-';
-            $estado_tiempo = '-';
-        } elseif ($type == 'ASIGNACION') {
-            // ... (Existing Assignment Logic) ...
+        if ($type == 'ASIGNACION') {
             $cat_nom = $current['cat_nom'] ?? '';
             $subcat_nom = $current['cats_nom'] ?? '';
             $paso_nom = $current['paso_nombre'] ?? 'N/A';
@@ -484,31 +423,46 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
             $estado_tiempo = $current['estado_tiempo_paso'] ?? '';
             $desc_novedad = $current['error_descrip'] ?? '';
 
+            // Check implicit novelty in comments (if error_descrip is empty)
             if (empty($desc_novedad) && !empty($current['asig_comentario'])) {
+                // Heuristic: If comment looks like a novelty or just usage of fallback
                 $comment = $current['asig_comentario'];
+                // Only treat as novelty if it's substantial or matches user concern
+                // "Ticket trasladado" is default; maybe check if DIFFERENT? 
+                // Or if Time Status is empty, use the comment as explanation.
                 if (stripos($comment, 'novedad') !== false || stripos($comment, 'error') !== false || stripos($comment, 'falta') !== false) {
                     $desc_novedad = $comment;
                 }
             }
 
+            // FIX: If Time Status is empty but there's a novelty/error, label it
             if (empty($estado_tiempo)) {
                 if (!empty($desc_novedad)) {
                     $estado_tiempo = 'Reasignado por Novedad';
                 } else {
+                    // NEW: Look ahead! If the NEXT event is an error or a novelty assignment,
+                    // it means THIS assignment ended because of that.
                     if (isset($timeline[$i + 1])) {
                         $next = $timeline[$i + 1];
-                        if ($next['type'] != 'ASIGNACION' && $next['type'] != 'CREADOR') {
-                            // Next is Error
+                        if ($next['type'] != 'ASIGNACION') {
+                            // Next is an Error Event
                             $estado_tiempo = 'Sin tiempo por asignación a novedad';
+                        } elseif (!empty($next['asig_comentario'])) {
+                            // Next is an Assignment with a potential novelty comment
+                            $next_comment = $next['asig_comentario'];
+                            if (stripos($next_comment, 'novedad') !== false || stripos($next_comment, 'error') !== false || stripos($next_comment, 'falta') !== false) {
+                                $estado_tiempo = 'Sin tiempo por asignación a novedad';
+                            }
                         }
                     }
                 }
             }
 
-            // Duration Logic
+            // Duration Logic (Find next ASIG start time)
             $start_time = strtotime($current['fech_asig']);
             $end_time = null;
 
+            // Search next assignment in sorted timeline (Skip errors)
             for ($k = $i + 1; $k < $count; $k++) {
                 if ($timeline[$k]['type'] == 'ASIGNACION') {
                     $end_time = strtotime($timeline[$k]['fech_asig']);
@@ -516,6 +470,7 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
                     break;
                 }
             }
+            // If no next assignment found
             if (!$end_time) {
                 if ($current['tick_estado'] == 'Cerrado' && !empty($current['fech_cierre'])) {
                     $end_time = strtotime($current['fech_cierre']);
@@ -534,21 +489,22 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
             }
         } else {
             // ERROR ENTRY via tm_ticket_error
-            $ref_asig = $assignments[0] ?? null;
+            $ref_asig = $assignments[0] ?? null; // Get basic ticket info from first assignment
             if ($ref_asig) {
                 $subcat_nom = $ref_asig['cats_nom'];
                 $tick_estado = $ref_asig['tick_estado'];
                 $tick_titulo = $ref_asig['tick_titulo'];
             }
 
+            // FIX: Set a descriptive name instead of empty
             $paso_nom = ($type == 'ERROR PROCESO') ? 'Devolución por Error' : 'Reporte Informativo';
-            $estado_tiempo = '-';
+            $estado_tiempo = '-'; // FIX: Avoid empty cell for errors
 
-            $usu_nom = $current['resp_nom'] . ' ' . $current['resp_ape'];
+            $usu_nom = $current['resp_nom'] . ' ' . $current['resp_ape']; // Responsable
             $car_nom = $current['resp_car'];
-            $reg_nom = $current['resp_reg'] ?? 'N/A';
+            $reg_nom = $current['resp_reg'] ?? 'N/A'; // Regional Responsible (NEW)
             $rol_nom = 'Responsable Error';
-            $perfiles = '';
+            $perfiles = ''; // Could fetch if needed
 
             $tipo_novedad = $current['answer_nom'] ?? '';
             $desc_novedad = strip_tags($current['error_descrip']);
@@ -578,29 +534,27 @@ foreach ($assignments_by_ticket as $tick_id => $assignments) {
         $sheet2->setCellValue('R' . $row2, $tick_estado);
 
         // Styles
-        if ($type == 'CREADOR') {
+        if ($type == 'ERROR PROCESO') {
+            $sheet2->getStyle('F' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED)); // Shifted E->F
             $sheet2->getStyle('F' . $row2)->getFont()->setBold(true);
-            $sheet2->getStyle('F' . $row2)->getFont()->setColor(new Color(Color::COLOR_DARKGREEN));
-        } elseif ($type == 'ERROR PROCESO') {
-            $sheet2->getStyle('F' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED));
-            $sheet2->getStyle('F' . $row2)->getFont()->setBold(true);
-            $sheet2->getStyle('P' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED));
-            $sheet2->getStyle('Q' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED));
+            $sheet2->getStyle('P' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED)); // Tipo Red
+            $sheet2->getStyle('Q' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED)); // Desc Red
         } elseif ($type == 'ERROR INFORMATIVO') {
             $sheet2->getStyle('F' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE));
-            $sheet2->getStyle('P' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE));
-            $sheet2->getStyle('Q' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE));
+            $sheet2->getStyle('P' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE)); // Tipo Blue
+            $sheet2->getStyle('Q' . $row2)->getFont()->setColor(new Color(Color::COLOR_BLUE)); // Desc Blue
         } else {
             // Asignacion colors
             if (!empty($estado_tiempo)) {
                 $est = mb_strtolower($estado_tiempo);
                 if (strpos($est, 'atrasado') !== false || strpos($est, 'vencido') !== false) {
-                    $sheet2->getStyle('O' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED));
+                    $sheet2->getStyle('O' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED)); // Shifted N->O
                 } elseif (strpos($est, 'tiempo') !== false) {
                     $sheet2->getStyle('O' . $row2)->getFont()->setColor(new Color(Color::COLOR_DARKGREEN));
                 }
             }
             if (!empty($desc_novedad) && $type == 'ASIGNACION') {
+                // Novedades en asignacion (retornos)
                 $sheet2->getStyle('Q' . $row2)->getFont()->setColor(new Color(Color::COLOR_RED));
             }
         }
@@ -613,9 +567,6 @@ $sheet2->getStyle('A2:R' . $lastRow2)->applyFromArray($styleArray);
 
 // Volver a la primera hoja antes de guardar
 $spreadsheet->setActiveSheetIndex(0);
-
-// Clean output buffer to assure no whitespace or warnings corrupt the file
-if (ob_get_length()) ob_end_clean();
 
 // 5. Output
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
