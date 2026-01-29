@@ -284,7 +284,80 @@ $sheet->getStyle('A2:L' . $lastRow)->applyFromArray($styleArray);
 // SEGUNDA HOJA: DETALLE (POR TICKET/ASIGNACION + ERRORES + CREADOR)
 // ==========================================
 
-// ... (Header check) ...
+$spreadsheet->createSheet();
+$spreadsheet->setActiveSheetIndex(1);
+$sheet2 = $spreadsheet->getActiveSheet();
+$sheet2->setTitle('Detalle Tickets');
+
+// Encabezados Detalle
+$headers2 = [
+    'TICKET #',
+    'TITULO TICKET',
+    'CATEGORIA',
+    'SUBCATEGORIA',
+    'PASO FLUJO',
+    'TIPO REGISTRO',       // NEW: Asignación vs Error
+    'REGIONAL',
+    'USUARIO',
+    'ROL',
+    'CARGO',
+    'PERFILES',
+    'FECHA EVENTO',        // Renamed from FECHA ASIGNADO
+    'FECHA FIN/CIERRE',
+    'DURACIÓN (Horas)',
+    'ESTADO TIEMPO',
+    'TIPO NOVEDAD',      // SPLIT 1
+    'DESCRIPCION NOVEDAD', // SPLIT 2
+    'ESTADO TICKET ACTUAL'
+];
+
+$col = 'A';
+foreach ($headers2 as $header) {
+    $sheet2->setCellValue($col . '1', $header);
+    $sheet2->getColumnDimension($col)->setAutoSize(true);
+    $col++;
+}
+
+// Reuse header style if available, or define simple one
+$headerStyle = [
+    'font' => ['bold' => true],
+    'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+    'borders' => [
+        'bottom' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THICK],
+    ],
+    'fill' => [
+        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+        'startColor' => ['argb' => 'FFCCCCCC'],
+    ]
+];
+$sheet2->getStyle('A1:R1')->applyFromArray($headerStyle);
+
+$row2 = 2;
+
+// Agrupar Errores por Ticket
+$sql_all_errors = "SELECT 
+                    te.*,
+                    fa.answer_nom,
+                    u_resp.usu_nom as resp_nom, u_resp.usu_ape as resp_ape,
+                    c_resp.car_nom as resp_car,
+                    r_resp.reg_nom as resp_reg,
+                    u_rep.usu_nom as rep_nom, u_rep.usu_ape as rep_ape
+                   FROM tm_ticket_error te
+                   LEFT JOIN tm_fast_answer fa ON te.answer_id = fa.answer_id
+                   LEFT JOIN tm_usuario u_resp ON te.usu_id_responsable = u_resp.usu_id
+                   LEFT JOIN tm_regional r_resp ON u_resp.reg_id = r_resp.reg_id
+                   LEFT JOIN tm_cargo c_resp ON u_resp.car_id = c_resp.car_id
+                   LEFT JOIN tm_usuario u_rep ON te.usu_id_reporta = u_rep.usu_id
+                   WHERE te.est = 1
+                   ORDER BY te.fech_crea ASC";
+$stmt_all_err = $conectar->prepare($sql_all_errors);
+$stmt_all_err->execute();
+$all_errors = $stmt_all_err->fetchAll(PDO::FETCH_ASSOC);
+
+$errors_by_ticket = [];
+foreach ($all_errors as $err) {
+    $errors_by_ticket[$err['tick_id']][] = $err;
+}
 
 foreach ($assignments_by_ticket as $tick_id => $assignments) {
 
